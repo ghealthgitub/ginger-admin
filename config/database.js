@@ -163,6 +163,123 @@ async function initDB() {
                 details TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
             );
+
+            -- SPECIALTIES
+            CREATE TABLE IF NOT EXISTS specialties (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(200) NOT NULL,
+                slug VARCHAR(200) UNIQUE NOT NULL,
+                icon VARCHAR(10),
+                category VARCHAR(50) CHECK (category IN ('surgical', 'medical', 'oncology', 'super_specialty')),
+                description TEXT,
+                long_description TEXT,
+                treatment_count INTEGER DEFAULT 0,
+                image VARCHAR(500),
+                is_featured BOOLEAN DEFAULT false,
+                display_order INTEGER DEFAULT 0,
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- TREATMENTS (belong to a specialty)
+            CREATE TABLE IF NOT EXISTS treatments (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(300) NOT NULL,
+                slug VARCHAR(300) UNIQUE NOT NULL,
+                specialty_id INTEGER REFERENCES specialties(id),
+                description TEXT,
+                long_description TEXT,
+                duration VARCHAR(100),
+                recovery_time VARCHAR(100),
+                success_rate VARCHAR(50),
+                cost_range_usd VARCHAR(100),
+                image VARCHAR(500),
+                is_featured BOOLEAN DEFAULT false,
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- DESTINATIONS (countries)
+            CREATE TABLE IF NOT EXISTS destinations (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                slug VARCHAR(100) UNIQUE NOT NULL,
+                flag VARCHAR(10),
+                tagline VARCHAR(300),
+                description TEXT,
+                long_description TEXT,
+                why_choose TEXT,
+                image VARCHAR(500),
+                gallery TEXT[],
+                hospital_count INTEGER DEFAULT 0,
+                doctor_count INTEGER DEFAULT 0,
+                avg_savings VARCHAR(50),
+                visa_info TEXT,
+                travel_info TEXT,
+                climate TEXT,
+                language VARCHAR(200),
+                currency VARCHAR(100),
+                is_featured BOOLEAN DEFAULT false,
+                display_order INTEGER DEFAULT 0,
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- TREATMENT COSTS (per treatment per destination)
+            CREATE TABLE IF NOT EXISTS treatment_costs (
+                id SERIAL PRIMARY KEY,
+                treatment_id INTEGER REFERENCES treatments(id),
+                destination_id INTEGER REFERENCES destinations(id),
+                cost_min_usd INTEGER,
+                cost_max_usd INTEGER,
+                cost_local VARCHAR(100),
+                includes TEXT,
+                hospital_stay VARCHAR(100),
+                notes TEXT,
+                status VARCHAR(20) DEFAULT 'published',
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(treatment_id, destination_id)
+            );
+
+            -- STATIC PAGES (About, FAQ, Contact, How It Works, etc.)
+            CREATE TABLE IF NOT EXISTS static_pages (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(300) NOT NULL,
+                slug VARCHAR(300) UNIQUE NOT NULL,
+                page_type VARCHAR(50) DEFAULT 'page' CHECK (page_type IN ('page', 'legal', 'landing', 'form')),
+                content TEXT,
+                hero_title VARCHAR(500),
+                hero_description TEXT,
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'published',
+                updated_by INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- LINKING TABLES for many-to-many relationships
+            CREATE TABLE IF NOT EXISTS hospital_specialties (
+                hospital_id INTEGER REFERENCES hospitals(id) ON DELETE CASCADE,
+                specialty_id INTEGER REFERENCES specialties(id) ON DELETE CASCADE,
+                PRIMARY KEY (hospital_id, specialty_id)
+            );
+
+            CREATE TABLE IF NOT EXISTS doctor_treatments (
+                doctor_id INTEGER REFERENCES doctors(id) ON DELETE CASCADE,
+                treatment_id INTEGER REFERENCES treatments(id) ON DELETE CASCADE,
+                PRIMARY KEY (doctor_id, treatment_id)
+            );
         `);
         console.log('✅ Database tables initialized');
     } catch (err) {
