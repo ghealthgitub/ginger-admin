@@ -774,6 +774,13 @@ app.put('/api/static-pages/:id', apiAuth, roleRequired('super_admin', 'editor'),
 
 // ============== SEED ENDPOINT (run once) ==============
 app.post('/api/admin/seed', apiAuth, roleRequired('super_admin'), async (req, res) => {
+
+// Simple seed page - just visit /seed in browser
+app.get('/seed', authRequired, async (req, res) => {
+    res.send(`<html><head><title>Seed Database</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#0B2545;color:#fff;text-align:center}.box{background:#fff;color:#333;padding:40px;border-radius:16px;max-width:500px}h1{color:#F26522}button{background:#F26522;color:#fff;border:none;padding:14px 32px;border-radius:8px;font-size:1rem;cursor:pointer;font-weight:700;margin-top:16px}button:hover{background:#d9531e}#result{margin-top:16px;padding:12px;border-radius:8px;display:none}</style></head><body><div class="box"><h1>🌱 Seed Database</h1><p>This will populate your database with 28 specialties, 23 treatments, 5 destinations, 10 hospitals, 5 doctors, 5 testimonials, and 13 static pages.</p><button onclick="runSeed()">🚀 Seed Now</button><div id="result"></div></div><script>async function runSeed(){const r=document.getElementById('result');r.style.display='block';r.style.background='#FEF3C7';r.textContent='⏳ Seeding... please wait...';try{const res=await fetch('/api/admin/seed',{method:'POST'});const d=await res.json();if(d.success){r.style.background='#D1FAE5';r.innerHTML='✅ '+d.message+'<br><br><a href="/">← Back to Dashboard</a>'}else{r.style.background='#FEE2E2';r.textContent='❌ Error: '+(d.error||'Unknown')}}catch(e){r.style.background='#FEE2E2';r.textContent='❌ '+e}}</script></body></html>`);
+});
+
+app.post('/api/admin/seed', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         // Run seed inline
         const { execSync } = require('child_process');
