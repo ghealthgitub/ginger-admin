@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Ginger Healthcare Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--navy:#0B2545;--navy-light:#13315C;--navy-deep:#071A33;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-700:#374151}
+        *{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#071A33,#0B2545,#13315C);position:relative;overflow:hidden}
+        .bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15}.bg-orb--1{width:400px;height:400px;background:var(--ginger);top:-100px;right:-50px}.bg-orb--2{width:500px;height:500px;background:var(--teal);bottom:-150px;left:-100px}
+        .login-card{background:var(--white);border-radius:24px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 25px 80px rgba(0,0,0,.3);position:relative;z-index:1}
+        .login-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px}
+        .login-logo__icon{width:46px;height:46px;background:linear-gradient(135deg,var(--ginger),var(--ginger-dark));border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:800;box-shadow:0 4px 12px rgba(242,101,34,.3)}
+        .login-logo__text{font-size:1.3rem;font-weight:700}.login-logo__text span:first-child{color:var(--navy)}.login-logo__text span:last-child{color:var(--ginger)}
+        .login-title{text-align:center;font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--navy);margin:16px 0 4px}
+        .login-subtitle{text-align:center;font-size:.9rem;color:var(--gray-400);margin-bottom:32px}
+        .form-group{margin-bottom:20px}
+        .form-label{display:block;font-weight:600;font-size:.85rem;color:var(--gray-700);margin-bottom:6px}
+        .form-input{width:100%;padding:14px 16px;border:1.5px solid var(--gray-200);border-radius:10px;font-size:.95rem;font-family:inherit;transition:all .2s;background:var(--gray-50)}
+        .form-input:focus{outline:none;border-color:var(--ginger);box-shadow:0 0 0 3px rgba(242,101,34,.1);background:#fff}
+        .btn-login{width:100%;padding:16px;background:var(--ginger);color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .25s;box-shadow:0 4px 16px rgba(242,101,34,.3)}
+        .btn-login:hover{background:var(--ginger-dark);transform:translateY(-1px);box-shadow:0 6px 20px rgba(242,101,34,.4)}
+        .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        .error-msg{background:#FEE2E2;border:1px solid #FECACA;color:#991B1B;padding:10px 14px;border-radius:8px;font-size:.85rem;margin-bottom:16px;display:none}
+        .login-footer{text-align:center;margin-top:24px;font-size:.8rem;color:var(--gray-400)}
+    </style>
+</head>
+<body>
+    <div class="bg-orb bg-orb--1"></div>
+    <div class="bg-orb bg-orb--2"></div>
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="login-logo__icon">G</div>
+            <div class="login-logo__text"><span>Ginger</span> <span>Healthcare</span></div>
+        </div>
+        <div class="login-title">Admin Dashboard</div>
+        <div class="login-subtitle">Sign in to manage your website</div>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="password" placeholder="Enter your password" autocomplete="current-password">
+        </div>
+        <button class="btn-login" id="loginBtn" onclick="handleLogin()">Sign In</button>
+        <div class="login-footer">© 2025 Ginger Healthcare · Admin Portal</div>
+    </div>
+
+    <script>
+    async function handleLogin() {
+        const btn = document.getElementById('loginBtn');
+        const err = document.getElementById('errorMsg');
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) { err.textContent = 'Please enter email and password'; err.style.display = 'block'; return; }
+
+        btn.disabled = true; btn.textContent = 'Signing in...'; err.style.display = 'none';
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok) { window.location.href = '/'; }
+            else { err.textContent = data.error || 'Login failed'; err.style.display = 'block'; }
+        } catch (e) { err.textContent = 'Network error. Please try again.'; err.style.display = 'block'; }
+
+        btn.disabled = false; btn.textContent = 'Sign In';
+    }
+
+    document.getElementById('password').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+    </script>
+</body>
+</html>

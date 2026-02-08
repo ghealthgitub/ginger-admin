@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Ginger Healthcare Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar__logo">
+                <div class="sidebar__logo-icon">G</div>
+                <div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div>
+            </div>
+            <nav class="sidebar__nav">
+                <a href="/" class="sidebar__link active" data-page="dashboard">
+                    <span class="sidebar__link-icon">📊</span> Dashboard
+                </a>
+                <div class="sidebar__section">Content</div>
+                <a href="/blog" class="sidebar__link" data-page="blog">
+                    <span class="sidebar__link-icon">📝</span> Blog Posts
+                </a>
+                <a href="/testimonials" class="sidebar__link" data-page="testimonials">
+                    <span class="sidebar__link-icon">⭐</span> Testimonials
+                </a>
+                <a href="/hospitals" class="sidebar__link" data-page="hospitals">
+                    <span class="sidebar__link-icon">🏥</span> Hospitals
+                </a>
+                <a href="/doctors" class="sidebar__link" data-page="doctors">
+                    <span class="sidebar__link-icon">👨‍⚕️</span> Doctors
+                </a>
+                <div class="sidebar__section">Management</div>
+                <a href="/submissions" class="sidebar__link" data-page="submissions">
+                    <span class="sidebar__link-icon">📋</span> Submissions
+                    <span class="sidebar__badge" id="newSubsBadge" style="display:none">0</span>
+                </a>
+                <a href="/page-content" class="sidebar__link" data-page="page-content">
+                    <span class="sidebar__link-icon">📄</span> Page Content
+                </a>
+                <a href="/media" class="sidebar__link" data-page="media">
+                    <span class="sidebar__link-icon">🖼️</span> Media Library
+                </a>
+                <div class="sidebar__section">Tools</div>
+                <a href="/ai-assistant" class="sidebar__link" data-page="ai-assistant">
+                    <span class="sidebar__link-icon">🤖</span> Claude AI Assistant
+                </a>
+                <a href="/users" class="sidebar__link" data-page="users" id="usersLink">
+                    <span class="sidebar__link-icon">👥</span> Users
+                </a>
+            </nav>
+            <div class="sidebar__footer">
+                <div class="sidebar__user" id="sidebarUser">
+                    <div class="sidebar__user-avatar" id="userAvatar">SA</div>
+                    <div class="sidebar__user-info">
+                        <div class="sidebar__user-name" id="userName">Loading...</div>
+                        <div class="sidebar__user-role" id="userRole">-</div>
+                    </div>
+                </div>
+                <a href="/logout" class="sidebar__logout">Logout →</a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+            <header class="topbar">
+                <button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+                <h1 class="topbar__title" id="pageTitle">Dashboard</h1>
+                <div class="topbar__actions">
+                    <a href="https://ginger-healthcare.onrender.com" target="_blank" class="topbar__view-site">🌐 View Site</a>
+                </div>
+            </header>
+
+            <div class="content" id="mainContent">
+                <!-- DASHBOARD HOME -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card"><div class="stat-card__icon" style="background:rgba(242,101,34,.1);color:var(--ginger)">📝</div><div class="stat-card__info"><div class="stat-card__value" id="statPosts">-</div><div class="stat-card__label">Blog Posts</div></div></div>
+                    <div class="stat-card"><div class="stat-card__icon" style="background:rgba(14,165,160,.1);color:var(--teal)">⭐</div><div class="stat-card__info"><div class="stat-card__value" id="statTestimonials">-</div><div class="stat-card__label">Testimonials</div></div></div>
+                    <div class="stat-card"><div class="stat-card__icon" style="background:rgba(59,130,246,.1);color:#3B82F6">🏥</div><div class="stat-card__info"><div class="stat-card__value" id="statHospitals">-</div><div class="stat-card__label">Hospitals</div></div></div>
+                    <div class="stat-card"><div class="stat-card__icon" style="background:rgba(236,72,153,.1);color:#EC4899">👨‍⚕️</div><div class="stat-card__info"><div class="stat-card__value" id="statDoctors">-</div><div class="stat-card__label">Doctors</div></div></div>
+                    <div class="stat-card"><div class="stat-card__icon" style="background:rgba(245,158,11,.1);color:#F59E0B">📋</div><div class="stat-card__info"><div class="stat-card__value" id="statSubmissions">-</div><div class="stat-card__label">Total Submissions</div></div></div>
+                    <div class="stat-card stat-card--highlight"><div class="stat-card__icon" style="background:rgba(5,150,105,.1);color:#059669">🔔</div><div class="stat-card__info"><div class="stat-card__value" id="statNewSubs">-</div><div class="stat-card__label">New Submissions</div></div></div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card__header"><h3>Recent Activity</h3></div>
+                        <div class="card__body" id="activityList"><div class="loading">Loading...</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card__header"><h3>Quick Actions</h3></div>
+                        <div class="card__body">
+                            <a href="/blog/new" class="quick-action"><span>📝</span> New Blog Post</a>
+                            <a href="/testimonials" class="quick-action"><span>⭐</span> Add Testimonial</a>
+                            <a href="/hospitals" class="quick-action"><span>🏥</span> Add Hospital</a>
+                            <a href="/doctors" class="quick-action"><span>👨‍⚕️</span> Add Doctor</a>
+                            <a href="/ai-assistant" class="quick-action"><span>🤖</span> Claude AI Assistant</a>
+                            <a href="/submissions" class="quick-action"><span>📋</span> View Submissions</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // Load user info
+    async function loadUser() {
+        try {
+            const res = await fetch('/api/auth/me');
+            if (!res.ok) { window.location.href = '/login'; return; }
+            const user = await res.json();
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userRole').textContent = user.role.replace('_', ' ').toUpperCase();
+            document.getElementById('userAvatar').textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+            // Hide users link for non-super-admins
+            if (user.role !== 'super_admin') {
+                const ul = document.getElementById('usersLink');
+                if (ul) ul.style.display = 'none';
+            }
+        } catch(e) { window.location.href = '/login'; }
+    }
+
+    // Load dashboard stats
+    async function loadStats() {
+        try {
+            const res = await fetch('/api/dashboard/stats');
+            const stats = await res.json();
+            document.getElementById('statPosts').textContent = stats.blog_posts;
+            document.getElementById('statTestimonials').textContent = stats.testimonials;
+            document.getElementById('statHospitals').textContent = stats.hospitals;
+            document.getElementById('statDoctors').textContent = stats.doctors;
+            document.getElementById('statSubmissions').textContent = stats.total_submissions;
+            document.getElementById('statNewSubs').textContent = stats.new_submissions;
+
+            // Update badge
+            if (stats.new_submissions > 0) {
+                const badge = document.getElementById('newSubsBadge');
+                badge.textContent = stats.new_submissions;
+                badge.style.display = 'inline-flex';
+            }
+        } catch(e) { console.error('Stats error:', e); }
+    }
+
+    // Load recent activity
+    async function loadActivity() {
+        try {
+            const res = await fetch('/api/dashboard/activity');
+            const activities = await res.json();
+            const list = document.getElementById('activityList');
+            if (activities.length === 0) {
+                list.innerHTML = '<div class="empty-state">No activity yet. Start by creating content!</div>';
+                return;
+            }
+            list.innerHTML = activities.slice(0, 10).map(a => `
+                <div class="activity-item">
+                    <div class="activity-item__dot"></div>
+                    <div class="activity-item__content">
+                        <strong>${a.user_name || 'System'}</strong> ${a.action} ${a.entity_type || ''}
+                        <div class="activity-item__time">${timeAgo(a.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch(e) { console.error('Activity error:', e); }
+    }
+
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return Math.floor(seconds/60) + 'm ago';
+        if (seconds < 86400) return Math.floor(seconds/3600) + 'h ago';
+        return Math.floor(seconds/86400) + 'd ago';
+    }
+
+    // Init
+    loadUser();
+    loadStats();
+    loadActivity();
+    </script>
+</body>
+</html>

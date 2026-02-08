@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ginger-admin
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js

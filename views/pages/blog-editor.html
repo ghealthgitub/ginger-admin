@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Blog Editor | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css">
+<style>.editor-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}.editor-main .form-textarea{min-height:400px;font-size:.92rem;line-height:1.7}.ai-panel{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;position:sticky;top:80px}.ai-panel__header{padding:14px 18px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:.9rem;color:var(--navy)}.ai-panel__body{padding:16px}.ai-output{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px;margin-top:12px;font-size:.85rem;line-height:1.6;max-height:300px;overflow-y:auto;display:none}.ai-btn{width:100%;margin-bottom:8px}@media(max-width:1024px){.editor-layout{grid-template-columns:1fr}}</style></head>
+<body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link active"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><div class="sidebar__section">Management</div><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> Claude AI</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a></nav><div class="sidebar__footer"><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">New Blog Post</h1><div class="topbar__actions"><button class="btn btn--outline" onclick="savePost('draft')">💾 Save Draft</button><button class="btn btn--primary" onclick="savePost('published')">🚀 Publish</button></div></header>
+<div class="content"><div class="editor-layout"><div class="editor-main">
+<div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="title" placeholder="Enter post title..." oninput="generateSlug()"></div>
+<div class="form-row"><div class="form-group"><label class="form-label">URL Slug</label><input type="text" class="form-input" id="slug" placeholder="post-url-slug"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="category"><option value="">Select</option><option>Guide</option><option>Cost</option><option>Treatment</option><option>Patient Story</option><option>News</option><option>Tips</option></select></div></div>
+<div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="excerpt" style="min-height:80px" placeholder="Brief summary for listings..."></textarea></div>
+<div class="form-group"><label class="form-label">Content (HTML)</label><textarea class="form-textarea" id="content" placeholder="Write your blog post here... You can use HTML tags."></textarea></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Meta Title (SEO)</label><input type="text" class="form-input" id="metaTitle" placeholder="SEO title"></div><div class="form-group"><label class="form-label">Read Time (min)</label><input type="number" class="form-input" id="readTime" placeholder="10"></div></div>
+<div class="form-group"><label class="form-label">Meta Description (SEO)</label><textarea class="form-textarea" id="metaDesc" style="min-height:60px" placeholder="SEO description..."></textarea></div>
+</div>
+<div class="ai-panel"><div class="ai-panel__header">🤖 Claude AI Writer</div><div class="ai-panel__body">
+<div class="form-group"><label class="form-label">What do you need?</label><textarea class="form-textarea" id="aiPrompt" style="min-height:80px" placeholder="e.g. Write a 1500-word blog post about knee replacement surgery in India including costs, hospitals, recovery..."></textarea></div>
+<button class="btn btn--teal ai-btn" onclick="aiGenerate('blog')">✨ Generate with Claude</button>
+<button class="btn btn--outline ai-btn" onclick="aiGenerate('blog','Improve the SEO of this content: '+document.getElementById('content').value.substring(0,500))">📈 Improve SEO</button>
+<button class="btn btn--outline ai-btn" onclick="aiGenerate('blog','Generate a compelling meta title and description for: '+document.getElementById('title').value)">🏷️ Generate Meta Tags</button>
+<div class="ai-output" id="aiOutput"></div>
+<button class="btn btn--outline ai-btn" id="useContentBtn" style="display:none" onclick="useAIContent()">📋 Use This Content</button>
+</div></div></div></div></main></div>
+<script>
+const editId=window.location.pathname.includes('/edit/')?window.location.pathname.split('/edit/')[1]:null;
+if(editId)loadPost();
+
+async function loadPost(){
+    const r=await fetch('/api/blog/'+editId);const p=await r.json();
+    document.getElementById('title').value=p.title||'';
+    document.getElementById('slug').value=p.slug||'';
+    document.getElementById('category').value=p.category||'';
+    document.getElementById('excerpt').value=p.excerpt||'';
+    document.getElementById('content').value=p.content||'';
+    document.getElementById('metaTitle').value=p.meta_title||'';
+    document.getElementById('metaDesc').value=p.meta_description||'';
+    document.getElementById('readTime').value=p.read_time||'';
+    document.getElementById('pageTitle').textContent='Edit: '+p.title;
+}
+
+function generateSlug(){
+    const title=document.getElementById('title').value;
+    document.getElementById('slug').value=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+async function savePost(status){
+    const data={title:document.getElementById('title').value,slug:document.getElementById('slug').value,category:document.getElementById('category').value,excerpt:document.getElementById('excerpt').value,content:document.getElementById('content').value,meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,read_time:parseInt(document.getElementById('readTime').value)||null,status};
+    const url=editId?'/api/blog/'+editId:'/api/blog';
+    const method=editId?'PUT':'POST';
+    try{const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(r.ok){alert('Post saved!');window.location.href='/blog'}else{const e=await r.json();alert('Error: '+e.error)}}
+    catch(e){alert('Save failed')}
+}
+
+async function aiGenerate(type,customPrompt){
+    const prompt=customPrompt||document.getElementById('aiPrompt').value;
+    if(!prompt){alert('Enter a prompt first');return}
+    const out=document.getElementById('aiOutput');
+    out.style.display='block';out.innerHTML='<div class="loading">🤖 Claude is writing...</div>';
+    document.getElementById('useContentBtn').style.display='none';
+    try{const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,type,context:document.getElementById('title').value})});
+    const data=await r.json();
+    if(r.ok){out.innerHTML=data.content.replace(/\n/g,'<br>');document.getElementById('useContentBtn').style.display='block'}
+    else{out.innerHTML='Error: '+data.error}}
+    catch(e){out.innerHTML='Failed to connect to AI'}
+}
+
+function useAIContent(){
+    const content=document.getElementById('aiOutput').innerText;
+    document.getElementById('content').value=content;
+    alert('Content added to editor!');
+}
+</script></body></html>
