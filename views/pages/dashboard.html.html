@@ -92,6 +92,10 @@
                     <div class="card">
                         <div class="card__header"><h3>Quick Actions</h3></div>
                         <div class="card__body">
+                            <div id="maintenanceToggle" style="background:var(--gray-50);border:2px solid var(--gray-200);border-radius:10px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+                                <div><strong style="color:var(--navy)">🔧 Maintenance Mode</strong><br><span style="font-size:.78rem;color:var(--gray-400)" id="maintenanceStatus">Loading...</span></div>
+                                <button id="maintenanceBtn" class="btn btn--sm" onclick="toggleMaintenance()" style="min-width:80px">...</button>
+                            </div>
                             <a href="/blog/new" class="quick-action"><span>📝</span> New Blog Post</a>
                             <a href="/testimonials" class="quick-action"><span>⭐</span> Add Testimonial</a>
                             <a href="/hospitals" class="quick-action"><span>🏥</span> Add Hospital</a>
@@ -175,10 +179,49 @@
         return Math.floor(seconds/86400) + 'd ago';
     }
 
+    // Load maintenance status
+    async function loadMaintenance() {
+        try {
+            const res = await fetch('/api/maintenance/status');
+            const data = await res.json();
+            updateMaintenanceUI(data.maintenance);
+        } catch(e) { console.error('Maintenance error:', e); }
+    }
+
+    function updateMaintenanceUI(isOn) {
+        const btn = document.getElementById('maintenanceBtn');
+        const status = document.getElementById('maintenanceStatus');
+        const toggle = document.getElementById('maintenanceToggle');
+        if (isOn) {
+            btn.textContent = '🟢 Go Live';
+            btn.className = 'btn btn--sm btn--primary';
+            status.textContent = 'Website is showing "Coming Soon" page';
+            toggle.style.borderColor = '#F59E0B';
+            toggle.style.background = '#FFFBEB';
+        } else {
+            btn.textContent = '🔧 Enable';
+            btn.className = 'btn btn--sm btn--outline';
+            status.textContent = 'Website is live and visible to public';
+            toggle.style.borderColor = '#D1FAE5';
+            toggle.style.background = '#F0FDF4';
+        }
+    }
+
+    async function toggleMaintenance() {
+        const res = await fetch('/api/maintenance/status');
+        const data = await res.json();
+        const newState = !data.maintenance;
+        const msg = newState ? 'Enable maintenance mode? Website will show "Coming Soon" page.' : 'Disable maintenance mode? Website will go LIVE.';
+        if (!confirm(msg)) return;
+        const r = await fetch('/api/maintenance/toggle', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({enabled: newState}) });
+        if (r.ok) { updateMaintenanceUI(newState); }
+    }
+
     // Init
     loadUser();
     loadStats();
     loadActivity();
+    loadMaintenance();
     </script>
 </body>
 </html>
