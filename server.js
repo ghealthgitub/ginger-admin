@@ -377,6 +377,44 @@ app.post('/api/public/submit', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Submission failed' }); }
 });
 
+// ============== MAINTENANCE MODE ==============
+// Get maintenance status (public - called by website)
+app.get('/api/public/maintenance', async (req, res) => {
+    try {
+        // Set CORS headers so the website can call this
+        res.header('Access-Control-Allow-Origin', '*');
+        const result = await pool.query("SELECT field_value FROM page_content WHERE page='site' AND section='settings' AND field_key='maintenance_mode'");
+        const isEnabled = result.rows.length > 0 && result.rows[0].field_value === 'true';
+        res.json({ maintenance: isEnabled });
+    } catch (err) {
+        res.json({ maintenance: false });
+    }
+});
+
+// Toggle maintenance mode (admin only)
+app.put('/api/maintenance/toggle', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        await pool.query(
+            `INSERT INTO page_content (page, section, field_key, field_value, field_type, updated_by)
+             VALUES ('site','settings','maintenance_mode',$1,'text',$2)
+             ON CONFLICT (page, section, field_key) DO UPDATE SET field_value=$1, updated_by=$2, updated_at=NOW()`,
+            [enabled ? 'true' : 'false', req.user.id]
+        );
+        await logActivity(req.user.id, enabled ? 'enable' : 'disable', 'maintenance', null, 'Maintenance mode ' + (enabled ? 'ON' : 'OFF'));
+        res.json({ success: true, maintenance: enabled });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get maintenance status (admin)
+app.get('/api/maintenance/status', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT field_value FROM page_content WHERE page='site' AND section='settings' AND field_key='maintenance_mode'");
+        const isEnabled = result.rows.length > 0 && result.rows[0].field_value === 'true';
+        res.json({ maintenance: isEnabled });
+    } catch (err) { res.json({ maintenance: false }); }
+});
+
 // ============== PAGE CONTENT ==============
 app.get('/page-content', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'page-content.html'));
