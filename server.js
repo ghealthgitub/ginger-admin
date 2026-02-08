@@ -518,7 +518,7 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
             general: "You are an AI assistant for Ginger Healthcare's admin team. Help with content creation, editing, SEO optimization, and medical tourism industry knowledge."
         };
 
-        const Anthropic = require('anthropic');
+        const { Anthropic } = require('@anthropic-ai/sdk');
         const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
         const message = await client.messages.create({
