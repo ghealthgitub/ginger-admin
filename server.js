@@ -773,7 +773,6 @@ app.put('/api/static-pages/:id', apiAuth, roleRequired('super_admin', 'editor'),
 });
 
 // ============== SEED ENDPOINT (run once) ==============
-app.post('/api/admin/seed', apiAuth, roleRequired('super_admin'), async (req, res) => {
 
 // Simple seed page - just visit /seed in browser
 app.get('/seed', authRequired, async (req, res) => {
