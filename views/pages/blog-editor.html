@@ -1,88 +1,327 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Blog Editor | Ginger Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/admin.css">
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <style>
-.editor-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
-.ql-editor{min-height:350px;font-size:.95rem;line-height:1.8;font-family:'DM Sans',sans-serif}
+.editor-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+.editor-main{display:flex;flex-direction:column;gap:16px}
+
+/* Permalink */
+.permalink{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:10px 14px;font-size:.82rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.permalink__base{color:var(--gray-400)}.permalink__slug{color:var(--navy);font-weight:600;background:#fff;border:1px solid var(--gray-200);border-radius:4px;padding:2px 8px;font-family:monospace;font-size:.82rem;min-width:150px}
+.permalink__slug:focus{outline:none;border-color:var(--ginger)}
+.permalink a{color:var(--teal);font-weight:600;margin-left:auto}
+
+/* Quill */
+.ql-editor{min-height:300px;font-size:.95rem;line-height:1.8;font-family:'DM Sans',sans-serif}
 .ql-toolbar{border-radius:8px 8px 0 0;border-color:var(--gray-200)!important;background:var(--gray-50)}
 .ql-container{border-radius:0 0 8px 8px;border-color:var(--gray-200)!important}
-.ql-editor h1,.ql-editor h2,.ql-editor h3{font-family:'Playfair Display',serif;color:var(--navy)}
-.ai-panel{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;position:sticky;top:80px}
-.ai-panel__header{padding:14px 18px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:.9rem;color:var(--navy)}
-.ai-panel__body{padding:16px}
-.ai-output{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px;margin-top:12px;font-size:.85rem;line-height:1.6;max-height:300px;overflow-y:auto;display:none}
-.ai-btn{width:100%;margin-bottom:8px}
-.word-count{font-size:.78rem;color:var(--gray-400);margin-top:6px;text-align:right}
-@media(max-width:1024px){.editor-layout{grid-template-columns:1fr}}
+.word-count{font-size:.78rem;color:var(--gray-400);text-align:right;margin-top:4px}
+
+/* Right sidebar panels */
+.panel{background:#fff;border:1px solid var(--gray-200);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.panel__head{padding:12px 16px;border-bottom:1px solid var(--gray-100);font-weight:700;font-size:.88rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.panel__head::after{content:'▾';font-size:.7rem;color:var(--gray-400)}
+.panel__body{padding:14px 16px}
+.panel.collapsed .panel__body{display:none}
+.panel.collapsed .panel__head::after{content:'▸'}
+
+/* Publish panel */
+.publish-actions{display:flex;gap:8px;margin-top:12px}
+.status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.85rem;border-bottom:1px solid var(--gray-50)}
+.status-row:last-child{border:none}
+.status-label{color:var(--gray-500)}.status-value{font-weight:600;color:var(--navy)}
+
+/* Claude Visual Editor */
+.claude-panel{background:linear-gradient(135deg,#0B2545,#13315C);border-radius:10px;border:1px solid rgba(255,255,255,.1);overflow:hidden}
+.claude-panel .panel__head{background:rgba(255,255,255,.05);color:#fff;border-color:rgba(255,255,255,.1)}
+.claude-panel .panel__head::after{color:rgba(255,255,255,.4)}
+.claude-panel .panel__body{padding:0}
+.claude-chat{display:flex;flex-direction:column;height:400px}
+.claude-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.claude-msg{padding:10px 14px;border-radius:10px;font-size:.85rem;line-height:1.5;max-width:90%;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.claude-msg--user{background:rgba(242,101,34,.15);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.claude-msg--ai{background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);align-self:flex-start;border-bottom-left-radius:4px}
+.claude-msg--ai pre{background:rgba(0,0,0,.2);padding:8px;border-radius:6px;overflow-x:auto;margin:6px 0;font-size:.78rem}
+.claude-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.15)}
+.claude-input input{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;color:#fff;font-size:.85rem;font-family:inherit}
+.claude-input input::placeholder{color:rgba(255,255,255,.3)}
+.claude-input input:focus{outline:none;border-color:var(--ginger)}
+.claude-input button{background:var(--ginger);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.claude-input button:hover{background:var(--ginger-dark)}
+.claude-input button:disabled{opacity:.5;cursor:not-allowed}
+.claude-actions{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.1);flex-wrap:wrap}
+.claude-quick{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:6px;padding:5px 10px;font-size:.72rem;cursor:pointer;font-family:inherit}
+.claude-quick:hover{background:rgba(255,255,255,.12);color:#fff}
+
+/* Live Preview */
+.preview-panel{background:#fff;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden}
+.preview-panel .panel__head{background:var(--gray-50)}
+.preview-frame{padding:20px;max-height:300px;overflow-y:auto;font-size:.9rem;line-height:1.7;font-family:'DM Sans',sans-serif}
+.preview-frame h1,.preview-frame h2,.preview-frame h3{font-family:'Playfair Display',serif;color:var(--navy);margin:12px 0 8px}
+.preview-frame h1{font-size:1.6rem}.preview-frame h2{font-size:1.3rem}.preview-frame h3{font-size:1.1rem}
+.preview-frame p{margin-bottom:10px;color:var(--gray-600)}
+.preview-frame ul,.preview-frame ol{padding-left:20px;margin-bottom:10px}
+.preview-frame img{max-width:100%;border-radius:8px;margin:8px 0}
+.preview-frame a{color:var(--teal)}
+
+/* Tags */
+.tags-container{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.tag{background:var(--gray-100);color:var(--navy);padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.tag__remove{cursor:pointer;color:var(--gray-400);font-weight:400}.tag__remove:hover{color:red}
+.tag-input{border:1px solid var(--gray-200);border-radius:6px;padding:6px 10px;font-size:.82rem;width:100%;font-family:inherit}
+
+@media(max-width:1100px){.editor-grid{grid-template-columns:1fr}.claude-chat{height:300px}}
 </style></head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link sidebar__link--active"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> Claude AI</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link"><span class="sidebar__link-icon">⚙️</span> Settings</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">New Blog Post</h1><div class="topbar__actions"><a href="/blog" class="btn btn--outline">← Back</a><button class="btn btn--outline" onclick="savePost('draft')">💾 Save Draft</button><button class="btn btn--primary" onclick="savePost('published')">🚀 Publish</button></div></header>
-<div class="content"><div class="editor-layout"><div class="editor-main">
-<div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="title" placeholder="Enter post title..." oninput="generateSlug()" style="font-size:1.2rem;font-weight:600"></div>
-<div class="form-row"><div class="form-group"><label class="form-label">URL Slug</label><input type="text" class="form-input" id="slug" placeholder="post-url-slug"></div><div class="form-group"><label class="form-label">Category</label><select class="form-select" id="category"><option value="">Select</option><option>Guide</option><option>Cost</option><option>Treatment</option><option>Patient Story</option><option>News</option><option>Tips</option></select></div></div>
-<div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="excerpt" style="min-height:70px" placeholder="Brief summary for listings and SEO..."></textarea></div>
-<div class="form-group"><label class="form-label">Content</label><div id="editor"></div><div class="word-count" id="wordCount">0 words</div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Meta Title (SEO)</label><input type="text" class="form-input" id="metaTitle" placeholder="SEO title — leave blank to use post title"></div><div class="form-group"><label class="form-label">Read Time (min)</label><input type="number" class="form-input" id="readTime" placeholder="10"></div></div>
-<div class="form-group"><label class="form-label">Meta Description (SEO)</label><textarea class="form-textarea" id="metaDesc" style="min-height:60px" placeholder="SEO description — leave blank to use excerpt"></textarea></div>
-<div class="form-group"><label class="form-label">Cover Image URL</label><input type="text" class="form-input" id="coverImage" placeholder="https://..."></div>
+
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">New Blog Post</h1><div class="topbar__actions"><a href="/blog" class="btn btn--outline">← Back</a><button class="btn btn--outline" onclick="savePost('draft')">💾 Draft</button><button class="btn btn--primary" onclick="savePost('published')">🚀 Publish</button></div></header>
+<div class="content">
+
+<!-- PERMALINK -->
+<div class="permalink">
+    <span>🔗</span>
+    <span class="permalink__base">ginger.healthcare/blog/</span>
+    <input type="text" class="permalink__slug" id="slug" placeholder="post-slug" oninput="updatePreviewLink()">
+    <a href="#" id="viewLink" target="_blank" onclick="return !!document.getElementById('slug').value">View →</a>
 </div>
-<div class="ai-panel"><div class="ai-panel__header">🤖 Claude AI Writer</div><div class="ai-panel__body">
-<div class="form-group"><label class="form-label">What do you need?</label><textarea class="form-textarea" id="aiPrompt" style="min-height:80px" placeholder="e.g. Write a 1500-word blog about knee replacement in India..."></textarea></div>
-<button class="btn btn--teal ai-btn" onclick="aiGenerate('blog')">✨ Generate with Claude</button>
-<button class="btn btn--outline ai-btn" onclick="aiGenerate('blog','Improve this content for SEO:\n'+quill.root.innerHTML.substring(0,1000))">📈 Improve SEO</button>
-<button class="btn btn--outline ai-btn" onclick="aiGenerate('blog','Generate meta title and description for: '+document.getElementById('title').value)">🏷️ Generate Meta Tags</button>
-<div class="ai-output" id="aiOutput"></div>
-<button class="btn btn--primary ai-btn" id="useContentBtn" style="display:none" onclick="useAIContent()">📋 Insert into Editor</button>
-</div></div></div></div></main></div>
+
+<div class="editor-grid">
+<!-- LEFT: EDITOR -->
+<div class="editor-main">
+    <div class="form-group"><input type="text" class="form-input" id="title" placeholder="Post title..." oninput="generateSlug()" style="font-size:1.3rem;font-weight:700;padding:14px 16px;font-family:'Playfair Display',serif"></div>
+    <div class="form-group"><div id="editor"></div><div class="word-count" id="wordCount">0 words</div></div>
+</div>
+
+<!-- RIGHT: SIDEBAR PANELS -->
+<div class="editor-sidebar">
+
+    <!-- PUBLISH -->
+    <div class="panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">📋 Publish</div>
+        <div class="panel__body">
+            <div class="status-row"><span class="status-label">Status</span><select class="form-select" id="status" style="width:auto;padding:4px 8px;font-size:.82rem"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+            <div class="status-row"><span class="status-label">Category</span><select class="form-select" id="category" style="width:auto;padding:4px 8px;font-size:.82rem"><option value="">None</option><option>Guide</option><option>Cost</option><option>Treatment</option><option>Patient Story</option><option>News</option><option>Tips</option></select></div>
+            <div class="status-row"><span class="status-label">Read Time</span><input type="number" class="form-input" id="readTime" placeholder="min" style="width:60px;padding:4px 8px;font-size:.82rem"></div>
+            <div class="publish-actions">
+                <button class="btn btn--outline btn--sm" style="flex:1" onclick="savePost('draft')">💾 Save Draft</button>
+                <button class="btn btn--primary btn--sm" style="flex:1" onclick="savePost('published')">🚀 Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLAUDE VISUAL EDITOR -->
+    <div class="claude-panel panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🤖 Claude AI Editor</div>
+        <div class="panel__body">
+            <div class="claude-chat">
+                <div class="claude-messages" id="claudeMessages">
+                    <div class="claude-msg claude-msg--ai">Hi! I'm your AI writing assistant. Tell me what you'd like to write and I'll create it for you. You can also ask me to edit, improve, or rewrite the current content.</div>
+                </div>
+                <div class="claude-actions">
+                    <button class="claude-quick" onclick="claudeSend('Write a comprehensive blog post about: '+document.getElementById('title').value)">✨ Write full post</button>
+                    <button class="claude-quick" onclick="claudeSend('Improve SEO of this content')">📈 Improve SEO</button>
+                    <button class="claude-quick" onclick="claudeSend('Generate meta title and description')">🏷️ Meta tags</button>
+                    <button class="claude-quick" onclick="claudeSend('Make it more engaging and add subheadings')">🎯 Make engaging</button>
+                </div>
+                <div class="claude-input">
+                    <input type="text" id="claudeInput" placeholder="Ask Claude to write, edit, improve..." onkeydown="if(event.key==='Enter')claudeSend()">
+                    <button onclick="claudeSend()" id="claudeSendBtn">Send ✨</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE PREVIEW -->
+    <div class="preview-panel panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">👁️ Live Preview</div>
+        <div class="panel__body" style="padding:0">
+            <div class="preview-frame" id="previewFrame">
+                <p style="color:var(--gray-400);text-align:center;padding:20px">Start writing to see preview...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXCERPT -->
+    <div class="panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">📝 Excerpt</div>
+        <div class="panel__body"><textarea class="form-textarea" id="excerpt" style="min-height:60px;font-size:.85rem" placeholder="Brief summary for search results..."></textarea></div>
+    </div>
+
+    <!-- TAGS -->
+    <div class="panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🏷️ Tags</div>
+        <div class="panel__body">
+            <div class="tags-container" id="tagsContainer"></div>
+            <input type="text" class="tag-input" id="tagInput" placeholder="Add tag and press Enter..." onkeydown="if(event.key==='Enter'){addTag(this.value);this.value=''}">
+        </div>
+    </div>
+
+    <!-- SEO -->
+    <div class="panel collapsed">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🔍 SEO Settings</div>
+        <div class="panel__body">
+            <div class="form-group"><label class="form-label" style="font-size:.8rem">Meta Title</label><input class="form-input" id="metaTitle" style="font-size:.85rem" placeholder="Leave blank to use post title"></div>
+            <div class="form-group"><label class="form-label" style="font-size:.8rem">Meta Description</label><textarea class="form-textarea" id="metaDesc" style="min-height:50px;font-size:.85rem" placeholder="Leave blank to use excerpt"></textarea></div>
+        </div>
+    </div>
+
+    <!-- FEATURED IMAGE -->
+    <div class="panel">
+        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🖼️ Featured Image</div>
+        <div class="panel__body">
+            <div id="imagePreview" style="margin-bottom:8px"></div>
+            <input class="form-input" id="coverImage" placeholder="Image URL..." style="font-size:.82rem" oninput="previewImage()">
+        </div>
+    </div>
+
+</div>
+</div>
+</div></main></div>
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-// Initialize Quill editor
+// ===== QUILL EDITOR =====
 const quill = new Quill('#editor', {
     theme: 'snow',
     placeholder: 'Write your blog post here...',
-    modules: {
-        toolbar: [
-            [{ 'header': [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'color': [] }, { 'background': [] }],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['blockquote', 'code-block'],
-            ['link', 'image'],
-            [{ 'align': [] }],
-            ['clean']
-        ]
-    }
+    modules: { toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['blockquote', 'code-block'],
+        ['link', 'image'],
+        [{ 'align': [] }],
+        ['clean']
+    ]}
 });
 
-// Word count
+// Word count + live preview
 quill.on('text-change', () => {
     const text = quill.getText().trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    document.getElementById('wordCount').textContent = words + ' words';
+    document.getElementById('wordCount').textContent = (text ? text.split(/\s+/).length : 0) + ' words';
+    document.getElementById('previewFrame').innerHTML = quill.root.innerHTML;
 });
 
+// ===== TAGS =====
+let tags = [];
+function addTag(t) {
+    t = t.trim();
+    if (!t || tags.includes(t)) return;
+    tags.push(t);
+    renderTags();
+}
+function removeTag(t) { tags = tags.filter(x => x !== t); renderTags(); }
+function renderTags() {
+    document.getElementById('tagsContainer').innerHTML = tags.map(t =>
+        `<span class="tag">${t} <span class="tag__remove" onclick="removeTag('${t}')">✕</span></span>`
+    ).join('');
+}
+
+// ===== PERMALINK =====
+function generateSlug() {
+    const title = document.getElementById('title').value;
+    document.getElementById('slug').value = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    updatePreviewLink();
+}
+function updatePreviewLink() {
+    const slug = document.getElementById('slug').value;
+    document.getElementById('viewLink').href = 'https://ginger.healthcare/blog/' + slug + '/';
+}
+
+// ===== IMAGE PREVIEW =====
+function previewImage() {
+    const url = document.getElementById('coverImage').value;
+    document.getElementById('imagePreview').innerHTML = url
+        ? `<img src="${url}" style="width:100%;border-radius:8px;border:1px solid var(--gray-200)" onerror="this.style.display='none'">`
+        : '';
+}
+
+// ===== CLAUDE AI CHAT =====
+let isGenerating = false;
+async function claudeSend(customMsg) {
+    const input = document.getElementById('claudeInput');
+    const msg = customMsg || input.value.trim();
+    if (!msg || isGenerating) return;
+    input.value = '';
+    isGenerating = true;
+    document.getElementById('claudeSendBtn').disabled = true;
+
+    const messages = document.getElementById('claudeMessages');
+    messages.innerHTML += `<div class="claude-msg claude-msg--user">${msg}</div>`;
+    messages.innerHTML += `<div class="claude-msg claude-msg--ai" id="aiLoading">✨ Writing...</div>`;
+    messages.scrollTop = messages.scrollHeight;
+
+    try {
+        const currentContent = quill.root.innerHTML;
+        const title = document.getElementById('title').value;
+        const fullPrompt = title
+            ? `Context - Blog title: "${title}"\nCurrent content: ${currentContent.substring(0, 500)}\n\nRequest: ${msg}\n\nRespond with HTML content only (use h2, h3, p, ul, li, strong, em tags). No markdown.`
+            : msg + '\n\nRespond with HTML content only.';
+
+        const r = await fetch('/api/ai/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: fullPrompt, type: 'blog', context: title })
+        });
+        const data = await r.json();
+        const loading = document.getElementById('aiLoading');
+
+        if (r.ok) {
+            const content = data.content;
+            loading.id = '';
+            loading.innerHTML = content.substring(0, 300).replace(/</g,'&lt;') + (content.length > 300 ? '...' : '') +
+                `<div style="margin-top:10px;display:flex;gap:6px">
+                    <button class="claude-quick" style="background:var(--ginger);color:#fff;border-color:var(--ginger)" onclick="insertAI(\`${encodeURIComponent(content)}\`)">📋 Insert into editor</button>
+                    <button class="claude-quick" onclick="insertAI(\`${encodeURIComponent(content)}\`, true)">➕ Append to editor</button>
+                </div>`;
+        } else {
+            loading.id = '';
+            loading.textContent = 'Error: ' + (data.error || 'Failed');
+        }
+    } catch(e) {
+        const loading = document.getElementById('aiLoading');
+        if (loading) { loading.id = ''; loading.textContent = 'Connection failed'; }
+    }
+    isGenerating = false;
+    document.getElementById('claudeSendBtn').disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function insertAI(encodedContent, append) {
+    const content = decodeURIComponent(encodedContent);
+    if (append) {
+        quill.root.innerHTML += content;
+    } else {
+        quill.root.innerHTML = content;
+    }
+    document.getElementById('previewFrame').innerHTML = quill.root.innerHTML;
+}
+
+// ===== SAVE / LOAD =====
 const editId = window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null;
 if (editId) loadPost();
 
 async function loadPost() {
-    const r = await fetch('/api/blog/' + editId); const p = await r.json();
+    const r = await fetch('/api/blog/' + editId);
+    const p = await r.json();
     document.getElementById('title').value = p.title || '';
     document.getElementById('slug').value = p.slug || '';
     document.getElementById('category').value = p.category || '';
     document.getElementById('excerpt').value = p.excerpt || '';
+    document.getElementById('status').value = p.status || 'draft';
     quill.root.innerHTML = p.content || '';
     document.getElementById('metaTitle').value = p.meta_title || '';
     document.getElementById('metaDesc').value = p.meta_description || '';
     document.getElementById('readTime').value = p.read_time || '';
     document.getElementById('coverImage').value = p.cover_image || '';
     document.getElementById('pageTitle').textContent = 'Edit: ' + p.title;
-}
-
-function generateSlug() {
-    const title = document.getElementById('title').value;
-    document.getElementById('slug').value = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    if (p.tags && p.tags.length) { tags = p.tags; renderTags(); }
+    if (p.cover_image) previewImage();
+    updatePreviewLink();
+    document.getElementById('previewFrame').innerHTML = p.content || '';
 }
 
 async function savePost(status) {
@@ -96,35 +335,16 @@ async function savePost(status) {
         meta_description: document.getElementById('metaDesc').value,
         read_time: parseInt(document.getElementById('readTime').value) || null,
         cover_image: document.getElementById('coverImage').value,
-        status
+        tags: tags,
+        status: status || document.getElementById('status').value
     };
     const url = editId ? '/api/blog/' + editId : '/api/blog';
     const method = editId ? 'PUT' : 'POST';
     try {
         const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (r.ok) { alert('Post saved!'); window.location.href = '/blog'; }
+        if (r.ok) { window.location.href = '/blog'; }
         else { const e = await r.json(); alert('Error: ' + e.error); }
-    } catch (e) { alert('Save failed'); }
-}
-
-async function aiGenerate(type, customPrompt) {
-    const prompt = customPrompt || document.getElementById('aiPrompt').value;
-    if (!prompt) { alert('Enter a prompt first'); return; }
-    const out = document.getElementById('aiOutput');
-    out.style.display = 'block'; out.innerHTML = '<div class="loading">🤖 Claude is writing...</div>';
-    document.getElementById('useContentBtn').style.display = 'none';
-    try {
-        const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type, context: document.getElementById('title').value }) });
-        const data = await r.json();
-        if (r.ok) { out.innerHTML = data.content.replace(/\n/g, '<br>'); document.getElementById('useContentBtn').style.display = 'block'; }
-        else { out.innerHTML = 'Error: ' + data.error; }
-    } catch (e) { out.innerHTML = 'Failed to connect to AI'; }
-}
-
-function useAIContent() {
-    const content = document.getElementById('aiOutput').innerHTML;
-    quill.root.innerHTML = content;
-    alert('Content added to editor!');
+    } catch(e) { alert('Save failed'); }
 }
 
 // Load user

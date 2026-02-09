@@ -1,8 +1,131 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Blog Posts | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"></head><body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link" data-page="dashboard"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> Claude AI</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link"><span class="sidebar__link-icon">⚙️</span> Settings</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside><main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">Blog Posts</h1><div class="topbar__actions"><a href="/blog/new" class="btn btn--primary">+ New Post</a></div></header><div class="content"><div class="toolbar"><input type="text" class="search-input" placeholder="Search posts..." id="searchInput" oninput="filterPosts()"><select class="form-select" style="width:auto" id="statusFilter" onchange="filterPosts()"><option value="">All Status</option><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></div><div class="card"><div class="card__body"><table class="data-table"><thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Author</th><th>Date</th><th>Actions</th></tr></thead><tbody id="postsList"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody></table></div></div></div></main></div><script>
-let allPosts=[];
-async function loadPosts(){try{const r=await fetch('/api/blog');allPosts=await r.json();renderPosts(allPosts)}catch(e){document.getElementById('postsList').innerHTML='<tr><td colspan="6">Error loading posts</td></tr>'}}
-function renderPosts(posts){const tb=document.getElementById('postsList');if(!posts.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No blog posts yet. <a href="/blog/new" style="color:var(--ginger)">Create your first post →</a></td></tr>';return}
-tb.innerHTML=posts.map(p=>`<tr><td><strong>${p.title}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">/${p.slug}/</span></td><td>${p.category||'-'}</td><td><span class="badge badge--${p.status}">${p.status}</span></td><td>${p.author_name||'-'}</td><td style="font-size:.82rem;color:var(--gray-400)">${new Date(p.created_at).toLocaleDateString()}</td><td><a href="/blog/edit/${p.id}" class="btn btn--outline btn--sm">Edit</a> <button class="btn btn--danger btn--sm" onclick="deletePost(${p.id})">🗑</button></td></tr>`).join('')}
-function filterPosts(){const q=document.getElementById('searchInput').value.toLowerCase();const s=document.getElementById('statusFilter').value;const f=allPosts.filter(p=>(p.title.toLowerCase().includes(q))&&(!s||p.status===s));renderPosts(f)}
-async function deletePost(id){if(!confirm('Delete this post?'))return;await fetch('/api/blog/'+id,{method:'DELETE'});loadPosts()}
-loadPosts();</script></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Blog Posts | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>
+.post-thumb{width:60px;height:40px;border-radius:6px;object-fit:cover;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--gray-300)}
+.post-thumb img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+.post-actions{display:flex;gap:6px;flex-wrap:wrap}
+.post-actions a,.post-actions button{font-size:.78rem;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit;text-decoration:none}
+.action-edit{background:var(--gray-100);color:var(--navy);border:1px solid var(--gray-200)}.action-edit:hover{background:var(--gray-200)}
+.action-quick{background:#EBF5FF;color:#2563EB;border:1px solid #BFDBFE}.action-quick:hover{background:#DBEAFE}
+.action-view{background:#F0FDF4;color:#059669;border:1px solid #BBF7D0}.action-view:hover{background:#DCFCE7}
+.action-delete{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}.action-delete:hover{background:#FEE2E2}
+
+/* Quick Edit Inline */
+.quick-edit{display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px;margin-top:8px}
+.quick-edit.open{display:block}
+.quick-edit .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.quick-edit .form-group{margin-bottom:8px}
+.quick-edit .form-label{font-size:.75rem}
+.quick-edit .form-input,.quick-edit .form-select{font-size:.82rem;padding:6px 10px}
+.quick-edit__actions{display:flex;gap:8px;margin-top:10px}
+
+.post-title-col{max-width:300px}
+.post-title-col strong{display:block;color:var(--navy);font-size:.92rem}
+.post-title-col .post-slug{font-size:.72rem;color:var(--gray-400);font-family:monospace}
+
+.toolbar{display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.filter-group{display:flex;gap:8px;align-items:center}
+</style></head>
+<body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link sidebar__link--active"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> Claude AI</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link"><span class="sidebar__link-icon">⚙️</span> Settings</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
+
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Blog Posts</h1><div class="topbar__actions"><a href="/blog/new" class="btn btn--primary">+ New Post</a></div></header>
+<div class="content">
+    <div class="toolbar">
+        <input type="text" class="search-input" placeholder="Search posts..." id="searchInput" oninput="filterPosts()" style="flex:1;max-width:400px">
+        <div class="filter-group">
+            <select class="form-select" id="catFilter" onchange="filterPosts()" style="width:auto;font-size:.85rem"><option value="">All Categories</option><option>Guide</option><option>Cost</option><option>Treatment</option><option>Patient Story</option><option>News</option><option>Tips</option></select>
+            <select class="form-select" id="statusFilter" onchange="filterPosts()" style="width:auto;font-size:.85rem"><option value="">All Status</option><option value="published">Published</option><option value="draft">Draft</option></select>
+        </div>
+    </div>
+    <div class="card"><div class="card__body">
+        <table class="data-table"><thead><tr><th style="width:70px">Image</th><th>Title</th><th>Category</th><th>Tags</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody id="list"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody></table>
+    </div></div>
+</div></main></div>
+
+<script>
+let posts = [];
+async function load() {
+    const r = await fetch('/api/blog'); posts = await r.json();
+    document.getElementById('pageTitle').textContent = `Blog Posts (${posts.length})`;
+    filterPosts();
+}
+
+function filterPosts() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const cat = document.getElementById('catFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const filtered = posts.filter(p =>
+        (!q || p.title.toLowerCase().includes(q)) &&
+        (!cat || p.category === cat) &&
+        (!status || p.status === status)
+    );
+    const tb = document.getElementById('list');
+    if (!filtered.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No posts found</td></tr>'; return; }
+    tb.innerHTML = filtered.map(p => `
+        <tr>
+            <td><div class="post-thumb">${p.cover_image ? `<img src="${p.cover_image}" onerror="this.parentElement.innerHTML='📝'">` : '📝'}</div></td>
+            <td class="post-title-col">
+                <strong><a href="/blog/edit/${p.id}" style="color:var(--navy)">${p.title}</a></strong>
+                <span class="post-slug">/blog/${p.slug}/</span>
+                <div class="post-actions" style="margin-top:4px">
+                    <a href="/blog/edit/${p.id}" class="action-edit">Edit</a>
+                    <button class="action-quick" onclick="toggleQuickEdit(${p.id})">Quick Edit</button>
+                    <a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>
+                    <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
+                </div>
+                <div class="quick-edit" id="qe-${p.id}">
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="qe-title-${p.id}" value="${p.title}"></div>
+                        <div class="form-group"><label class="form-label">Slug</label><input class="form-input" id="qe-slug-${p.id}" value="${p.slug}"></div>
+                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="qe-status-${p.id}"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="published" ${p.status==='published'?'selected':''}>Published</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="qe-cat-${p.id}"><option value="">None</option><option ${p.category==='Guide'?'selected':''}>Guide</option><option ${p.category==='Cost'?'selected':''}>Cost</option><option ${p.category==='Treatment'?'selected':''}>Treatment</option><option ${p.category==='Patient Story'?'selected':''}>Patient Story</option><option ${p.category==='News'?'selected':''}>News</option><option ${p.category==='Tips'?'selected':''}>Tips</option></select></div>
+                        <div class="form-group"><label class="form-label">Excerpt</label><input class="form-input" id="qe-excerpt-${p.id}" value="${(p.excerpt||'').replace(/"/g,'&quot;')}"></div>
+                        <div class="form-group"><label class="form-label">Read Time</label><input class="form-input" type="number" id="qe-read-${p.id}" value="${p.read_time||''}"></div>
+                    </div>
+                    <div class="quick-edit__actions">
+                        <button class="btn btn--primary btn--sm" onclick="quickSave(${p.id})">💾 Update</button>
+                        <button class="btn btn--outline btn--sm" onclick="toggleQuickEdit(${p.id})">Cancel</button>
+                    </div>
+                </div>
+            </td>
+            <td><span class="badge" style="background:var(--gray-100);color:var(--gray-600);font-size:.75rem">${p.category || '-'}</span></td>
+            <td style="font-size:.78rem;color:var(--gray-400)">${(p.tags||[]).join(', ') || '-'}</td>
+            <td><span class="badge badge--${p.status}">${p.status}</span></td>
+            <td style="font-size:.78rem;color:var(--gray-400)">${p.published_at ? new Date(p.published_at).toLocaleDateString() : '-'}</td>
+            <td></td>
+        </tr>
+    `).join('');
+}
+
+function toggleQuickEdit(id) {
+    const el = document.getElementById('qe-' + id);
+    el.classList.toggle('open');
+}
+
+async function quickSave(id) {
+    const data = {
+        title: document.getElementById('qe-title-' + id).value,
+        slug: document.getElementById('qe-slug-' + id).value,
+        status: document.getElementById('qe-status-' + id).value,
+        category: document.getElementById('qe-cat-' + id).value,
+        excerpt: document.getElementById('qe-excerpt-' + id).value,
+        read_time: parseInt(document.getElementById('qe-read-' + id).value) || null
+    };
+    const r = await fetch('/api/blog/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (r.ok) { load(); } else { alert('Save failed'); }
+}
+
+async function deletePost(id) {
+    if (!confirm('Delete this post?')) return;
+    await fetch('/api/blog/' + id, { method: 'DELETE' });
+    load();
+}
+
+// Load user
+(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+load();
+</script></body></html>
