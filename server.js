@@ -148,6 +148,9 @@ app.get('/blog/new', authRequired, roleRequired('super_admin', 'editor'), (req, 
 app.get('/blog/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'blog-editor.html'));
 });
+app.get('/blog/claude/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'claude-editor.html'));
+});
 
 app.get('/api/blog', apiAuth, async (req, res) => {
     try {
