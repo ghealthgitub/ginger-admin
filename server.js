@@ -188,10 +188,11 @@ app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (
         const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description } = req.body;
         const tagsArray = Array.isArray(tags) ? tags : [];
         const readTimeVal = read_time ? parseInt(read_time) || null : null;
+        const pubStatus = status || 'draft';
         const result = await pool.query(
-            `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7::text[], status=$8, read_time=$9, meta_title=$10, meta_description=$11, published_at = CASE WHEN $8='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
-             WHERE id=$12 RETURNING *`,
-            [title, slug, excerpt || null, content || null, cover_image || null, category || null, tagsArray, status || 'draft', readTimeVal, meta_title || null, meta_description || null, req.params.id]
+            `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7::text[], status=$8, read_time=$9, meta_title=$10, meta_description=$11, published_at = CASE WHEN $12='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
+             WHERE id=$13 RETURNING *`,
+            [title, slug, excerpt || null, content || null, cover_image || null, category || null, tagsArray, pubStatus, readTimeVal, meta_title || null, meta_description || null, pubStatus, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'blog_post', req.params.id, `Updated: ${title}`);
         res.json(result.rows[0]);
