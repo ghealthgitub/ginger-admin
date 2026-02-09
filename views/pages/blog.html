@@ -72,7 +72,7 @@ function filterPosts() {
                 <div class="post-actions" style="margin-top:4px">
                     <a href="/blog/edit/${p.id}" class="action-edit">Edit</a>
                     <button class="action-quick" onclick="toggleQuickEdit(${p.id})">Quick Edit</button>
-                    <a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>
+                    ${p.status === 'published' ? `<a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>` : `<a href="/blog/edit/${p.id}" class="action-view" style="background:#FFF7ED;color:#D97706;border-color:#FED7AA">Preview</a>`}
                     <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
                 </div>
                 <div class="quick-edit" id="qe-${p.id}">
