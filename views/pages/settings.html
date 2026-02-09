@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Settings | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.settings-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:24px}.settings-card h3{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}.saved-msg{position:fixed;top:80px;right:20px;background:#059669;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:1000;display:none;animation:slideIn .3s}@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@media(max-width:768px){.settings-grid{grid-template-columns:1fr}}</style>
+</head><body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> Claude AI</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link sidebar__link--active"><span class="sidebar__link-icon">⚙️</span> Settings</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
+
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">⚙️ Site Settings</h1><div class="topbar__actions"><button class="btn btn--primary" onclick="saveAll()">💾 Save All Settings</button></div></header>
+<div class="content">
+<div id="savedMsg" class="saved-msg">✅ Settings saved successfully!</div>
+
+<div class="settings-grid">
+    <!-- Company Info -->
+    <div class="settings-card">
+        <h3>🏢 Company Information</h3>
+        <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" id="s_company_name" value="Ginger Healthcare"></div>
+        <div class="form-group"><label class="form-label">Tagline</label><input class="form-input" id="s_tagline" placeholder="World-Class Medical Care. 60-90% Less."></div>
+        <div class="form-group"><label class="form-label">Address</label><textarea class="form-textarea" id="s_address" style="min-height:60px"></textarea></div>
+        <div class="form-group"><label class="form-label">Copyright Text</label><input class="form-input" id="s_copyright" placeholder="© 2025 Ginger Healthcare"></div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="settings-card">
+        <h3>📞 Contact Information</h3>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="s_email" type="email" placeholder="info@ginger.healthcare"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="s_phone" placeholder="+91 1234567890"></div>
+        <div class="form-group"><label class="form-label">WhatsApp Number (with country code)</label><input class="form-input" id="s_whatsapp" placeholder="911234567890"></div>
+        <div class="form-group"><label class="form-label">Support Hours</label><input class="form-input" id="s_support_hours" placeholder="24/7"></div>
+    </div>
+
+    <!-- Social Links -->
+    <div class="settings-card">
+        <h3>🌐 Social Media Links</h3>
+        <div class="form-group"><label class="form-label">📘 Facebook URL</label><input class="form-input" id="s_facebook" placeholder="https://facebook.com/..."></div>
+        <div class="form-group"><label class="form-label">📸 Instagram URL</label><input class="form-input" id="s_instagram" placeholder="https://instagram.com/..."></div>
+        <div class="form-group"><label class="form-label">🐦 Twitter / X URL</label><input class="form-input" id="s_twitter" placeholder="https://x.com/..."></div>
+        <div class="form-group"><label class="form-label">💼 LinkedIn URL</label><input class="form-input" id="s_linkedin" placeholder="https://linkedin.com/company/..."></div>
+        <div class="form-group"><label class="form-label">📺 YouTube URL</label><input class="form-input" id="s_youtube" placeholder="https://youtube.com/..."></div>
+    </div>
+
+    <!-- Site Settings -->
+    <div class="settings-card">
+        <h3>🔧 Site Configuration</h3>
+        <div class="form-group"><label class="form-label">Google Analytics ID</label><input class="form-input" id="s_ga_id" placeholder="G-XXXXXXXXXX"></div>
+        <div class="form-group"><label class="form-label">Google Search Console Verification</label><input class="form-input" id="s_gsc" placeholder="Verification meta tag content"></div>
+        <div class="form-group"><label class="form-label">Default SEO Title Suffix</label><input class="form-input" id="s_seo_suffix" placeholder="| Ginger Healthcare"></div>
+        <div class="form-group"><label class="form-label">Patients Count (for display)</label><input class="form-input" id="s_patient_count" placeholder="5,000+"></div>
+        <div class="form-group"><label class="form-label">Countries Count</label><input class="form-input" id="s_country_count" placeholder="60+"></div>
+    </div>
+</div>
+</div></main></div>
+
+<script>
+const settingsFields = [
+    's_company_name','s_tagline','s_address','s_copyright',
+    's_email','s_phone','s_whatsapp','s_support_hours',
+    's_facebook','s_instagram','s_twitter','s_linkedin','s_youtube',
+    's_ga_id','s_gsc','s_seo_suffix','s_patient_count','s_country_count'
+];
+
+async function loadSettings() {
+    try {
+        const r = await fetch('/api/settings');
+        const settings = await r.json();
+        settings.forEach(s => {
+            const el = document.getElementById('s_' + s.field_key);
+            if (el) el.value = s.field_value || '';
+        });
+    } catch(e) { console.error('Load settings error:', e); }
+}
+
+async function saveAll() {
+    const data = {};
+    settingsFields.forEach(id => {
+        const key = id.replace('s_', '');
+        const el = document.getElementById(id);
+        if (el) data[key] = el.value;
+    });
+    try {
+        const r = await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (r.ok) {
+            const msg = document.getElementById('savedMsg');
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        } else { alert('Save failed'); }
+    } catch(e) { alert('Save error'); }
+}
+
+// Load user
+(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+
+loadSettings();
+</script></body></html>

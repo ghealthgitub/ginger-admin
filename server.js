@@ -872,6 +872,36 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
     }
 });
 
+// ============== SETTINGS ==============
+app.get('/settings', authRequired, roleRequired('super_admin'), (req, res) => {
+    servePage(res, 'settings');
+});
+
+// Settings API - Get all settings
+app.get('/api/settings', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT field_key, field_value FROM page_content WHERE page='site' AND section='settings'");
+        res.json(result.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Settings API - Save all settings
+app.put('/api/settings', apiAuth, async (req, res) => {
+    try {
+        const settings = req.body;
+        for (const [key, value] of Object.entries(settings)) {
+            await pool.query(`
+                INSERT INTO page_content (page, section, field_key, field_value, field_type, updated_by)
+                VALUES ('site', 'settings', $1, $2, 'text', $3)
+                ON CONFLICT (page, section, field_key)
+                DO UPDATE SET field_value = $2, updated_by = $3, updated_at = NOW()
+            `, [key, value, req.user.id]);
+        }
+        await logActivity(req.user.id, 'update_settings', 'settings', null, 'Updated site settings');
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ============== STARTUP ==============
 async function startServer() {
     try {
