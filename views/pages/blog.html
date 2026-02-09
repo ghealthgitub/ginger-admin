@@ -11,10 +11,10 @@
 .action-view{background:#F0FDF4;color:#059669;border:1px solid #BBF7D0}.action-view:hover{background:#DCFCE7}
 .action-delete{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}.action-delete:hover{background:#FEE2E2}
 
-/* Quick Edit Inline */
-.quick-edit{display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:20px;margin-top:8px}
-.quick-edit.open{display:block}
-.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+/* Quick Edit Inline - Full Width Row */
+.quick-edit-row td{background:var(--gray-50)!important}
+.quick-edit{background:var(--gray-50);padding:20px 24px}
+.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
 .quick-edit .form-group{margin-bottom:0}
 .quick-edit .form-label{font-size:.78rem;font-weight:600;margin-bottom:4px}
 .quick-edit .form-input,.quick-edit .form-select,.quick-edit .form-textarea{font-size:.85rem;padding:8px 12px}
@@ -65,7 +65,7 @@ function filterPosts() {
     const tb = document.getElementById('list');
     if (!filtered.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No posts found</td></tr>'; return; }
     tb.innerHTML = filtered.map(p => `
-        <tr>
+        <tr id="row-${p.id}">
             <td><div class="post-thumb">${p.cover_image ? `<img src="${p.cover_image}" onerror="this.parentElement.innerHTML='📝'">` : '📝'}</div></td>
             <td class="post-title-col">
                 <strong><a href="/blog/edit/${p.id}" style="color:var(--navy)">${p.title}</a></strong>
@@ -76,7 +76,16 @@ function filterPosts() {
                     ${p.status === 'published' ? `<a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>` : `<a href="/blog/edit/${p.id}" class="action-view" style="background:#FFF7ED;color:#D97706;border-color:#FED7AA">Preview</a>`}
                     <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
                 </div>
-                <div class="quick-edit" id="qe-${p.id}">
+            </td>
+            <td><span class="badge" style="background:var(--gray-100);color:var(--gray-600);font-size:.75rem">${p.category || '-'}</span></td>
+            <td style="font-size:.78rem;color:var(--gray-400)">${(p.tags||[]).join(', ') || '-'}</td>
+            <td><span class="badge badge--${p.status}">${p.status}</span></td>
+            <td style="font-size:.78rem;color:var(--gray-400)">${p.published_at ? new Date(p.published_at).toLocaleDateString() : '-'}</td>
+            <td></td>
+        </tr>
+        <tr class="quick-edit-row" id="qe-row-${p.id}" style="display:none">
+            <td colspan="7" style="padding:0;border:none">
+                <div class="quick-edit open">
                     <div class="quick-edit__title">QUICK EDIT</div>
                     <div class="quick-edit__grid">
                         <div>
@@ -90,7 +99,7 @@ function filterPosts() {
                             <div class="form-group" style="margin-top:12px"><label class="form-label">Tags</label><input class="form-input" id="qe-tags-${p.id}" value="${(p.tags||[]).join(', ')}" placeholder="Separate tags with commas"></div>
                         </div>
                         <div>
-                            <div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="qe-excerpt-${p.id}" style="min-height:120px;font-size:.85rem" placeholder="Brief summary...">${(p.excerpt||'').replace(/"/g,'&quot;')}</textarea></div>
+                            <div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="qe-excerpt-${p.id}" style="min-height:140px;font-size:.85rem" placeholder="Brief summary...">${(p.excerpt||'').replace(/"/g,'&amp;quot;')}</textarea></div>
                         </div>
                     </div>
                     <div class="quick-edit__actions">
@@ -99,18 +108,13 @@ function filterPosts() {
                     </div>
                 </div>
             </td>
-            <td><span class="badge" style="background:var(--gray-100);color:var(--gray-600);font-size:.75rem">${p.category || '-'}</span></td>
-            <td style="font-size:.78rem;color:var(--gray-400)">${(p.tags||[]).join(', ') || '-'}</td>
-            <td><span class="badge badge--${p.status}">${p.status}</span></td>
-            <td style="font-size:.78rem;color:var(--gray-400)">${p.published_at ? new Date(p.published_at).toLocaleDateString() : '-'}</td>
-            <td></td>
         </tr>
     `).join('');
 }
 
 function toggleQuickEdit(id) {
-    const el = document.getElementById('qe-' + id);
-    el.classList.toggle('open');
+    const row = document.getElementById('qe-row-' + id);
+    row.style.display = row.style.display === 'none' ? '' : 'none';
 }
 
 async function quickSave(id) {
