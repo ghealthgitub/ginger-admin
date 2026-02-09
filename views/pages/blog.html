@@ -12,13 +12,14 @@
 .action-delete{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}.action-delete:hover{background:#FEE2E2}
 
 /* Quick Edit Inline */
-.quick-edit{display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:14px;margin-top:8px}
+.quick-edit{display:none;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:20px;margin-top:8px}
 .quick-edit.open{display:block}
-.quick-edit .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.quick-edit .form-group{margin-bottom:8px}
-.quick-edit .form-label{font-size:.75rem}
-.quick-edit .form-input,.quick-edit .form-select{font-size:.82rem;padding:6px 10px}
-.quick-edit__actions{display:flex;gap:8px;margin-top:10px}
+.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.quick-edit .form-group{margin-bottom:0}
+.quick-edit .form-label{font-size:.78rem;font-weight:600;margin-bottom:4px}
+.quick-edit .form-input,.quick-edit .form-select,.quick-edit .form-textarea{font-size:.85rem;padding:8px 12px}
+.quick-edit__title{font-size:.82rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray-200)}
+.quick-edit__actions{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--gray-200)}
 
 .post-title-col{max-width:300px}
 .post-title-col strong{display:block;color:var(--navy);font-size:.92rem}
@@ -76,15 +77,21 @@ function filterPosts() {
                     <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
                 </div>
                 <div class="quick-edit" id="qe-${p.id}">
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="qe-title-${p.id}" value="${p.title}"></div>
-                        <div class="form-group"><label class="form-label">Slug</label><input class="form-input" id="qe-slug-${p.id}" value="${p.slug}"></div>
-                        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="qe-status-${p.id}"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="published" ${p.status==='published'?'selected':''}>Published</option></select></div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="qe-cat-${p.id}"><option value="">None</option><option ${p.category==='Guide'?'selected':''}>Guide</option><option ${p.category==='Cost'?'selected':''}>Cost</option><option ${p.category==='Treatment'?'selected':''}>Treatment</option><option ${p.category==='Patient Story'?'selected':''}>Patient Story</option><option ${p.category==='News'?'selected':''}>News</option><option ${p.category==='Tips'?'selected':''}>Tips</option></select></div>
-                        <div class="form-group"><label class="form-label">Excerpt</label><input class="form-input" id="qe-excerpt-${p.id}" value="${(p.excerpt||'').replace(/"/g,'&quot;')}"></div>
-                        <div class="form-group"><label class="form-label">Read Time</label><input class="form-input" type="number" id="qe-read-${p.id}" value="${p.read_time||''}"></div>
+                    <div class="quick-edit__title">QUICK EDIT</div>
+                    <div class="quick-edit__grid">
+                        <div>
+                            <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="qe-title-${p.id}" value="${p.title}"></div>
+                            <div class="form-group" style="margin-top:12px"><label class="form-label">Slug</label><input class="form-input" id="qe-slug-${p.id}" value="${p.slug}"></div>
+                            <div class="form-group" style="margin-top:12px"><label class="form-label">Status</label><select class="form-select" id="qe-status-${p.id}"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="published" ${p.status==='published'?'selected':''}>Published</option></select></div>
+                        </div>
+                        <div>
+                            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="qe-cat-${p.id}"><option value="">None</option><option ${p.category==='Guide'?'selected':''}>Guide</option><option ${p.category==='Cost'?'selected':''}>Cost</option><option ${p.category==='Treatment'?'selected':''}>Treatment</option><option ${p.category==='Patient Story'?'selected':''}>Patient Story</option><option ${p.category==='News'?'selected':''}>News</option><option ${p.category==='Tips'?'selected':''}>Tips</option></select></div>
+                            <div class="form-group" style="margin-top:12px"><label class="form-label">Read Time (min)</label><input class="form-input" type="number" id="qe-read-${p.id}" value="${p.read_time||''}"></div>
+                            <div class="form-group" style="margin-top:12px"><label class="form-label">Tags</label><input class="form-input" id="qe-tags-${p.id}" value="${(p.tags||[]).join(', ')}" placeholder="Separate tags with commas"></div>
+                        </div>
+                        <div>
+                            <div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="qe-excerpt-${p.id}" style="min-height:120px;font-size:.85rem" placeholder="Brief summary...">${(p.excerpt||'').replace(/"/g,'&quot;')}</textarea></div>
+                        </div>
                     </div>
                     <div class="quick-edit__actions">
                         <button class="btn btn--primary btn--sm" onclick="quickSave(${p.id})">💾 Update</button>
@@ -107,13 +114,15 @@ function toggleQuickEdit(id) {
 }
 
 async function quickSave(id) {
+    const tagsVal = document.getElementById('qe-tags-' + id).value;
     const data = {
         title: document.getElementById('qe-title-' + id).value,
         slug: document.getElementById('qe-slug-' + id).value,
         status: document.getElementById('qe-status-' + id).value,
         category: document.getElementById('qe-cat-' + id).value,
         excerpt: document.getElementById('qe-excerpt-' + id).value,
-        read_time: parseInt(document.getElementById('qe-read-' + id).value) || null
+        read_time: parseInt(document.getElementById('qe-read-' + id).value) || null,
+        tags: tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t) : []
     };
     const r = await fetch('/api/blog/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     if (r.ok) { load(); } else { alert('Save failed'); }
