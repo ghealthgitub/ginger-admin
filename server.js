@@ -171,10 +171,11 @@ app.get('/api/blog/:id', apiAuth, async (req, res) => {
 app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description } = req.body;
+        const tagsArray = Array.isArray(tags) ? tags : [];
         const result = await pool.query(
             `INSERT INTO blog_posts (title, slug, excerpt, content, cover_image, category, tags, status, read_time, author_id, meta_title, meta_description, published_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-            [title, slug, excerpt, content, cover_image, category, tags || [], status || 'draft', read_time, req.user.id, meta_title, meta_description, status === 'published' ? new Date() : null]
+             VALUES ($1,$2,$3,$4,$5,$6,$7::text[],$8,$9,$10,$11,$12,$13) RETURNING *`,
+            [title, slug, excerpt, content, cover_image, category, tagsArray, status || 'draft', read_time || null, req.user.id, meta_title, meta_description, status === 'published' ? new Date() : null]
         );
         await logActivity(req.user.id, 'create', 'blog_post', result.rows[0].id, `Created: ${title}`);
         res.json(result.rows[0]);
@@ -184,10 +185,11 @@ app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req
 app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description } = req.body;
+        const tagsArray = Array.isArray(tags) ? tags : [];
         const result = await pool.query(
-            `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7, status=$8, read_time=$9, meta_title=$10, meta_description=$11, published_at = CASE WHEN $8='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
+            `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7::text[], status=$8, read_time=$9, meta_title=$10, meta_description=$11, published_at = CASE WHEN $8='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
              WHERE id=$12 RETURNING *`,
-            [title, slug, excerpt, content, cover_image, category, tags || [], status, read_time, meta_title, meta_description, req.params.id]
+            [title, slug, excerpt, content, cover_image, category, tagsArray, status, read_time || null, meta_title, meta_description, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'blog_post', req.params.id, `Updated: ${title}`);
         res.json(result.rows[0]);
