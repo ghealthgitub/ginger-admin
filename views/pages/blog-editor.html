@@ -118,23 +118,13 @@
 
     <!-- CLAUDE VISUAL EDITOR -->
     <div class="claude-panel panel">
-        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🤖 Claude AI Editor</div>
-        <div class="panel__body">
-            <div class="claude-chat">
-                <div class="claude-messages" id="claudeMessages">
-                    <div class="claude-msg claude-msg--ai">Hi! I'm your AI writing assistant. Tell me what you'd like to write and I'll create it for you. You can also ask me to edit, improve, or rewrite the current content.</div>
-                </div>
-                <div class="claude-actions">
-                    <button class="claude-quick" onclick="claudeSend('Write a comprehensive blog post about: '+document.getElementById('title').value)">✨ Write full post</button>
-                    <button class="claude-quick" onclick="claudeSend('Improve SEO of this content')">📈 Improve SEO</button>
-                    <button class="claude-quick" onclick="claudeSend('Generate meta title and description')">🏷️ Meta tags</button>
-                    <button class="claude-quick" onclick="claudeSend('Make it more engaging and add subheadings')">🎯 Make engaging</button>
-                </div>
-                <div class="claude-input">
-                    <input type="text" id="claudeInput" placeholder="Ask Claude to write, edit, improve..." onkeydown="if(event.key==='Enter')claudeSend()">
-                    <button onclick="claudeSend()" id="claudeSendBtn">Send ✨</button>
-                </div>
-            </div>
+        <div class="panel__head" style="background:linear-gradient(135deg,#0B2545,#13315C);color:#fff;border-color:rgba(255,255,255,.1)">🤖 AI Editor</div>
+        <div class="panel__body" style="background:linear-gradient(135deg,#0B2545,#13315C);padding:20px;text-align:center">
+            <p style="color:rgba(255,255,255,.6);font-size:.85rem;line-height:1.6;margin-bottom:16px">Open the full-screen AI writing environment. Chat with AI on the left, edit content on the right.</p>
+            <a id="claudeEditorLink" href="#" target="_blank" class="btn" style="background:var(--ginger);color:#fff;padding:12px 24px;font-size:.9rem;width:100%;justify-content:center;box-shadow:0 4px 15px rgba(242,101,34,.3)" onclick="return !!editId">
+                🤖 Edit with AI
+            </a>
+            <p style="color:rgba(255,255,255,.3);font-size:.72rem;margin-top:10px">Opens in a new tab • Full-screen AI editor</p>
         </div>
     </div>
 
@@ -265,66 +255,8 @@ function previewImage() {
         : '';
 }
 
-// ===== CLAUDE AI CHAT =====
-let isGenerating = false;
-async function claudeSend(customMsg) {
-    const input = document.getElementById('claudeInput');
-    const msg = customMsg || input.value.trim();
-    if (!msg || isGenerating) return;
-    input.value = '';
-    isGenerating = true;
-    document.getElementById('claudeSendBtn').disabled = true;
-
-    const messages = document.getElementById('claudeMessages');
-    messages.innerHTML += `<div class="claude-msg claude-msg--user">${msg}</div>`;
-    messages.innerHTML += `<div class="claude-msg claude-msg--ai" id="aiLoading">✨ Writing...</div>`;
-    messages.scrollTop = messages.scrollHeight;
-
-    try {
-        const currentContent = quill.root.innerHTML;
-        const title = document.getElementById('title').value;
-        const fullPrompt = title
-            ? `Context - Blog title: "${title}"\nCurrent content: ${currentContent.substring(0, 500)}\n\nRequest: ${msg}\n\nRespond with HTML content only (use h2, h3, p, ul, li, strong, em tags). No markdown.`
-            : msg + '\n\nRespond with HTML content only.';
-
-        const r = await fetch('/api/ai/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: fullPrompt, type: 'blog', context: title })
-        });
-        const data = await r.json();
-        const loading = document.getElementById('aiLoading');
-
-        if (r.ok) {
-            const content = data.content;
-            loading.id = '';
-            loading.innerHTML = content.substring(0, 300).replace(/</g,'&lt;') + (content.length > 300 ? '...' : '') +
-                `<div style="margin-top:10px;display:flex;gap:6px">
-                    <button class="claude-quick" style="background:var(--ginger);color:#fff;border-color:var(--ginger)" onclick="insertAI(\`${encodeURIComponent(content)}\`)">📋 Insert into editor</button>
-                    <button class="claude-quick" onclick="insertAI(\`${encodeURIComponent(content)}\`, true)">➕ Append to editor</button>
-                </div>`;
-        } else {
-            loading.id = '';
-            loading.textContent = 'Error: ' + (data.error || 'Failed');
-        }
-    } catch(e) {
-        const loading = document.getElementById('aiLoading');
-        if (loading) { loading.id = ''; loading.textContent = 'Connection failed'; }
-    }
-    isGenerating = false;
-    document.getElementById('claudeSendBtn').disabled = false;
-    messages.scrollTop = messages.scrollHeight;
-}
-
-function insertAI(encodedContent, append) {
-    const content = decodeURIComponent(encodedContent);
-    if (append) {
-        quill.root.innerHTML += content;
-    } else {
-        quill.root.innerHTML = content;
-    }
-    document.getElementById('previewFrame').innerHTML = quill.root.innerHTML;
-}
+// ===== CLAUDE AI CHAT (removed - now in separate full-screen editor) =====
+// Link is set after post loads or saves
 
 // ===== SAVE / LOAD =====
 const editId = window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null;
@@ -348,6 +280,7 @@ async function loadPost() {
     if (p.cover_image) previewImage();
     updatePreviewLink();
     document.getElementById('previewFrame').innerHTML = p.content || '';
+    document.getElementById('claudeEditorLink').href = '/blog/claude/' + editId;
 }
 
 async function savePost(status) {
@@ -368,7 +301,14 @@ async function savePost(status) {
     const method = editId ? 'PUT' : 'POST';
     try {
         const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (r.ok) { window.location.href = '/blog'; }
+        if (r.ok) {
+            const result = await r.json();
+            if (!editId && result.id) {
+                window.location.href = '/blog/edit/' + result.id;
+            } else {
+                window.location.href = '/blog';
+            }
+        }
         else { const e = await r.json(); alert('Error: ' + e.error); }
     } catch(e) { alert('Save failed'); }
 }
