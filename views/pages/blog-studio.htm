@@ -794,5 +794,5 @@ document.getElementById('dragRight').removeEventListener('mousedown', ()=>{});
 })();
 
 // Auth
-(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login'}catch(e){window.location.href='/login'}})();
+// Auth handled by server-side authRequired middleware
 </script></body></html>

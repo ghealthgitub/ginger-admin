@@ -28,7 +28,8 @@
 
 .toolbar{display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
 .filter-group{display:flex;gap:8px;align-items:center}
-</style></head>
+</style><script src="/js/sidebar.js" defer></script>
+</head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
 <main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Blog Posts</h1><div class="topbar__actions"><a href="/blog/new" class="btn btn--primary">+ New Post</a></div></header>
@@ -140,7 +141,6 @@ async function deletePost(id) {
 }
 
 // Load user
-(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+// Auth handled by sidebar.js;
 load();
-</script><script src="/js/sidebar.js"></script>
 </body></html>

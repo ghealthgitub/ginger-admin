@@ -1185,9 +1185,26 @@ async function toggleUserStatus(id, currentActive) {
 
 // ===== ROLE-BASED INIT =====
 async function initDashboard() {
-    // Wait for sidebar.js to resolve user
-    const user = await window.gingerUser;
-    if (!user) return;
+    // Wait for sidebar.js to resolve user — with retry
+    let user = null;
+    try {
+        user = await window.gingerUser;
+    } catch(e) {}
+    
+    // If sidebar.js failed, try direct auth call
+    if (!user) {
+        try {
+            const r = await fetch('/api/auth/me');
+            if (r.ok) user = await r.json();
+        } catch(e) {}
+    }
+    
+    if (!user) {
+        // Still no user — show basic dashboard
+        document.getElementById('tab-activity').classList.add('active');
+        document.querySelector('.mcp-tab:last-child')?.classList.add('active');
+        return;
+    }
 
     const role = user.role;
     const isSuperAdmin = role === 'super_admin';
@@ -1212,16 +1229,15 @@ async function initDashboard() {
     const firstTab = document.querySelector('.mcp-tab:not([data-hidden])');
     if (firstTab) {
         firstTab.classList.add('active');
-        const tabName = firstTab.textContent.trim();
-        // Find which tab to activate based on the onclick
         const onclick = firstTab.getAttribute('onclick');
         const match = onclick ? onclick.match(/switchTab\('(\w+)'\)/) : null;
         if (match) {
-            document.getElementById('tab-' + match[1]).classList.add('active');
+            const tabEl = document.getElementById('tab-' + match[1]);
+            if (tabEl) tabEl.classList.add('active');
         }
     }
 
-    // Load data based on role (staggered to avoid 429)
+    // Load data (staggered to avoid 429)
     await loadStats();
     if (isSuperAdmin) {
         await loadAll();
