@@ -39,7 +39,7 @@ window.gingerUser = (async function() {
 
     const menu = [
         role === 'super_admin'
-            ? { href: '/master-control', icon: '🎛️', label: 'Command Center' }
+            ? { href: '/', icon: '🎛️', label: 'Command Center' }
             : { href: '/', icon: '📊', label: 'Dashboard' },
         { section: 'Content' },
         { href: '/blog', icon: '📝', label: 'Blog Posts', roles: ['super_admin', 'editor'] },
@@ -71,7 +71,6 @@ window.gingerUser = (async function() {
         if (item.roles && !item.roles.includes(role)) return;
         const isActive = path === item.href || 
             (item.href === '/blog' && path.startsWith('/blog/')) ||
-            (item.href === '/master-control' && path === '/master-control') ||
             (item.href === '/' && path === '/');
         const activeClass = isActive ? ' sidebar__link--active' : '';
         navHTML += `<a href="${item.href}" class="sidebar__link${activeClass}"><span class="sidebar__link-icon">${item.icon}</span> ${item.label}</a>`;

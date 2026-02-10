@@ -97,10 +97,7 @@ app.get('/api/auth/me', apiAuth, async (req, res) => {
 
 // ============== DASHBOARD ==============
 app.get('/', authRequired, (req, res) => {
-    if (req.user && req.user.role === 'super_admin') {
-        return res.redirect('/master-control');
-    }
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'unified-dashboard.html'));
 });
 
 // Dashboard stats API
@@ -901,8 +898,8 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
 app.get('/settings', authRequired, roleRequired('super_admin'), (req, res) => {
     servePage(res, 'settings');
 });
-app.get('/master-control', authRequired, roleRequired('super_admin'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'master-control.html'));
+app.get('/master-control', authRequired, (req, res) => {
+    res.redirect('/');
 });
 
 // Settings API - Get all settings
