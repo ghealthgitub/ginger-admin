@@ -187,13 +187,43 @@
             </a>
             <a href="/blog" class="quick-card" data-role="editor">
                 <div class="quick-card__icon">📋</div>
-                <div class="quick-card__title">My Blog Posts</div>
-                <div class="quick-card__desc">View and edit your posts</div>
+                <div class="quick-card__title">Blog Posts</div>
+                <div class="quick-card__desc">View and edit all posts</div>
+            </a>
+            <a href="/hospitals" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">🏥</div>
+                <div class="quick-card__title">Hospitals</div>
+                <div class="quick-card__desc">Manage hospital listings</div>
+            </a>
+            <a href="/doctors" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">👨‍⚕️</div>
+                <div class="quick-card__title">Doctors</div>
+                <div class="quick-card__desc">Manage doctor profiles</div>
+            </a>
+            <a href="/specialties-mgmt" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">🏷️</div>
+                <div class="quick-card__title">Specialties</div>
+                <div class="quick-card__desc">Medical specialties & categories</div>
+            </a>
+            <a href="/treatments" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">💊</div>
+                <div class="quick-card__title">Treatments</div>
+                <div class="quick-card__desc">Treatment procedures & details</div>
+            </a>
+            <a href="/destinations-mgmt" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">🌍</div>
+                <div class="quick-card__title">Destinations</div>
+                <div class="quick-card__desc">Countries & cities</div>
             </a>
             <a href="/testimonials" class="quick-card" data-role="editor">
                 <div class="quick-card__icon">⭐</div>
                 <div class="quick-card__title">Testimonials</div>
-                <div class="quick-card__desc">Add patient testimonials</div>
+                <div class="quick-card__desc">Patient testimonials</div>
+            </a>
+            <a href="/costs" class="quick-card" data-role="editor">
+                <div class="quick-card__icon">💰</div>
+                <div class="quick-card__title">Cost Manager</div>
+                <div class="quick-card__desc">Treatment cost comparisons</div>
             </a>
             <a href="/media" class="quick-card" data-role="editor">
                 <div class="quick-card__icon">🖼️</div>
@@ -1224,16 +1254,16 @@ async function initDashboard() {
             isSuperAdmin ? {href:'/',icon:'🎛️',label:'Command Center'} : {href:'/',icon:'📊',label:'Dashboard'},
             {section:'Content'},
             {href:'/blog',icon:'📝',label:'Blog Posts',roles:['super_admin','editor']},
-            {href:'/specialties-mgmt',icon:'🏷️',label:'Specialties',roles:['super_admin']},
-            {href:'/treatments',icon:'💊',label:'Treatments',roles:['super_admin']},
-            {href:'/destinations-mgmt',icon:'🌍',label:'Destinations',roles:['super_admin']},
-            {href:'/hospitals',icon:'🏥',label:'Hospitals',roles:['super_admin']},
-            {href:'/doctors',icon:'👨‍⚕️',label:'Doctors',roles:['super_admin']},
+            {href:'/specialties-mgmt',icon:'🏷️',label:'Specialties',roles:['super_admin','editor']},
+            {href:'/treatments',icon:'💊',label:'Treatments',roles:['super_admin','editor']},
+            {href:'/destinations-mgmt',icon:'🌍',label:'Destinations',roles:['super_admin','editor']},
+            {href:'/hospitals',icon:'🏥',label:'Hospitals',roles:['super_admin','editor']},
+            {href:'/doctors',icon:'👨‍⚕️',label:'Doctors',roles:['super_admin','editor']},
             {href:'/testimonials',icon:'⭐',label:'Testimonials',roles:['super_admin','editor']},
-            {section:'Management',roles:['super_admin']},
-            {href:'/costs',icon:'💰',label:'Cost Manager',roles:['super_admin']},
+            {section:'Management',roles:['super_admin','editor']},
+            {href:'/costs',icon:'💰',label:'Cost Manager',roles:['super_admin','editor']},
             {href:'/submissions',icon:'📋',label:'Submissions',roles:['super_admin']},
-            {href:'/static-pages',icon:'📄',label:'Static Pages',roles:['super_admin']},
+            {href:'/static-pages',icon:'📄',label:'Static Pages',roles:['super_admin','editor']},
             {href:'/page-content',icon:'🔧',label:'Page Content',roles:['super_admin']},
             {href:'/media',icon:'🖼️',label:'Media Library',roles:['super_admin','editor']},
             {section:'Tools',roles:['super_admin']},
