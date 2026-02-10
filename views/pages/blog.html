@@ -49,14 +49,23 @@
 
 <script>
 let posts = [];
+async function safeFetch(url, options) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const r = await fetch(url, options);
+            if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1))); continue; }
+            return r;
+        } catch(e) { if (attempt === 2) throw e; await new Promise(ok => setTimeout(ok, 1000)); }
+    }
+}
 async function load() {
     try {
-        const r = await fetch('/api/blog');
-        if (!r.ok) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; return; }
+        const r = await safeFetch('/api/blog');
+        if (!r || !r.ok) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; return; }
         posts = await r.json();
         document.getElementById('pageTitle').textContent = `Blog Posts (${posts.length})`;
         filterPosts();
-    } catch(e) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; }
+    } catch(e) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading. Please refresh.</td></tr>'; }
 }
 
 function filterPosts() {

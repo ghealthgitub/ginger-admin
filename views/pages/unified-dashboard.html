@@ -957,7 +957,8 @@ const allFields = {
 // ===== LOAD =====
 async function loadAll() {
     try {
-        const r = await fetch('/api/page-content?page=master');
+        const r = await safeFetch('/api/page-content?page=master');
+        if (!r || !r.ok) return;
         const data = await r.json();
         data.forEach(item => {
             // Find the element by matching section + field_key
@@ -1020,7 +1021,8 @@ async function saveAll() {
 // ===== LOAD DASHBOARD STATS =====
 async function loadStats() {
     try {
-        const r = await fetch('/api/dashboard/stats');
+        const r = await safeFetch('/api/dashboard/stats');
+        if (!r || !r.ok) return;
         const s = await r.json();
         document.getElementById('statPosts').textContent = s.blog_posts || 0;
         document.getElementById('statHospitals').textContent = s.hospitals || 0;
@@ -1184,23 +1186,37 @@ async function toggleUserStatus(id, currentActive) {
 }
 
 // ===== ROLE-BASED INIT =====
+// Helper: fetch with retry on 429
+async function safeFetch(url, options) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const r = await fetch(url, options);
+            if (r.status === 429) {
+                await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1)));
+                continue;
+            }
+            return r;
+        } catch(e) {
+            if (attempt === 2) throw e;
+            await new Promise(ok => setTimeout(ok, 1000));
+        }
+    }
+}
+
 async function initDashboard() {
+    // Single auth call — reuse from sidebar.js if available
     let user = null;
-    
-    // Try to get user from sidebar.js first
     if (window.gingerUser) {
         try { user = await window.gingerUser; } catch(e) {}
     }
-    
-    // Fallback: direct auth call
     if (!user) {
         try {
-            const r = await fetch('/api/auth/me');
-            if (r.ok) user = await r.json();
+            const r = await safeFetch('/api/auth/me');
+            if (r && r.ok) user = await r.json();
         } catch(e) {}
     }
     
-    // Default to super_admin view if auth fails (server already protects routes)
+    // Default to super_admin if auth fails (server protects routes anyway)
     const role = (user && user.role) ? user.role : 'super_admin';
     const isSuperAdmin = role === 'super_admin';
 
@@ -1233,10 +1249,12 @@ async function initDashboard() {
         }
     }
 
-    // Load data (staggered to avoid 429)
-    try { await loadStats(); } catch(e) {}
+    // Load data with delays between calls to avoid 429
+    try { await loadStats(); } catch(e) { console.log('Stats:', e); }
+    
     if (isSuperAdmin) {
-        try { await loadAll(); } catch(e) {}
+        await new Promise(ok => setTimeout(ok, 500));
+        try { await loadAll(); } catch(e) { console.log('LoadAll:', e); }
     }
 
     // Load editor's recent activity
