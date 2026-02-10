@@ -120,47 +120,7 @@
 .ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
 @keyframes aiBlink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 
-@media(max-width:900px){.ai-layout{grid-template-columns:1fr;height:auto}.ai-preview-panel{height:300px}}
-
-/* AI Designer */
-.ai-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:600px}
-.ai-chat-wrap{background:linear-gradient(180deg,#0B2545,#0D1B2A);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
-.ai-chat-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
-.ai-chat-header h3{color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
-.ai-chat-header p{color:rgba(255,255,255,.35);font-size:.78rem;margin-top:4px}
-.ai-chat-msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
-.ai-chat-msgs::-webkit-scrollbar{width:4px}.ai-chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
-.ai-m{padding:12px 16px;border-radius:12px;font-size:.88rem;line-height:1.65;max-width:95%;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.ai-m--user{background:rgba(242,101,34,.12);color:rgba(255,255,255,.9);align-self:flex-end;border-bottom-right-radius:4px}
-.ai-m--ai{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8);align-self:flex-start;border-bottom-left-radius:4px}
-.ai-m--system{background:rgba(14,165,160,.1);color:var(--teal);align-self:center;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px}
-.ai-m__actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.ai-m__btn{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
-.ai-m__btn--apply{background:var(--teal);color:#fff}.ai-m__btn--apply:hover{background:#0c918c}
-.ai-m__btn--copy{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12)}.ai-m__btn--copy:hover{color:#fff;background:rgba(255,255,255,.15)}
-.ai-quick-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 20px;border-top:1px solid rgba(255,255,255,.06)}
-.ai-qbtn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);border-radius:8px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-family:inherit;transition:all .2s}
-.ai-qbtn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
-.ai-input-row{display:flex;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
-.ai-input-row textarea{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:inherit;resize:none;min-height:48px;max-height:120px;line-height:1.5}
-.ai-input-row textarea::placeholder{color:rgba(255,255,255,.25)}
-.ai-input-row textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.15)}
-.ai-input-row button{align-self:flex-end;background:var(--ginger);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s}
-.ai-input-row button:hover{background:var(--ginger-dark)}
-.ai-input-row button:disabled{opacity:.4;cursor:not-allowed}
-.ai-typing{display:flex;gap:4px;padding:8px 14px}.ai-typing span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
-
-/* Preview panel */
-.ai-preview-wrap{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
-.ai-preview-header{padding:14px 20px;border-bottom:2px solid var(--teal);display:flex;align-items:center;justify-content:space-between;background:#F0F5FF}
-.ai-preview-header h3{font-size:.95rem;font-weight:700;color:var(--navy)}
-.ai-preview-body{flex:1;overflow-y:auto;position:relative}
-.ai-preview-body iframe{width:100%;height:100%;border:none;min-height:550px}
-.ai-css-output{width:100%;min-height:200px;font-family:'Courier New',monospace;font-size:.82rem;padding:14px;border:none;background:#1E1E2E;color:#A6E3A1;resize:none;border-top:1px solid var(--gray-200)}
-
-@media(max-width:900px){.ai-layout{grid-template-columns:1fr}}
+@media(max-width:900px){.ai-layout{flex-direction:column;height:auto}.ai-chat-panel{width:100%!important}.ai-preview-panel{height:300px}}
 </style></head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> AI Assistant</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link"><span class="sidebar__link-icon">⚙️</span> Settings</a><a href="/master-control" class="sidebar__link sidebar__link--active"><span class="sidebar__link-icon">🎛️</span> Master Control</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
 
