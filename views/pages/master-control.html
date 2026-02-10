@@ -89,13 +89,19 @@
 .ai-quick-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);border-radius:8px;padding:6px 12px;font-size:.76rem;cursor:pointer;font-family:inherit;transition:all .2s}
 .ai-quick-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
 
-.ai-chat-input{display:flex;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
-.ai-chat-input textarea{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:inherit;resize:none;min-height:48px;max-height:120px;line-height:1.5}
+.ai-chat-input{padding:14px 20px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
+.ai-chat-input__row{display:flex;gap:10px;align-items:flex-end}
+.ai-attach-btn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;cursor:pointer;font-size:1.1rem;transition:all .2s;flex-shrink:0;align-self:flex-end}
+.ai-attach-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+.ai-chat-input textarea{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:inherit;resize:none;min-height:90px;max-height:150px;line-height:1.5}
 .ai-chat-input textarea::placeholder{color:rgba(255,255,255,.25)}
 .ai-chat-input textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.15)}
-.ai-chat-input button{align-self:flex-end;background:var(--ginger);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-chat-input button{align-self:flex-end;background:var(--ginger);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap}
 .ai-chat-input button:hover{background:var(--ginger-dark)}
 .ai-chat-input button:disabled{opacity:.4;cursor:not-allowed}
+.ai-file-preview{display:flex;align-items:center;gap:8px;padding:8px 12px;margin-top:8px;background:rgba(255,255,255,.06);border-radius:8px;font-size:.78rem;color:rgba(255,255,255,.6)}
+.ai-file-preview img{width:32px;height:32px;border-radius:4px;object-fit:cover}
+.ai-file-preview button{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:.9rem;padding:2px 6px}.ai-file-preview button:hover{color:#EF4444}
 
 .ai-preview-panel{display:flex;flex-direction:column;background:var(--gray-50);border-left:1px solid var(--gray-200)}
 .ai-preview-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:2px solid var(--teal);font-weight:700;font-size:.88rem;color:var(--navy);background:#F0F5FF}
@@ -197,8 +203,19 @@ Just describe what you want in plain English!</div>
             <button class="ai-quick-btn" onclick="aiSend('Add smooth hover animations to all interactive elements')">💫 Add animations</button>
         </div>
         <div class="ai-chat-input">
-            <textarea id="aiChatInput" rows="2" placeholder="Describe any design or content change you want..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"></textarea>
-            <button onclick="aiSend()" id="aiSendBtn">Send ✨</button>
+            <div class="ai-chat-input__row">
+                <label class="ai-attach-btn" title="Attach image/screenshot">
+                    📎
+                    <input type="file" id="aiFileInput" accept="image/*" style="display:none" onchange="handleFileAttach(this)">
+                </label>
+                <textarea id="aiChatInput" rows="4" placeholder="Describe any design or content change you want...&#10;&#10;Examples: 'Change hero title to...', 'Make buttons blue', 'Add shadow to cards'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"></textarea>
+                <button onclick="aiSend()" id="aiSendBtn">Send ✨</button>
+            </div>
+            <div id="aiFilePreview" class="ai-file-preview" style="display:none">
+                <img id="aiFileThumb">
+                <span id="aiFileName"></span>
+                <button onclick="removeFileAttach()">✕</button>
+            </div>
         </div>
     </div>
     <!-- RIGHT: Preview -->
@@ -552,6 +569,7 @@ async function aiSend(customMsg) {
 Current theme colors: ${currentColors}
 Current hero title: ${heroTitle || '(not set)'}
 Current custom CSS: ${currentCSS ? currentCSS.substring(0, 300) : '(none)'}
+${attachedFile ? '\nUser attached a screenshot/image: ' + attachedFile.name + ' (use this context to understand what they want to change)' : ''}
 
 The user wants: ${msg}
 
@@ -636,6 +654,8 @@ If the request is just a question or suggestion, use only "message" with an empt
     aiGenerating = false;
     document.getElementById('aiSendBtn').disabled = false;
     messages.scrollTop = messages.scrollHeight;
+    // Clear file attachment after send
+    removeFileAttach();
 }
 
 function applyAIChanges(encodedActions) {
@@ -668,17 +688,50 @@ function applyAIChanges(encodedActions) {
 
         updateThemePreview();
 
-        // Show system message
-        const sysMsg = document.createElement('div');
-        sysMsg.className = 'ai-msg ai-msg--system';
-        sysMsg.innerHTML = '✅ Changes applied! Click <strong>💾 Save All Changes</strong> to push to the live site.';
-        document.getElementById('aiChatMessages').appendChild(sysMsg);
-        document.getElementById('aiChatMessages').scrollTop = document.getElementById('aiChatMessages').scrollHeight;
+        // AUTO-SAVE to database
+        saveAll().then(() => {
+            const sysMsg = document.createElement('div');
+            sysMsg.className = 'ai-msg ai-msg--system';
+            sysMsg.innerHTML = '✅ Changes applied & saved! Refresh the preview to see updates.';
+            document.getElementById('aiChatMessages').appendChild(sysMsg);
+            document.getElementById('aiChatMessages').scrollTop = document.getElementById('aiChatMessages').scrollHeight;
+            // Auto-refresh preview iframe
+            setTimeout(() => {
+                const iframe = document.getElementById('aiPreviewFrame');
+                if (iframe) iframe.src = iframe.src;
+            }, 2000);
+        });
 
     } catch(e) {
         console.error('Apply error:', e);
         alert('Failed to apply changes');
     }
+}
+
+// ===== FILE ATTACHMENT =====
+let attachedFile = null;
+let attachedBase64 = null;
+
+function handleFileAttach(input) {
+    const file = input.files[0];
+    if (!file) return;
+    attachedFile = file;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        attachedBase64 = e.target.result;
+        document.getElementById('aiFileThumb').src = e.target.result;
+        document.getElementById('aiFileName').textContent = file.name;
+        document.getElementById('aiFilePreview').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeFileAttach() {
+    attachedFile = null;
+    attachedBase64 = null;
+    document.getElementById('aiFileInput').value = '';
+    document.getElementById('aiFilePreview').style.display = 'none';
 }
 
 function copyAIResponse(encodedActions) {
