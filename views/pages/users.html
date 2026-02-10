@@ -6,11 +6,12 @@
 <div class="form-row"><div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="f_pass" placeholder="Min 8 characters"></div><div class="form-group"><label class="form-label">Role</label><select class="form-select" id="f_role"><option value="viewer">Viewer</option><option value="editor">Editor</option><option value="super_admin">Super Admin</option></select></div></div>
 </div><div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveUser()">Save</button></div></div></div></main></div>
 <script>let users=[];
-async function load(){const r=await fetch('/api/users');users=await r.json();const tb=document.getElementById('list');
-tb.innerHTML=users.map(u=>`<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td><span class="badge" style="background:${u.role==='super_admin'?'#DBEAFE':'#D1FAE5'};color:${u.role==='super_admin'?'#1E40AF':'#065F46'}">${u.role.replace('_',' ')}</span></td><td>${u.is_active?'✅ Active':'❌ Inactive'}</td><td style="font-size:.82rem;color:var(--gray-400)">${u.last_login?new Date(u.last_login).toLocaleDateString():'Never'}</td><td><button class="btn btn--outline btn--sm" onclick="editUser(${u.id})">Edit</button></td></tr>`).join('')}
+async function load(){try{const r=await fetch('/api/users');if(!r.ok)return;users=await r.json();const tb=document.getElementById('list');
+tb.innerHTML=users.map(u=>`<tr><td><strong>${u.name}</strong></td><td>${u.email}</td><td><span class="badge" style="background:${u.role==='super_admin'?'#DBEAFE':'#D1FAE5'};color:${u.role==='super_admin'?'#1E40AF':'#065F46'}">${u.role.replace('_',' ')}</span></td><td>${u.is_active?'✅ Active':'❌ Inactive'}</td><td style="font-size:.82rem;color:var(--gray-400)">${u.last_login?new Date(u.last_login).toLocaleDateString():'Never'}</td><td><button class="btn btn--outline btn--sm" onclick="editUser(${u.id})">Edit</button></td></tr>`).join('')}catch(e){console.error(e)}}
 function openModal(){document.getElementById('modal').classList.add('open');['f_name','f_email','f_pass'].forEach(f=>document.getElementById(f).value='')}
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 async function saveUser(){const data={name:document.getElementById('f_name').value,email:document.getElementById('f_email').value,password:document.getElementById('f_pass').value,role:document.getElementById('f_role').value};
 const r=await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load()}else{const e=await r.json();alert(e.error)}}
+load();
 </script>
 </body></html>
