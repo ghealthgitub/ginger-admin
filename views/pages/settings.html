@@ -2,6 +2,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/admin.css">
 <style>.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.settings-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:24px}.settings-card h3{font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}.saved-msg{position:fixed;top:80px;right:20px;background:#059669;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:1000;display:none;animation:slideIn .3s}@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}@media(max-width:768px){.settings-grid{grid-template-columns:1fr}}</style>
+<script src="/js/sidebar.js" defer></script>
 </head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
 <main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">⚙️ Site Settings</h1><div class="topbar__actions"><button class="btn btn--primary" onclick="saveAll()">💾 Save All Settings</button></div></header>
@@ -90,8 +91,8 @@ async function saveAll() {
 }
 
 // Load user
-(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+// Auth handled by sidebar.js;
 
 loadSettings();
-</script><script src="/js/sidebar.js"></script>
+</script>
 </body></html>

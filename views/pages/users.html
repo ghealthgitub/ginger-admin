@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Users | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"></head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Users | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"><script src="/js/sidebar.js" defer></script>
+</head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 <main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">Users</h1><div class="topbar__actions"><button class="btn btn--primary" onclick="openModal()">+ Add User</button></div></header><div class="content"><div class="card"><div class="card__body"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead><tbody id="list"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody></table></div></div></div>
 <div class="modal-overlay" id="modal"><div class="modal"><div class="modal__header"><h3 id="modalTitle">Add User</h3><button class="modal__close" onclick="closeModal()">✕</button></div><div class="modal__body">
 <div class="form-row"><div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" id="f_name"></div><div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="f_email"></div></div>
@@ -11,5 +12,5 @@ function openModal(){document.getElementById('modal').classList.add('open');['f_
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 async function saveUser(){const data={name:document.getElementById('f_name').value,email:document.getElementById('f_email').value,password:document.getElementById('f_pass').value,role:document.getElementById('f_role').value};
 const r=await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load()}else{const e=await r.json();alert(e.error)}}
-load();</script><script src="/js/sidebar.js"></script>
+</script>
 </body></html>
