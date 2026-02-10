@@ -56,6 +56,10 @@
 /* Warning */
 .warning-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:12px 16px;font-size:.85rem;color:#92400E;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 
+/* Activity & Team tables */
+#tab-activity .data-table td,#tab-team .data-table td{padding:10px 14px;vertical-align:middle}
+#tab-activity .data-table tr:hover,#tab-team .data-table tr:hover{background:#F0F5FF}
+
 /* Image upload preview */
 .img-preview{width:100%;max-width:200px;height:80px;border-radius:8px;object-fit:contain;border:1px solid var(--gray-200);background:var(--gray-50);margin-top:8px}
 
@@ -136,6 +140,8 @@
     <div class="mcp-tab" onclick="switchTab('homepage')"><span>🏠</span> Homepage</div>
     <div class="mcp-tab" onclick="switchTab('global')"><span>🌐</span> Global Settings</div>
     <div class="mcp-tab" onclick="switchTab('css')"><span>💻</span> Custom CSS</div>
+    <div class="mcp-tab" onclick="switchTab('activity');loadActivity()"><span>📋</span> Activity</div>
+    <div class="mcp-tab" onclick="switchTab('team');loadTeam()"><span>👥</span> Team</div>
 </div>
 
 <!-- ===================== TAB 0: AI DESIGNER ===================== -->
@@ -439,6 +445,91 @@ h1 {
             <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Hide top announcement bar */\n.topbar-announcement {\n    display: none !important;\n}\n')">Hide Announcement Bar</button>
             <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Custom hero height */\n.hero-section {\n    min-height: 600px;\n}\n')">Taller Hero</button>
             <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Smooth animations */\n* {\n    transition: all 0.2s ease;\n}\n')">Smooth Animations</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TAB 5: ACTIVITY ===================== -->
+<div class="tab-content" id="tab-activity">
+    <div class="section">
+        <div class="section__title"><span>📋</span> Activity Log</div>
+        <div class="section__desc">Track all content changes across your team</div>
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+            <select class="form-select" id="actFilterUser" onchange="loadActivity()" style="width:180px"><option value="">All Users</option></select>
+            <select class="form-select" id="actFilterAction" onchange="loadActivity()" style="width:150px">
+                <option value="">All Actions</option>
+                <option value="create">Create</option>
+                <option value="update">Update</option>
+                <option value="delete">Delete</option>
+                <option value="login">Login</option>
+                <option value="update_settings">Settings</option>
+            </select>
+            <select class="form-select" id="actFilterEntity" onchange="loadActivity()" style="width:150px">
+                <option value="">All Types</option>
+                <option value="blog_post">Blog Posts</option>
+                <option value="specialty">Specialties</option>
+                <option value="treatment">Treatments</option>
+                <option value="hospital">Hospitals</option>
+                <option value="doctor">Doctors</option>
+                <option value="destination">Destinations</option>
+                <option value="testimonial">Testimonials</option>
+                <option value="page_content">Page Content</option>
+                <option value="settings">Settings</option>
+            </select>
+            <button class="btn btn--outline btn--sm" onclick="loadActivity()">🔄 Refresh</button>
+        </div>
+        <div id="activityTableWrap">
+            <table class="data-table" style="width:100%">
+                <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Type</th><th>Details</th></tr></thead>
+                <tbody id="activityBody"><tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:40px">Loading...</td></tr></tbody>
+            </table>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px">
+            <div id="actPageInfo" style="font-size:.82rem;color:var(--gray-400)"></div>
+            <div style="display:flex;gap:6px">
+                <button class="btn btn--outline btn--sm" id="actPrev" onclick="loadActivity(actPage-1)" disabled>← Prev</button>
+                <button class="btn btn--outline btn--sm" id="actNext" onclick="loadActivity(actPage+1)">Next →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TAB 6: TEAM ===================== -->
+<div class="tab-content" id="tab-team">
+    <div class="section">
+        <div class="section__title"><span>👥</span> Team Management</div>
+        <div class="section__desc">Add, edit, or remove team members. Control who has access to the admin panel.</div>
+        <button class="btn btn--primary" onclick="showAddUser()" style="margin-bottom:16px">➕ Add Team Member</button>
+        <table class="data-table" style="width:100%">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+            <tbody id="teamBody"><tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:40px">Loading...</td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div id="userModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;display:none;align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:12px;padding:30px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+            <h3 style="font-family:'Playfair Display',serif;color:var(--navy);margin-bottom:20px" id="userModalTitle">Add Team Member</h3>
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="mu_name" placeholder="John Doe"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="mu_email" type="email" placeholder="john@ginger.healthcare"></div>
+            <div class="form-group"><label class="form-label">Password <span id="mu_pw_note" style="color:var(--gray-400);font-weight:400">(required)</span></label><input class="form-input" id="mu_password" type="password" placeholder="Min 6 characters"></div>
+            <div class="form-group"><label class="form-label">Role</label>
+                <select class="form-select" id="mu_role">
+                    <option value="viewer">👁️ Viewer — Can view content only</option>
+                    <option value="editor">✏️ Editor — Can create & edit content</option>
+                    <option value="super_admin">👑 Super Admin — Full access</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Status</label>
+                <select class="form-select" id="mu_active">
+                    <option value="true">✅ Active</option>
+                    <option value="false">🚫 Deactivated</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px">
+                <button class="btn btn--primary" onclick="saveUser()">💾 Save</button>
+                <button class="btn btn--outline" onclick="closeUserModal()">Cancel</button>
+            </div>
         </div>
     </div>
 </div>
@@ -861,6 +952,158 @@ async function saveAll() {
 
 // ===== AUTH =====
 (async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+
+// ===== ACTIVITY LOG =====
+let actPage = 1;
+async function loadActivity(page) {
+    actPage = page || 1;
+    const userId = document.getElementById('actFilterUser').value;
+    const action = document.getElementById('actFilterAction').value;
+    const entity = document.getElementById('actFilterEntity').value;
+    let url = `/api/dashboard/activity?page=${actPage}&limit=30`;
+    if (userId) url += `&user_id=${userId}`;
+    if (action) url += `&action=${action}`;
+    if (entity) url += `&entity_type=${entity}`;
+    try {
+        const r = await fetch(url);
+        const data = await r.json();
+        const body = document.getElementById('activityBody');
+        if (!data.activities || data.activities.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:40px">No activity found</td></tr>';
+        } else {
+            body.innerHTML = data.activities.map(a => {
+                const time = new Date(a.created_at);
+                const ago = timeAgo(time);
+                const actionBadge = {create:'background:#DCFCE7;color:#166534',update:'background:#DBEAFE;color:#1E40AF',delete:'background:#FEE2E2;color:#991B1B',login:'background:#F3E8FF;color:#6B21A8',update_settings:'background:#FEF3C7;color:#92400E'};
+                const style = actionBadge[a.action] || 'background:var(--gray-100);color:var(--gray-600)';
+                return `<tr>
+                    <td style="white-space:nowrap;font-size:.82rem"><span title="${time.toLocaleString()}">${ago}</span></td>
+                    <td><strong>${a.user_name || 'System'}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">${a.user_role || ''}</span></td>
+                    <td><span style="padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:600;${style}">${a.action}</span></td>
+                    <td style="font-size:.82rem">${a.entity_type || '-'}</td>
+                    <td style="font-size:.82rem;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(a.details||'').replace(/"/g,'&quot;')}">${a.details || '-'}</td>
+                </tr>`;
+            }).join('');
+        }
+        document.getElementById('actPageInfo').textContent = `Page ${data.page} of ${data.pages} (${data.total} total)`;
+        document.getElementById('actPrev').disabled = data.page <= 1;
+        document.getElementById('actNext').disabled = data.page >= data.pages;
+        // Populate user filter dropdown
+        if (document.getElementById('actFilterUser').options.length <= 1) {
+            const users = await (await fetch('/api/users')).json();
+            users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id; opt.textContent = u.name;
+                document.getElementById('actFilterUser').appendChild(opt);
+            });
+        }
+    } catch(e) { console.error('Activity load error:', e); }
+}
+
+function timeAgo(date) {
+    const s = Math.floor((new Date() - date) / 1000);
+    if (s < 60) return 'Just now';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    if (s < 604800) return Math.floor(s/86400) + 'd ago';
+    return date.toLocaleDateString();
+}
+
+// ===== TEAM MANAGEMENT =====
+let editingUserId = null;
+async function loadTeam() {
+    try {
+        const r = await fetch('/api/users');
+        const users = await r.json();
+        const body = document.getElementById('teamBody');
+        body.innerHTML = users.map(u => {
+            const roleBadge = {super_admin:'background:linear-gradient(135deg,#F26522,#D9531E);color:#fff',editor:'background:#DBEAFE;color:#1E40AF',viewer:'background:var(--gray-100);color:var(--gray-600)'};
+            const style = roleBadge[u.role] || '';
+            const statusDot = u.is_active ? '🟢' : '🔴';
+            const lastLogin = u.last_login ? timeAgo(new Date(u.last_login)) : 'Never';
+            return `<tr>
+                <td><strong>${u.name}</strong></td>
+                <td style="font-size:.85rem">${u.email}</td>
+                <td><span style="padding:3px 12px;border-radius:50px;font-size:.75rem;font-weight:700;${style}">${u.role.replace('_',' ')}</span></td>
+                <td>${statusDot} ${u.is_active ? 'Active' : 'Inactive'}</td>
+                <td style="font-size:.82rem">${lastLogin}</td>
+                <td>
+                    <button class="btn btn--outline btn--sm" onclick="editUser(${u.id},'${u.name.replace(/'/g,"\\'")}','${u.email}','${u.role}',${u.is_active})">✏️</button>
+                    ${u.role !== 'super_admin' ? `<button class="btn btn--outline btn--sm" style="color:#EF4444;border-color:#FCA5A5" onclick="toggleUserStatus(${u.id},${u.is_active})">${u.is_active ? '🚫' : '✅'}</button>` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+    } catch(e) { console.error('Team load error:', e); }
+}
+
+function showAddUser() {
+    editingUserId = null;
+    document.getElementById('userModalTitle').textContent = 'Add Team Member';
+    document.getElementById('mu_name').value = '';
+    document.getElementById('mu_email').value = '';
+    document.getElementById('mu_password').value = '';
+    document.getElementById('mu_role').value = 'editor';
+    document.getElementById('mu_active').value = 'true';
+    document.getElementById('mu_pw_note').textContent = '(required)';
+    document.getElementById('userModal').style.display = 'flex';
+}
+
+function editUser(id, name, email, role, active) {
+    editingUserId = id;
+    document.getElementById('userModalTitle').textContent = 'Edit Team Member';
+    document.getElementById('mu_name').value = name;
+    document.getElementById('mu_email').value = email;
+    document.getElementById('mu_password').value = '';
+    document.getElementById('mu_role').value = role;
+    document.getElementById('mu_active').value = active ? 'true' : 'false';
+    document.getElementById('mu_pw_note').textContent = '(leave blank to keep current)';
+    document.getElementById('userModal').style.display = 'flex';
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').style.display = 'none';
+}
+
+async function saveUser() {
+    const data = {
+        name: document.getElementById('mu_name').value,
+        email: document.getElementById('mu_email').value,
+        role: document.getElementById('mu_role').value,
+        is_active: document.getElementById('mu_active').value === 'true'
+    };
+    const pw = document.getElementById('mu_password').value;
+    if (pw) data.password = pw;
+    if (!data.name || !data.email) return alert('Name and email are required');
+    if (!editingUserId && !pw) return alert('Password is required for new users');
+    try {
+        const url = editingUserId ? `/api/users/${editingUserId}` : '/api/users';
+        const method = editingUserId ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (r.ok) {
+            closeUserModal();
+            loadTeam();
+            const msg = document.getElementById('savedMsg');
+            msg.textContent = editingUserId ? '✅ User updated!' : '✅ User created!';
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        } else {
+            const e = await r.json();
+            alert('Error: ' + (e.error || 'Save failed'));
+        }
+    } catch(e) { alert('Save failed'); }
+}
+
+async function toggleUserStatus(id, currentActive) {
+    if (!confirm(currentActive ? 'Deactivate this user? They will not be able to log in.' : 'Activate this user?')) return;
+    try {
+        const r = await fetch(`/api/users/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ is_active: !currentActive })
+        });
+        if (r.ok) loadTeam();
+    } catch(e) { alert('Error'); }
+}
 
 loadAll();
 </script></body></html>
