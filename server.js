@@ -97,7 +97,7 @@ app.get('/api/auth/me', apiAuth, async (req, res) => {
 
 // ============== DASHBOARD ==============
 app.get('/', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'dashboard.html'));
+    res.redirect('/master-control');
 });
 
 // Dashboard stats API
