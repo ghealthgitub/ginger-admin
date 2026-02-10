@@ -1,0 +1,803 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Master Control Panel | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>
+/* Tabs */
+.mcp-tabs{display:flex;gap:0;border-bottom:2px solid var(--teal);margin-bottom:24px;background:var(--white);border-radius:12px 12px 0 0;overflow:hidden}
+.mcp-tab{padding:14px 24px;font-weight:600;font-size:.88rem;color:var(--gray-400);cursor:pointer;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:8px}
+.mcp-tab:hover{color:var(--navy);background:var(--gray-50)}
+.mcp-tab.active{color:var(--teal);border-bottom-color:var(--teal);background:#F0F5FF}
+.mcp-tab span{font-size:1.1rem}
+
+/* Tab content */
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* Section cards */
+.section{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:24px;margin-bottom:20px}
+.section__title{font-family:'Playfair Display',serif;color:var(--navy);font-size:1.05rem;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--teal);display:flex;align-items:center;gap:8px}
+.section__desc{color:var(--gray-400);font-size:.82rem;margin-bottom:16px}
+.section__grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section__grid--3{grid-template-columns:1fr 1fr 1fr}
+
+/* Color picker row */
+.color-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-100)}
+.color-row:last-child{border:none}
+.color-row__label{flex:1;font-weight:600;font-size:.85rem;color:var(--navy)}
+.color-row__desc{font-size:.75rem;color:var(--gray-400)}
+.color-row__input{display:flex;align-items:center;gap:8px}
+.color-picker{width:40px;height:40px;border:2px solid var(--gray-200);border-radius:8px;cursor:pointer;padding:0;background:none}
+.color-picker::-webkit-color-swatch-wrapper{padding:2px}.color-picker::-webkit-color-swatch{border:none;border-radius:5px}
+.color-hex{width:90px;padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:6px;font-family:monospace;font-size:.82rem;text-align:center}
+.color-hex:focus{border-color:var(--teal);outline:none}
+
+/* Font selector */
+.font-preview{padding:12px 16px;background:var(--gray-50);border-radius:8px;margin-top:8px;border:1px solid var(--gray-200)}
+
+/* Custom CSS editor */
+.css-editor{width:100%;min-height:300px;font-family:'Courier New',monospace;font-size:.85rem;padding:16px;border:1.5px solid var(--gray-200);border-radius:8px;background:#1E1E2E;color:#A6E3A1;line-height:1.7;resize:vertical;tab-size:2}
+.css-editor:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.15)}
+
+/* Live preview mini */
+.preview-mini{background:var(--white);border:2px solid var(--gray-200);border-radius:12px;padding:20px;margin-top:16px;position:relative}
+.preview-mini__label{position:absolute;top:-10px;left:16px;background:var(--white);padding:0 8px;font-size:.72rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px}
+.preview-mini h2{font-family:var(--font-display);color:var(--navy);margin-bottom:8px}
+.preview-mini p{color:var(--gray-600);font-size:.9rem;line-height:1.6;margin-bottom:12px}
+.preview-mini .btn-demo{display:inline-block;padding:10px 20px;border-radius:8px;font-weight:600;font-size:.85rem;color:#fff}
+
+/* Homepage section editor */
+.hero-preview{background:linear-gradient(135deg,#071A33,#0B2545);border-radius:12px;padding:30px;color:#fff;margin-top:12px}
+.hero-preview h1{font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:8px}
+.hero-preview p{color:rgba(255,255,255,.6);font-size:.9rem}
+
+/* Saved notification */
+.saved-msg{position:fixed;top:80px;right:20px;background:#059669;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:1000;display:none;animation:slideIn .3s;box-shadow:0 4px 15px rgba(5,150,105,.3)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Warning */
+.warning-box{background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:12px 16px;font-size:.85rem;color:#92400E;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* Image upload preview */
+.img-preview{width:100%;max-width:200px;height:80px;border-radius:8px;object-fit:contain;border:1px solid var(--gray-200);background:var(--gray-50);margin-top:8px}
+
+@media(max-width:900px){.section__grid,.section__grid--3{grid-template-columns:1fr}.mcp-tabs{flex-wrap:wrap}.mcp-tab{font-size:.8rem;padding:10px 16px}}
+
+/* AI Designer Layout */
+.ai-layout{display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100vh - 200px);min-height:500px;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden}
+
+.ai-chat-panel{display:flex;flex-direction:column;background:linear-gradient(180deg,#0B2545,#0D1B2A)}
+.ai-chat-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.ai-chat-header__title{color:#fff;font-size:1.05rem;font-weight:700}
+.ai-chat-header__sub{color:rgba(255,255,255,.35);font-size:.78rem;margin-top:4px}
+
+.ai-chat-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.ai-chat-messages::-webkit-scrollbar{width:4px}.ai-chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+
+.ai-msg{padding:12px 16px;border-radius:12px;font-size:.88rem;line-height:1.65;max-width:95%;animation:msgIn .3s}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ai-msg--user{background:rgba(242,101,34,.12);color:rgba(255,255,255,.9);align-self:flex-end;border-bottom-right-radius:4px}
+.ai-msg--bot{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-msg--bot strong{color:var(--teal)}.ai-msg--bot code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-size:.82rem}
+.ai-msg--system{background:rgba(14,165,160,.1);color:var(--teal);align-self:center;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px}
+
+.ai-msg__actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ai-msg__btn{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.ai-msg__btn--apply{background:var(--teal);color:#fff}.ai-msg__btn--apply:hover{background:#0c918c}
+.ai-msg__btn--copy{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12)}.ai-msg__btn--copy:hover{color:#fff}
+.ai-msg__btn--undo{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.2)}.ai-msg__btn--undo:hover{background:rgba(239,68,68,.25)}
+
+.ai-chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:10px 20px;border-top:1px solid rgba(255,255,255,.06)}
+.ai-quick-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);border-radius:8px;padding:6px 12px;font-size:.76rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-quick-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+
+.ai-chat-input{display:flex;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
+.ai-chat-input textarea{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:inherit;resize:none;min-height:48px;max-height:120px;line-height:1.5}
+.ai-chat-input textarea::placeholder{color:rgba(255,255,255,.25)}
+.ai-chat-input textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.15)}
+.ai-chat-input button{align-self:flex-end;background:var(--ginger);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-chat-input button:hover{background:var(--ginger-dark)}
+.ai-chat-input button:disabled{opacity:.4;cursor:not-allowed}
+
+.ai-preview-panel{display:flex;flex-direction:column;background:var(--gray-50);border-left:1px solid var(--gray-200)}
+.ai-preview-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:2px solid var(--teal);font-weight:700;font-size:.88rem;color:var(--navy);background:#F0F5FF}
+.ai-preview-open{font-size:.78rem;color:var(--teal);text-decoration:none;font-weight:600}
+.ai-preview-iframe{flex:1;width:100%;border:none;background:#fff}
+
+/* Typing indicator */
+.ai-typing{display:flex;gap:4px;padding:8px 14px}
+.ai-typing span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);animation:aiBlink 1.4s infinite}
+.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes aiBlink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+@media(max-width:900px){.ai-layout{grid-template-columns:1fr;height:auto}.ai-preview-panel{height:300px}}
+
+/* AI Designer */
+.ai-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:600px}
+.ai-chat-wrap{background:linear-gradient(180deg,#0B2545,#0D1B2A);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.ai-chat-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.ai-chat-header h3{color:#fff;font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.ai-chat-header p{color:rgba(255,255,255,.35);font-size:.78rem;margin-top:4px}
+.ai-chat-msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.ai-chat-msgs::-webkit-scrollbar{width:4px}.ai-chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:4px}
+.ai-m{padding:12px 16px;border-radius:12px;font-size:.88rem;line-height:1.65;max-width:95%;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ai-m--user{background:rgba(242,101,34,.12);color:rgba(255,255,255,.9);align-self:flex-end;border-bottom-right-radius:4px}
+.ai-m--ai{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-m--system{background:rgba(14,165,160,.1);color:var(--teal);align-self:center;font-size:.8rem;font-weight:600;border-radius:20px;padding:6px 16px}
+.ai-m__actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.ai-m__btn{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.ai-m__btn--apply{background:var(--teal);color:#fff}.ai-m__btn--apply:hover{background:#0c918c}
+.ai-m__btn--copy{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.12)}.ai-m__btn--copy:hover{color:#fff;background:rgba(255,255,255,.15)}
+.ai-quick-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 20px;border-top:1px solid rgba(255,255,255,.06)}
+.ai-qbtn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);border-radius:8px;padding:6px 12px;font-size:.78rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-qbtn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)}
+.ai-input-row{display:flex;gap:10px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
+.ai-input-row textarea{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:.88rem;font-family:inherit;resize:none;min-height:48px;max-height:120px;line-height:1.5}
+.ai-input-row textarea::placeholder{color:rgba(255,255,255,.25)}
+.ai-input-row textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.15)}
+.ai-input-row button{align-self:flex-end;background:var(--ginger);color:#fff;border:none;border-radius:10px;padding:12px 20px;font-weight:700;font-size:.88rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-input-row button:hover{background:var(--ginger-dark)}
+.ai-input-row button:disabled{opacity:.4;cursor:not-allowed}
+.ai-typing{display:flex;gap:4px;padding:8px 14px}.ai-typing span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+
+/* Preview panel */
+.ai-preview-wrap{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.ai-preview-header{padding:14px 20px;border-bottom:2px solid var(--teal);display:flex;align-items:center;justify-content:space-between;background:#F0F5FF}
+.ai-preview-header h3{font-size:.95rem;font-weight:700;color:var(--navy)}
+.ai-preview-body{flex:1;overflow-y:auto;position:relative}
+.ai-preview-body iframe{width:100%;height:100%;border:none;min-height:550px}
+.ai-css-output{width:100%;min-height:200px;font-family:'Courier New',monospace;font-size:.82rem;padding:14px;border:none;background:#1E1E2E;color:#A6E3A1;resize:none;border-top:1px solid var(--gray-200)}
+
+@media(max-width:900px){.ai-layout{grid-template-columns:1fr}}
+</style></head>
+<body><div class="layout"><aside class="sidebar" id="sidebar"><div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav"><a href="/" class="sidebar__link"><span class="sidebar__link-icon">📊</span> Dashboard</a><div class="sidebar__section">Content</div><a href="/blog" class="sidebar__link"><span class="sidebar__link-icon">📝</span> Blog Posts</a><a href="/specialties-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🏷️</span> Specialties</a><a href="/treatments" class="sidebar__link"><span class="sidebar__link-icon">💊</span> Treatments</a><a href="/destinations-mgmt" class="sidebar__link"><span class="sidebar__link-icon">🌍</span> Destinations</a><a href="/hospitals" class="sidebar__link"><span class="sidebar__link-icon">🏥</span> Hospitals</a><a href="/doctors" class="sidebar__link"><span class="sidebar__link-icon">👨‍⚕️</span> Doctors</a><a href="/testimonials" class="sidebar__link"><span class="sidebar__link-icon">⭐</span> Testimonials</a><div class="sidebar__section">Management</div><a href="/costs" class="sidebar__link"><span class="sidebar__link-icon">💰</span> Cost Manager</a><a href="/submissions" class="sidebar__link"><span class="sidebar__link-icon">📋</span> Submissions</a><a href="/static-pages" class="sidebar__link"><span class="sidebar__link-icon">📄</span> Static Pages</a><a href="/page-content" class="sidebar__link"><span class="sidebar__link-icon">🔧</span> Page Content</a><a href="/media" class="sidebar__link"><span class="sidebar__link-icon">🖼️</span> Media Library</a><div class="sidebar__section">Tools</div><a href="/ai-assistant" class="sidebar__link"><span class="sidebar__link-icon">🤖</span> AI Assistant</a><a href="/users" class="sidebar__link"><span class="sidebar__link-icon">👥</span> Users</a><a href="/settings" class="sidebar__link"><span class="sidebar__link-icon">⚙️</span> Settings</a><a href="/master-control" class="sidebar__link sidebar__link--active"><span class="sidebar__link-icon">🎛️</span> Master Control</a></nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar" id="userAvatar">SA</div><div class="sidebar__user-info"><div class="sidebar__user-name" id="userName">Admin</div><div class="sidebar__user-role" id="userRole">-</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div></aside>
+
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">🎛️ Master Control Panel</h1><div class="topbar__actions"><a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="btn btn--teal" style="font-size:.82rem">🌐 Preview Site</a><button class="btn btn--primary" onclick="saveAll()">💾 Save All Changes</button></div></header>
+<div class="content">
+<div id="savedMsg" class="saved-msg">✅ Changes saved! Site updated instantly.</div>
+
+<!-- TABS -->
+<div class="mcp-tabs">
+    <div class="mcp-tab active" onclick="switchTab('ai')"><span>🤖</span> AI Designer</div>
+    <div class="mcp-tab" onclick="switchTab('theme')"><span>🎨</span> Theme</div>
+    <div class="mcp-tab" onclick="switchTab('homepage')"><span>🏠</span> Homepage</div>
+    <div class="mcp-tab" onclick="switchTab('global')"><span>🌐</span> Global Settings</div>
+    <div class="mcp-tab" onclick="switchTab('css')"><span>💻</span> Custom CSS</div>
+</div>
+
+<!-- ===================== TAB 0: AI DESIGNER ===================== -->
+<div class="tab-content active" id="tab-ai">
+<div class="ai-layout">
+    <!-- LEFT: Chat -->
+    <div class="ai-chat-panel">
+        <div class="ai-chat-header">
+            <div class="ai-chat-header__title">🤖 AI Design Assistant</div>
+            <div class="ai-chat-header__sub">Describe any change — design, content, layout, colors — and I'll make it happen</div>
+        </div>
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-msg ai-msg--system">✨ AI Design Assistant Ready</div>
+            <div class="ai-msg ai-msg--bot">Hi! I'm your AI design assistant. I can help you with:
+
+• <strong>Design changes</strong> — "Make buttons rounded", "Change primary color to blue"
+• <strong>Content updates</strong> — "Update hero title to 'Your Health Journey Starts Here'"
+• <strong>Layout tweaks</strong> — "Make the hero section taller", "Add more spacing"
+• <strong>SEO improvements</strong> — "Generate meta descriptions for all pages"
+• <strong>Custom CSS</strong> — "Add a gradient background to the header"
+
+Just describe what you want in plain English!</div>
+        </div>
+        <div class="ai-chat-quick">
+            <button class="ai-quick-btn" onclick="aiSend('Change the primary brand color to a modern blue')">🔵 Change to blue theme</button>
+            <button class="ai-quick-btn" onclick="aiSend('Make all buttons rounded with a pill shape')">💊 Rounded buttons</button>
+            <button class="ai-quick-btn" onclick="aiSend('Write a compelling hero section title and description for a medical tourism company')">✍️ Write hero content</button>
+            <button class="ai-quick-btn" onclick="aiSend('Add a subtle shadow to all cards and sections')">🌤️ Add card shadows</button>
+            <button class="ai-quick-btn" onclick="aiSend('Generate SEO meta title and description for the homepage')">📈 Generate SEO</button>
+            <button class="ai-quick-btn" onclick="aiSend('Make the website feel more premium and luxurious')">✨ Premium look</button>
+            <button class="ai-quick-btn" onclick="aiSend('Suggest a modern color palette for a healthcare website')">🎨 Suggest colors</button>
+            <button class="ai-quick-btn" onclick="aiSend('Add smooth hover animations to all interactive elements')">💫 Add animations</button>
+        </div>
+        <div class="ai-chat-input">
+            <textarea id="aiChatInput" rows="2" placeholder="Describe any design or content change you want..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"></textarea>
+            <button onclick="aiSend()" id="aiSendBtn">Send ✨</button>
+        </div>
+    </div>
+    <!-- RIGHT: Preview -->
+    <div class="ai-preview-panel">
+        <div class="ai-preview-header">
+            <span>👁️ Live Preview</span>
+            <a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="ai-preview-open">Open Site ↗</a>
+        </div>
+        <iframe id="aiPreviewFrame" src="https://ginger.healthcare/?bypass=ginger2026" class="ai-preview-iframe"></iframe>
+    </div>
+</div>
+</div>
+
+<!-- ===================== TAB 1: THEME ===================== -->
+<div class="tab-content" id="tab-theme">
+
+    <!-- Brand Colors -->
+    <div class="section">
+        <div class="section__title"><span>🎨</span> Brand Colors</div>
+        <div class="section__desc">These colors are used across the entire website. Changes apply instantly.</div>
+        
+        <div class="color-row">
+            <div><div class="color-row__label">Primary Color (Ginger Orange)</div><div class="color-row__desc">Buttons, CTAs, highlights</div></div>
+            <div class="color-row__input"><input type="color" class="color-picker" id="t_primary_color" value="#F26522" oninput="syncColor(this,'t_primary_hex')"><input type="text" class="color-hex" id="t_primary_hex" value="#F26522" oninput="syncHex(this,'t_primary_color')"></div>
+        </div>
+        <div class="color-row">
+            <div><div class="color-row__label">Secondary Color (Teal)</div><div class="color-row__desc">Links, accents, section highlights</div></div>
+            <div class="color-row__input"><input type="color" class="color-picker" id="t_secondary_color" value="#0EA5A0" oninput="syncColor(this,'t_secondary_hex')"><input type="text" class="color-hex" id="t_secondary_hex" value="#0EA5A0" oninput="syncHex(this,'t_secondary_color')"></div>
+        </div>
+        <div class="color-row">
+            <div><div class="color-row__label">Dark Background (Navy)</div><div class="color-row__desc">Header, footer, hero sections</div></div>
+            <div class="color-row__input"><input type="color" class="color-picker" id="t_dark_bg" value="#0B2545" oninput="syncColor(this,'t_dark_hex')"><input type="text" class="color-hex" id="t_dark_hex" value="#0B2545" oninput="syncHex(this,'t_dark_bg')"></div>
+        </div>
+        <div class="color-row">
+            <div><div class="color-row__label">Accent Color</div><div class="color-row__desc">Badges, tags, special highlights</div></div>
+            <div class="color-row__input"><input type="color" class="color-picker" id="t_accent_color" value="#F59E0B" oninput="syncColor(this,'t_accent_hex')"><input type="text" class="color-hex" id="t_accent_hex" value="#F59E0B" oninput="syncHex(this,'t_accent_color')"></div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="preview-mini" id="themePreview">
+            <div class="preview-mini__label">LIVE PREVIEW</div>
+            <h2>World-Class Medical Care</h2>
+            <p>Connect with top hospitals. Save 60–90% on treatment.</p>
+            <div class="btn-demo" id="previewBtn" style="background:#F26522">Get Free Quote →</div>
+            <div class="btn-demo" id="previewBtn2" style="background:#0EA5A0;margin-left:8px">Learn More</div>
+        </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="section">
+        <div class="section__title"><span>🔤</span> Typography</div>
+        <div class="section__grid">
+            <div>
+                <div class="form-group">
+                    <label class="form-label">Heading Font</label>
+                    <select class="form-select" id="t_heading_font" onchange="updateFontPreview()">
+                        <option value="Playfair Display">Playfair Display (Default)</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="Lora">Lora</option>
+                        <option value="DM Serif Display">DM Serif Display</option>
+                        <option value="Crimson Text">Crimson Text</option>
+                        <option value="Source Serif Pro">Source Serif Pro</option>
+                        <option value="Inter">Inter (Modern Sans)</option>
+                        <option value="Poppins">Poppins</option>
+                    </select>
+                    <div class="font-preview" id="headingPreview" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--navy)">The Quick Brown Fox</div>
+                </div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label class="form-label">Body Font</label>
+                    <select class="form-select" id="t_body_font" onchange="updateFontPreview()">
+                        <option value="DM Sans">DM Sans (Default)</option>
+                        <option value="Inter">Inter</option>
+                        <option value="Open Sans">Open Sans</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Nunito">Nunito</option>
+                        <option value="Roboto">Roboto</option>
+                        <option value="Source Sans Pro">Source Sans Pro</option>
+                        <option value="Poppins">Poppins</option>
+                    </select>
+                    <div class="font-preview" id="bodyPreview" style="font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--gray-600)">This is how body text will look on your website. Clear and readable.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logo & Branding -->
+    <div class="section">
+        <div class="section__title"><span>🖼️</span> Logo & Branding</div>
+        <div class="section__grid">
+            <div>
+                <div class="form-group"><label class="form-label">Logo URL (Light / for dark backgrounds)</label><input class="form-input" id="t_logo_light" placeholder="https://... (PNG with transparent bg)" oninput="previewLogo('t_logo_light','logoPreviewLight')"></div>
+                <img id="logoPreviewLight" class="img-preview" style="background:var(--navy-deep);display:none">
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">Logo URL (Dark / for light backgrounds)</label><input class="form-input" id="t_logo_dark" placeholder="https://... (PNG with transparent bg)" oninput="previewLogo('t_logo_dark','logoPreviewDark')"></div>
+                <img id="logoPreviewDark" class="img-preview" style="display:none">
+            </div>
+            <div class="form-group"><label class="form-label">Favicon URL</label><input class="form-input" id="t_favicon" placeholder="https://... (.ico or .png 32x32)"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TAB 2: HOMEPAGE ===================== -->
+<div class="tab-content" id="tab-homepage">
+
+    <!-- Hero Section -->
+    <div class="section">
+        <div class="section__title"><span>🦸</span> Hero Section</div>
+        <div class="section__grid">
+            <div>
+                <div class="form-group"><label class="form-label">Hero Badge Text</label><input class="form-input" id="h_hero_badge" placeholder="🏥 Trusted by 5,000+ patients"></div>
+                <div class="form-group"><label class="form-label">Hero Title (Line 1)</label><input class="form-input" id="h_hero_title1" placeholder="World-Class Medical Care." style="font-size:1.1rem;font-weight:700"></div>
+                <div class="form-group"><label class="form-label">Hero Title (Line 2 - Highlighted)</label><input class="form-input" id="h_hero_title2" placeholder="60–90% Less." style="font-size:1.1rem;font-weight:700;color:var(--ginger)"></div>
+                <div class="form-group"><label class="form-label">Hero Description</label><textarea class="form-textarea" id="h_hero_desc" style="min-height:80px" placeholder="Connect with top JCI-accredited hospitals..."></textarea></div>
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">CTA Button 1 Text</label><input class="form-input" id="h_cta1_text" placeholder="Get Free Quote"></div>
+                <div class="form-group"><label class="form-label">CTA Button 1 Link</label><input class="form-input" id="h_cta1_link" placeholder="/get-quote/"></div>
+                <div class="form-group"><label class="form-label">CTA Button 2 Text</label><input class="form-input" id="h_cta2_text" placeholder="How It Works"></div>
+                <div class="form-group"><label class="form-label">CTA Button 2 Link</label><input class="form-input" id="h_cta2_link" placeholder="/how-it-works/"></div>
+                <div class="form-group"><label class="form-label">Hero Background Image URL</label><input class="form-input" id="h_hero_bg" placeholder="https://..."></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="section">
+        <div class="section__title"><span>📊</span> Stats Bar</div>
+        <div class="section__desc">The stats shown below the hero section</div>
+        <div class="section__grid--3" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+            <div>
+                <div class="form-group"><label class="form-label">Stat 1 Number</label><input class="form-input" id="h_stat1_num" placeholder="50+"></div>
+                <div class="form-group"><label class="form-label">Stat 1 Label</label><input class="form-input" id="h_stat1_label" placeholder="Hospitals"></div>
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">Stat 2 Number</label><input class="form-input" id="h_stat2_num" placeholder="300+"></div>
+                <div class="form-group"><label class="form-label">Stat 2 Label</label><input class="form-input" id="h_stat2_label" placeholder="Doctors"></div>
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">Stat 3 Number</label><input class="form-input" id="h_stat3_num" placeholder="5"></div>
+                <div class="form-group"><label class="form-label">Stat 3 Label</label><input class="form-input" id="h_stat3_label" placeholder="Countries"></div>
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">Stat 4 Number</label><input class="form-input" id="h_stat4_num" placeholder="60-90%"></div>
+                <div class="form-group"><label class="form-label">Stat 4 Label</label><input class="form-input" id="h_stat4_label" placeholder="Savings"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Headings -->
+    <div class="section">
+        <div class="section__title"><span>📝</span> Section Headings</div>
+        <div class="section__desc">Customize the headings for each homepage section</div>
+        <div class="section__grid">
+            <div class="form-group"><label class="form-label">Destinations Section Title</label><input class="form-input" id="h_dest_title" placeholder="Popular Destinations"></div>
+            <div class="form-group"><label class="form-label">Destinations Subtitle</label><input class="form-input" id="h_dest_sub" placeholder="World-class healthcare across 5 countries"></div>
+            <div class="form-group"><label class="form-label">Specialties Section Title</label><input class="form-input" id="h_spec_title" placeholder="Medical Specialties"></div>
+            <div class="form-group"><label class="form-label">Specialties Subtitle</label><input class="form-input" id="h_spec_sub" placeholder="Browse 28+ specialties"></div>
+            <div class="form-group"><label class="form-label">Testimonials Section Title</label><input class="form-input" id="h_test_title" placeholder="Patient Stories"></div>
+            <div class="form-group"><label class="form-label">Testimonials Subtitle</label><input class="form-input" id="h_test_sub" placeholder="Real results from real patients"></div>
+            <div class="form-group"><label class="form-label">Blog Section Title</label><input class="form-input" id="h_blog_title" placeholder="Latest from Our Blog"></div>
+            <div class="form-group"><label class="form-label">Blog Subtitle</label><input class="form-input" id="h_blog_sub" placeholder="Expert guides and tips"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== TAB 3: GLOBAL SETTINGS ===================== -->
+<div class="tab-content" id="tab-global">
+    
+    <!-- Header & Navigation -->
+    <div class="section">
+        <div class="section__title"><span>🧭</span> Header & Navigation</div>
+        <div class="section__grid">
+            <div class="form-group"><label class="form-label">Top Bar Announcement Text</label><input class="form-input" id="g_topbar_text" placeholder="✈️ Free consultation for all patients!"></div>
+            <div class="form-group"><label class="form-label">Top Bar Link URL</label><input class="form-input" id="g_topbar_link" placeholder="/get-quote/"></div>
+            <div class="form-group"><label class="form-label">Header CTA Button Text</label><input class="form-input" id="g_header_cta" placeholder="Get Free Quote"></div>
+            <div class="form-group"><label class="form-label">Header CTA Link</label><input class="form-input" id="g_header_cta_link" placeholder="/get-quote/"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="section">
+        <div class="section__title"><span>🦶</span> Footer Content</div>
+        <div class="section__grid">
+            <div>
+                <div class="form-group"><label class="form-label">Footer Description</label><textarea class="form-textarea" id="g_footer_desc" style="min-height:80px" placeholder="Ginger Healthcare connects international patients..."></textarea></div>
+                <div class="form-group"><label class="form-label">Footer Copyright</label><input class="form-input" id="g_footer_copyright" placeholder="© 2025 Ginger Healthcare. All rights reserved."></div>
+            </div>
+            <div>
+                <div class="form-group"><label class="form-label">Footer CTA Heading</label><input class="form-input" id="g_footer_cta_head" placeholder="Ready to Start Your Journey?"></div>
+                <div class="form-group"><label class="form-label">Footer CTA Description</label><input class="form-input" id="g_footer_cta_desc" placeholder="Get a free consultation today"></div>
+                <div class="form-group"><label class="form-label">Footer CTA Button Text</label><input class="form-input" id="g_footer_cta_btn" placeholder="Get Free Quote"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEO & Analytics -->
+    <div class="section">
+        <div class="section__title"><span>📈</span> SEO & Analytics</div>
+        <div class="section__grid">
+            <div class="form-group"><label class="form-label">Default Meta Title Suffix</label><input class="form-input" id="g_meta_suffix" placeholder="| Ginger Healthcare"></div>
+            <div class="form-group"><label class="form-label">Default Meta Description</label><textarea class="form-textarea" id="g_meta_desc" style="min-height:60px" placeholder="World-class medical tourism..."></textarea></div>
+            <div class="form-group"><label class="form-label">Google Analytics ID</label><input class="form-input" id="g_ga_id" placeholder="G-XXXXXXXXXX"></div>
+            <div class="form-group"><label class="form-label">Google Tag Manager ID</label><input class="form-input" id="g_gtm_id" placeholder="GTM-XXXXXXX"></div>
+            <div class="form-group"><label class="form-label">Facebook Pixel ID</label><input class="form-input" id="g_fb_pixel" placeholder="123456789"></div>
+            <div class="form-group"><label class="form-label">Schema.org Organization Name</label><input class="form-input" id="g_schema_name" placeholder="Ginger Healthcare"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <div class="section">
+        <div class="section__title"><span>📜</span> Custom Scripts</div>
+        <div class="warning-box">⚠️ Only add trusted scripts. Incorrect code can break the website.</div>
+        <div class="form-group"><label class="form-label">Head Scripts (loaded in &lt;head&gt;)</label><textarea class="form-textarea css-editor" id="g_head_scripts" style="min-height:100px;background:#1E1E2E;color:#89B4FA" placeholder="<!-- Google Analytics, GTM, etc. -->"></textarea></div>
+        <div class="form-group"><label class="form-label">Body Scripts (loaded before &lt;/body&gt;)</label><textarea class="form-textarea css-editor" id="g_body_scripts" style="min-height:100px;background:#1E1E2E;color:#89B4FA" placeholder="<!-- Chat widgets, analytics, etc. -->"></textarea></div>
+    </div>
+</div>
+
+<!-- ===================== TAB 4: CUSTOM CSS ===================== -->
+<div class="tab-content" id="tab-css">
+    <div class="section">
+        <div class="section__title"><span>💻</span> Custom CSS</div>
+        <div class="section__desc">Add custom CSS that overrides default styles. Applied site-wide instantly. Use browser DevTools to find the selectors you want to change.</div>
+        <div class="warning-box">⚠️ Custom CSS is injected after the main stylesheet. Use with care — incorrect CSS can affect the layout.</div>
+        <textarea class="css-editor" id="c_custom_css" placeholder="/* Your custom CSS here */
+/* Example: */
+.hero-section {
+    background: linear-gradient(135deg, #071A33, #13315C);
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+.btn-primary {
+    border-radius: 50px;
+}"></textarea>
+    </div>
+
+    <!-- Quick CSS Snippets -->
+    <div class="section">
+        <div class="section__title"><span>⚡</span> Quick Snippets</div>
+        <div class="section__desc">Click to insert common CSS snippets</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Rounded buttons */\n.btn, .btn-primary, .btn-secondary {\n    border-radius: 50px;\n}\n')">Rounded Buttons</button>
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Larger headings */\nh1 { font-size: 3rem; }\nh2 { font-size: 2rem; }\nh3 { font-size: 1.5rem; }\n')">Larger Headings</button>
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Card shadows */\n.card, .treatment-card, .hospital-card {\n    box-shadow: 0 10px 30px rgba(0,0,0,0.08);\n}\n')">Card Shadows</button>
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Hide top announcement bar */\n.topbar-announcement {\n    display: none !important;\n}\n')">Hide Announcement Bar</button>
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Custom hero height */\n.hero-section {\n    min-height: 600px;\n}\n')">Taller Hero</button>
+            <button class="btn btn--outline btn--sm" onclick="insertCSS('/* Smooth animations */\n* {\n    transition: all 0.2s ease;\n}\n')">Smooth Animations</button>
+        </div>
+    </div>
+</div>
+
+</div>
+
+</div></main></div>
+
+<script>
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+    document.querySelectorAll('.mcp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ===== COLOR SYNC =====
+function syncColor(picker, hexId) {
+    document.getElementById(hexId).value = picker.value;
+    updateThemePreview();
+}
+function syncHex(hex, pickerId) {
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex.value)) {
+        document.getElementById(pickerId).value = hex.value;
+        updateThemePreview();
+    }
+}
+
+// ===== THEME PREVIEW =====
+function updateThemePreview() {
+    const primary = document.getElementById('t_primary_hex').value;
+    const secondary = document.getElementById('t_secondary_hex').value;
+    document.getElementById('previewBtn').style.background = primary;
+    document.getElementById('previewBtn2').style.background = secondary;
+}
+
+function updateFontPreview() {
+    const heading = document.getElementById('t_heading_font').value;
+    const body = document.getElementById('t_body_font').value;
+    document.getElementById('headingPreview').style.fontFamily = `'${heading}', serif`;
+    document.getElementById('bodyPreview').style.fontFamily = `'${body}', sans-serif`;
+}
+
+// ===== LOGO PREVIEW =====
+function previewLogo(inputId, imgId) {
+    const url = document.getElementById(inputId).value;
+    const img = document.getElementById(imgId);
+    if (url) { img.src = url; img.style.display = 'block'; img.onerror = () => img.style.display = 'none'; }
+    else img.style.display = 'none';
+}
+
+// ===== CSS SNIPPETS =====
+function insertCSS(snippet) {
+    const el = document.getElementById('c_custom_css');
+    el.value += (el.value ? '\n' : '') + snippet;
+    el.scrollTop = el.scrollHeight;
+    // Switch to CSS tab
+    switchTab('css');
+    document.querySelectorAll('.mcp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mcp-tab')[4].classList.add('active');
+}
+
+// ===== AI DESIGN ASSISTANT =====
+let aiGenerating = false;
+let lastAppliedCSS = '';
+
+async function aiSend(customMsg) {
+    const input = document.getElementById('aiChatInput');
+    const msg = customMsg || input.value.trim();
+    if (!msg || aiGenerating) return;
+    input.value = '';
+    aiGenerating = true;
+    document.getElementById('aiSendBtn').disabled = true;
+
+    const messages = document.getElementById('aiChatMessages');
+
+    // User message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'ai-msg ai-msg--user';
+    userDiv.textContent = msg;
+    messages.appendChild(userDiv);
+
+    // Loading
+    const loadDiv = document.createElement('div');
+    loadDiv.className = 'ai-msg ai-msg--bot';
+    loadDiv.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+    messages.appendChild(loadDiv);
+    messages.scrollTop = messages.scrollHeight;
+
+    try {
+        // Gather current settings context
+        const currentCSS = document.getElementById('c_custom_css').value;
+        const currentColors = `Primary: ${document.getElementById('t_primary_hex').value}, Secondary: ${document.getElementById('t_secondary_hex').value}, Dark BG: ${document.getElementById('t_dark_hex').value}, Accent: ${document.getElementById('t_accent_hex').value}`;
+        const heroTitle = document.getElementById('h_hero_title1').value + ' ' + document.getElementById('h_hero_title2').value;
+
+        const fullPrompt = `You are an AI design assistant for a medical tourism website called Ginger Healthcare.
+
+Current theme colors: ${currentColors}
+Current hero title: ${heroTitle || '(not set)'}
+Current custom CSS: ${currentCSS ? currentCSS.substring(0, 300) : '(none)'}
+
+The user wants: ${msg}
+
+Respond in this JSON format ONLY (no other text, no markdown, no code fences):
+{
+    "message": "Brief explanation of what you did",
+    "actions": [
+        {
+            "type": "css",
+            "value": "CSS code to add or replace"
+        },
+        {
+            "type": "setting",
+            "tab": "theme|homepage|global",
+            "field": "field_key from the control panel",
+            "value": "new value"
+        }
+    ]
+}
+
+Available setting fields:
+- theme tab: primary_color (#hex), secondary_color (#hex), dark_bg (#hex), accent_color (#hex), heading_font (font name), body_font (font name)
+- homepage tab: hero_badge, hero_title1, hero_title2, hero_desc, cta1_text, cta1_link, cta2_text, cta2_link, stat1_num, stat1_label, stat2_num, stat2_label, stat3_num, stat3_label, stat4_num, stat4_label, dest_title, dest_sub, spec_title, spec_sub, test_title, test_sub, blog_title, blog_sub
+- global tab: topbar_text, footer_desc, footer_copyright, meta_suffix, meta_desc
+
+For CSS changes, provide the full CSS to add. For color changes, use "type": "setting" with the hex value.
+If the request is just a question or suggestion, use only "message" with an empty "actions" array.`;
+
+        const r = await fetch('/api/ai/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: fullPrompt, type: 'design', context: 'master-control' })
+        });
+        const data = await r.json();
+
+        if (r.ok) {
+            let content = data.content || '';
+            // Try to parse JSON response
+            let parsed = null;
+            try {
+                // Clean up response - remove code fences if present
+                content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+                parsed = JSON.parse(content);
+            } catch(e) {
+                // Not JSON, show as plain text
+                loadDiv.innerHTML = content.replace(/</g,'&lt;').replace(/\n/g,'<br>');
+                aiGenerating = false;
+                document.getElementById('aiSendBtn').disabled = false;
+                messages.scrollTop = messages.scrollHeight;
+                return;
+            }
+
+            // Show message
+            let html = '<div style="margin-bottom:8px">' + (parsed.message || 'Done!') + '</div>';
+
+            if (parsed.actions && parsed.actions.length > 0) {
+                // Show what changes will be made
+                let changeList = '';
+                parsed.actions.forEach(a => {
+                    if (a.type === 'css') changeList += '• Custom CSS update<br>';
+                    if (a.type === 'setting') changeList += '• Set <code>' + a.field + '</code> → <code>' + (a.value || '').substring(0, 30) + '</code><br>';
+                });
+                html += '<div style="background:rgba(14,165,160,.1);padding:8px 12px;border-radius:8px;margin:8px 0;font-size:.8rem;color:rgba(255,255,255,.6)">' + changeList + '</div>';
+
+                // Action buttons
+                const actionsEncoded = encodeURIComponent(JSON.stringify(parsed.actions));
+                html += `<div class="ai-msg__actions">
+                    <button class="ai-msg__btn ai-msg__btn--apply" onclick="applyAIChanges('${actionsEncoded}')">✅ Apply Changes</button>
+                    <button class="ai-msg__btn ai-msg__btn--copy" onclick="copyAIResponse('${actionsEncoded}')">📄 Copy CSS</button>
+                </div>`;
+            }
+
+            loadDiv.innerHTML = html;
+        } else {
+            loadDiv.innerHTML = '❌ Error: ' + (data.error || 'Generation failed. Please try again.');
+        }
+    } catch(e) {
+        loadDiv.innerHTML = '❌ Connection failed. Please try again.';
+        console.error('AI error:', e);
+    }
+
+    aiGenerating = false;
+    document.getElementById('aiSendBtn').disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function applyAIChanges(encodedActions) {
+    try {
+        const actions = JSON.parse(decodeURIComponent(encodedActions));
+        const cssField = document.getElementById('c_custom_css');
+        lastAppliedCSS = cssField.value; // Save for undo
+
+        actions.forEach(action => {
+            if (action.type === 'css' && action.value) {
+                cssField.value += (cssField.value ? '\n\n' : '') + '/* AI Generated */\n' + action.value;
+            }
+            if (action.type === 'setting' && action.field) {
+                // Map field to element ID
+                const fieldMap = allFields[action.tab || 'theme'];
+                if (fieldMap && fieldMap[action.field]) {
+                    const el = document.getElementById(fieldMap[action.field]);
+                    if (el) {
+                        el.value = action.value || '';
+                        // Sync color pickers if needed
+                        if (el.classList.contains('color-hex')) {
+                            const pickerId = el.id.replace('_hex', '_color');
+                            const picker = document.getElementById(pickerId);
+                            if (picker && /^#[0-9A-Fa-f]{6}$/.test(el.value)) picker.value = el.value;
+                        }
+                    }
+                }
+            }
+        });
+
+        updateThemePreview();
+
+        // Show system message
+        const sysMsg = document.createElement('div');
+        sysMsg.className = 'ai-msg ai-msg--system';
+        sysMsg.innerHTML = '✅ Changes applied! Click <strong>💾 Save All Changes</strong> to push to the live site.';
+        document.getElementById('aiChatMessages').appendChild(sysMsg);
+        document.getElementById('aiChatMessages').scrollTop = document.getElementById('aiChatMessages').scrollHeight;
+
+    } catch(e) {
+        console.error('Apply error:', e);
+        alert('Failed to apply changes');
+    }
+}
+
+function copyAIResponse(encodedActions) {
+    try {
+        const actions = JSON.parse(decodeURIComponent(encodedActions));
+        const cssActions = actions.filter(a => a.type === 'css').map(a => a.value).join('\n\n');
+        if (cssActions) {
+            navigator.clipboard.writeText(cssActions);
+            const sysMsg = document.createElement('div');
+            sysMsg.className = 'ai-msg ai-msg--system';
+            sysMsg.textContent = '📋 CSS copied to clipboard';
+            document.getElementById('aiChatMessages').appendChild(sysMsg);
+        }
+    } catch(e) { console.error(e); }
+}
+
+// Auto-resize AI textarea
+document.getElementById('aiChatInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+// ===== FIELD DEFINITIONS =====
+const allFields = {
+    theme: {
+        primary_color: 't_primary_hex', secondary_color: 't_secondary_hex',
+        dark_bg: 't_dark_hex', accent_color: 't_accent_hex',
+        heading_font: 't_heading_font', body_font: 't_body_font',
+        logo_light: 't_logo_light', logo_dark: 't_logo_dark', favicon: 't_favicon'
+    },
+    homepage: {
+        hero_badge: 'h_hero_badge', hero_title1: 'h_hero_title1', hero_title2: 'h_hero_title2',
+        hero_desc: 'h_hero_desc', cta1_text: 'h_cta1_text', cta1_link: 'h_cta1_link',
+        cta2_text: 'h_cta2_text', cta2_link: 'h_cta2_link', hero_bg: 'h_hero_bg',
+        stat1_num: 'h_stat1_num', stat1_label: 'h_stat1_label',
+        stat2_num: 'h_stat2_num', stat2_label: 'h_stat2_label',
+        stat3_num: 'h_stat3_num', stat3_label: 'h_stat3_label',
+        stat4_num: 'h_stat4_num', stat4_label: 'h_stat4_label',
+        dest_title: 'h_dest_title', dest_sub: 'h_dest_sub',
+        spec_title: 'h_spec_title', spec_sub: 'h_spec_sub',
+        test_title: 'h_test_title', test_sub: 'h_test_sub',
+        blog_title: 'h_blog_title', blog_sub: 'h_blog_sub'
+    },
+    global: {
+        topbar_text: 'g_topbar_text', topbar_link: 'g_topbar_link',
+        header_cta: 'g_header_cta', header_cta_link: 'g_header_cta_link',
+        footer_desc: 'g_footer_desc', footer_copyright: 'g_footer_copyright',
+        footer_cta_head: 'g_footer_cta_head', footer_cta_desc: 'g_footer_cta_desc', footer_cta_btn: 'g_footer_cta_btn',
+        meta_suffix: 'g_meta_suffix', meta_desc: 'g_meta_desc',
+        ga_id: 'g_ga_id', gtm_id: 'g_gtm_id', fb_pixel: 'g_fb_pixel', schema_name: 'g_schema_name',
+        head_scripts: 'g_head_scripts', body_scripts: 'g_body_scripts'
+    },
+    css: {
+        custom_css: 'c_custom_css'
+    }
+};
+
+// ===== LOAD =====
+async function loadAll() {
+    try {
+        const r = await fetch('/api/page-content?page=master');
+        const data = await r.json();
+        data.forEach(item => {
+            // Find the element by matching section + field_key
+            const section = allFields[item.section];
+            if (section && section[item.field_key]) {
+                const el = document.getElementById(section[item.field_key]);
+                if (el) {
+                    el.value = item.field_value || '';
+                    // Sync color pickers
+                    if (el.type === 'text' && el.classList.contains('color-hex')) {
+                        const pickerId = el.id.replace('_hex', '_color');
+                        const picker = document.getElementById(pickerId);
+                        if (picker && /^#[0-9A-Fa-f]{6}$/.test(el.value)) picker.value = el.value;
+                    }
+                }
+            }
+        });
+        updateThemePreview();
+        updateFontPreview();
+        // Preview logos
+        if (document.getElementById('t_logo_light').value) previewLogo('t_logo_light', 'logoPreviewLight');
+        if (document.getElementById('t_logo_dark').value) previewLogo('t_logo_dark', 'logoPreviewDark');
+    } catch(e) { console.error('Load error:', e); }
+}
+
+// ===== SAVE =====
+async function saveAll() {
+    try {
+        const promises = [];
+        for (const [section, fields] of Object.entries(allFields)) {
+            for (const [key, elId] of Object.entries(fields)) {
+                const el = document.getElementById(elId);
+                if (!el) continue;
+                const value = el.value;
+                promises.push(
+                    fetch('/api/page-content', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            page: 'master',
+                            section: section,
+                            field_key: key,
+                            field_value: value,
+                            field_type: 'text'
+                        })
+                    })
+                );
+            }
+        }
+        await Promise.all(promises);
+        const msg = document.getElementById('savedMsg');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+    } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+// ===== AUTH =====
+(async()=>{try{const r=await fetch('/api/auth/me');if(!r.ok)return window.location.href='/login';const u=await r.json();document.getElementById('userName').textContent=u.name;document.getElementById('userRole').textContent=u.role.replace('_',' ').toUpperCase();document.getElementById('userAvatar').textContent=u.name.split(' ').map(n=>n[0]).join('')}catch(e){window.location.href='/login'}})();
+
+loadAll();
+</script></body></html>
