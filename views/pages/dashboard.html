@@ -6,6 +6,7 @@
     <title>Dashboard | Ginger Healthcare Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
+<script src="/js/sidebar.js" defer></script>
 </head>
 <body>
     <div class="layout">
@@ -59,24 +60,6 @@
     </div>
 
     <script>
-    // Load user info
-    async function loadUser() {
-        try {
-            const res = await fetch('/api/auth/me');
-            if (!res.ok) { window.location.href = '/login'; return; }
-            const user = await res.json();
-            document.getElementById('userName').textContent = user.name;
-            document.getElementById('userRole').textContent = user.role.replace('_', ' ').toUpperCase();
-            document.getElementById('userAvatar').textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
-
-            // Hide users link for non-super-admins
-            if (user.role !== 'super_admin') {
-                const ul = document.getElementById('usersLink');
-                if (ul) ul.style.display = 'none';
-            }
-        } catch(e) { window.location.href = '/login'; }
-    }
-
     // Load dashboard stats
     async function loadStats() {
         try {
@@ -102,9 +85,10 @@
     async function loadActivity() {
         try {
             const res = await fetch('/api/dashboard/activity');
-            const activities = await res.json();
+            const data = await res.json();
+            const activities = data.activities || data;
             const list = document.getElementById('activityList');
-            if (activities.length === 0) {
+            if (!activities || activities.length === 0) {
                 list.innerHTML = '<div class="empty-state">No activity yet. Start by creating content!</div>';
                 return;
             }
@@ -166,12 +150,18 @@
         if (r.ok) { updateMaintenanceUI(newState); }
     }
 
-    // Init
-    loadUser();
-    loadStats();
-    loadActivity();
-    loadMaintenance();
+    // Init - wait for sidebar.js to finish auth, then stagger API calls
+    async function init() {
+        // Wait for sidebar.js auth (no duplicate /api/auth/me call)
+        const user = await window.gingerUser;
+        if (!user) return; // Not authenticated
+        
+        // Stagger API calls to avoid 429 rate limiting
+        await loadStats();
+        await loadActivity();
+        await loadMaintenance();
+    }
+    init();
     </script>
-<script src="/js/sidebar.js"></script>
 </body>
 </html>
