@@ -97,7 +97,10 @@ app.get('/api/auth/me', apiAuth, async (req, res) => {
 
 // ============== DASHBOARD ==============
 app.get('/', authRequired, (req, res) => {
-    res.redirect('/master-control');
+    if (req.user && req.user.role === 'super_admin') {
+        return res.redirect('/master-control');
+    }
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'dashboard.html'));
 });
 
 // Dashboard stats API
