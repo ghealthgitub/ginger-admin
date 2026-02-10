@@ -127,12 +127,26 @@ app.get('/api/dashboard/stats', apiAuth, async (req, res) => {
 // Recent activity
 app.get('/api/dashboard/activity', apiAuth, async (req, res) => {
     try {
+        const { page = 1, limit = 50, user_id, action, entity_type } = req.query;
+        const offset = (page - 1) * limit;
+        let where = [];
+        let params = [];
+        let i = 1;
+        if (user_id) { where.push(`al.user_id = $${i++}`); params.push(user_id); }
+        if (action) { where.push(`al.action = $${i++}`); params.push(action); }
+        if (entity_type) { where.push(`al.entity_type = $${i++}`); params.push(entity_type); }
+        const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : '';
+        const countResult = await pool.query(`SELECT COUNT(*) FROM activity_log al ${whereClause}`, params);
+        const total = parseInt(countResult.rows[0].count);
+        params.push(limit, offset);
         const result = await pool.query(
-            `SELECT al.*, u.name as user_name FROM activity_log al
+            `SELECT al.*, u.name as user_name, u.email as user_email, u.role as user_role FROM activity_log al
              LEFT JOIN users u ON al.user_id = u.id
-             ORDER BY al.created_at DESC LIMIT 20`
+             ${whereClause}
+             ORDER BY al.created_at DESC LIMIT $${i++} OFFSET $${i++}`,
+            params
         );
-        res.json(result.rows);
+        res.json({ activities: result.rows, total, page: parseInt(page), pages: Math.ceil(total / limit) });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
