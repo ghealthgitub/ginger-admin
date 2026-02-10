@@ -50,9 +50,13 @@
 <script>
 let posts = [];
 async function load() {
-    const r = await fetch('/api/blog'); posts = await r.json();
-    document.getElementById('pageTitle').textContent = `Blog Posts (${posts.length})`;
-    filterPosts();
+    try {
+        const r = await fetch('/api/blog');
+        if (!r.ok) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; return; }
+        posts = await r.json();
+        document.getElementById('pageTitle').textContent = `Blog Posts (${posts.length})`;
+        filterPosts();
+    } catch(e) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; }
 }
 
 function filterPosts() {
