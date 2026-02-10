@@ -40,6 +40,7 @@ async function initDB() {
                 author_id INTEGER REFERENCES users(id),
                 meta_title VARCHAR(500),
                 meta_description TEXT,
+                focus_keywords TEXT,
                 published_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
@@ -281,6 +282,9 @@ async function initDB() {
                 PRIMARY KEY (doctor_id, treatment_id)
             );
         `);
+        // Add focus_keywords column if not exists
+        await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keywords TEXT`);
+
         console.log('✅ Database tables initialized');
     } catch (err) {
         console.error('❌ Database init error:', err.message);
