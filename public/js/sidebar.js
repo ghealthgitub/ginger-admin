@@ -10,15 +10,22 @@ window.gingerUser = (async function() {
     const sidebar = document.getElementById('sidebar');
 
     let user = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            const r = await fetch('/api/auth/me');
-            if (r.ok) { user = await r.json(); break; }
-            if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1))); continue; }
-            break;
-        } catch(e) {
-            if (attempt === 2) break;
-            await new Promise(ok => setTimeout(ok, 1000));
+    
+    // Check if dashboard already loaded user data
+    if (window._dashboardUser) {
+        user = window._dashboardUser;
+    } else {
+        // Fetch with retry
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const r = await fetch('/api/auth/me');
+                if (r.ok) { user = await r.json(); break; }
+                if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1500 * (attempt + 1))); continue; }
+                break;
+            } catch(e) {
+                if (attempt === 2) break;
+                await new Promise(ok => setTimeout(ok, 1500));
+            }
         }
     }
 

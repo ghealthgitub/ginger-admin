@@ -100,6 +100,38 @@ app.get('/', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'unified-dashboard.html'));
 });
 
+// COMBINED init endpoint - returns everything the dashboard needs in ONE call
+app.get('/api/dashboard/init', apiAuth, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [userResult, posts, testimonials, hospitals, doctors, submissions, newSubs, settings] = await Promise.all([
+            pool.query('SELECT id, name, email, role, avatar, last_login FROM users WHERE id = $1', [userId]),
+            pool.query("SELECT COUNT(*) FROM blog_posts"),
+            pool.query("SELECT COUNT(*) FROM testimonials"),
+            pool.query("SELECT COUNT(*) FROM hospitals"),
+            pool.query("SELECT COUNT(*) FROM doctors"),
+            pool.query("SELECT COUNT(*) FROM submissions"),
+            pool.query("SELECT COUNT(*) FROM submissions WHERE status = 'new'"),
+            pool.query("SELECT * FROM page_content WHERE page = 'master'")
+        ]);
+        res.json({
+            user: userResult.rows[0],
+            stats: {
+                blog_posts: parseInt(posts.rows[0].count),
+                testimonials: parseInt(testimonials.rows[0].count),
+                hospitals: parseInt(hospitals.rows[0].count),
+                doctors: parseInt(doctors.rows[0].count),
+                total_submissions: parseInt(submissions.rows[0].count),
+                new_submissions: parseInt(newSubs.rows[0].count)
+            },
+            settings: settings.rows
+        });
+    } catch (err) {
+        console.error('Dashboard init error:', err.message);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Dashboard stats API
 app.get('/api/dashboard/stats', apiAuth, async (req, res) => {
     try {

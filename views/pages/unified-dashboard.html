@@ -1185,51 +1185,45 @@ async function toggleUserStatus(id, currentActive) {
     } catch(e) { alert('Error'); }
 }
 
-// ===== ROLE-BASED INIT =====
-// Helper: fetch with retry on 429
-async function safeFetch(url, options) {
+// ===== SINGLE INIT CALL =====
+async function initDashboard() {
+    let data = null;
+    
+    // ONE API call gets everything
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
-            const r = await fetch(url, options);
-            if (r.status === 429) {
-                await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1)));
-                continue;
-            }
-            return r;
-        } catch(e) {
-            if (attempt === 2) throw e;
-            await new Promise(ok => setTimeout(ok, 1000));
-        }
-    }
-}
-
-async function initDashboard() {
-    // Single auth call — reuse from sidebar.js if available
-    let user = null;
-    if (window.gingerUser) {
-        try { user = await window.gingerUser; } catch(e) {}
-    }
-    if (!user) {
-        try {
-            const r = await safeFetch('/api/auth/me');
-            if (r && r.ok) user = await r.json();
-        } catch(e) {}
+            const r = await fetch('/api/dashboard/init');
+            if (r.ok) { data = await r.json(); break; }
+            if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1500 * (attempt + 1))); continue; }
+            break;
+        } catch(e) { await new Promise(ok => setTimeout(ok, 1500)); }
     }
     
-    // Default to super_admin if auth fails (server protects routes anyway)
-    const role = (user && user.role) ? user.role : 'super_admin';
-    const isSuperAdmin = role === 'super_admin';
-
-    // Set page title
-    document.getElementById('pageTitle').textContent = isSuperAdmin ? '🎛️ Command Center' : '📊 Dashboard';
-
-    // Show save button for admin
-    if (isSuperAdmin) {
-        const saveBtn = document.getElementById('saveAllBtn');
-        if (saveBtn) saveBtn.style.display = '';
+    if (!data || !data.user) {
+        // Fallback: just show tabs for super_admin
+        document.querySelectorAll('.mcp-tab')[0].classList.add('active');
+        document.getElementById('tab-ai').classList.add('active');
+        document.getElementById('saveAllBtn').style.display = '';
+        document.getElementById('pageTitle').textContent = '🎛️ Command Center';
+        return;
     }
 
-    // Hide elements not for this role
+    const user = data.user;
+    const role = user.role;
+    const isSuperAdmin = role === 'super_admin';
+
+    // === SET UP SIDEBAR (in case sidebar.js hasn't loaded yet) ===
+    window._dashboardUser = user;
+
+    // === PAGE TITLE ===
+    document.getElementById('pageTitle').textContent = isSuperAdmin ? '🎛️ Command Center' : '📊 Dashboard';
+
+    // === SAVE BUTTON ===
+    if (isSuperAdmin) {
+        document.getElementById('saveAllBtn').style.display = '';
+    }
+
+    // === HIDE ELEMENTS NOT FOR THIS ROLE ===
     document.querySelectorAll('[data-role]').forEach(el => {
         const roles = el.getAttribute('data-role').split(',');
         if (!roles.includes(role)) {
@@ -1237,7 +1231,7 @@ async function initDashboard() {
         }
     });
 
-    // Activate first visible tab
+    // === ACTIVATE FIRST VISIBLE TAB ===
     const visibleTabs = Array.from(document.querySelectorAll('.mcp-tab')).filter(t => t.style.display !== 'none');
     if (visibleTabs.length > 0) {
         visibleTabs[0].classList.add('active');
@@ -1249,29 +1243,55 @@ async function initDashboard() {
         }
     }
 
-    // Load data with delays between calls to avoid 429
-    try { await loadStats(); } catch(e) { console.log('Stats:', e); }
-    
-    if (isSuperAdmin) {
-        await new Promise(ok => setTimeout(ok, 500));
-        try { await loadAll(); } catch(e) { console.log('LoadAll:', e); }
+    // === POPULATE STATS (from same response) ===
+    if (data.stats) {
+        document.getElementById('statPosts').textContent = data.stats.blog_posts || 0;
+        document.getElementById('statHospitals').textContent = data.stats.hospitals || 0;
+        document.getElementById('statDoctors').textContent = data.stats.doctors || 0;
+        document.getElementById('statTestimonials').textContent = data.stats.testimonials || 0;
+        document.getElementById('statSubmissions').textContent = data.stats.total_submissions || 0;
+        document.getElementById('statNewSubs').textContent = data.stats.new_submissions || 0;
     }
 
-    // Load editor's recent activity
+    // === POPULATE SETTINGS (from same response) ===
+    if (isSuperAdmin && data.settings) {
+        data.settings.forEach(item => {
+            const section = allFields[item.section];
+            if (section && section[item.field_key]) {
+                const el = document.getElementById(section[item.field_key]);
+                if (el) {
+                    el.value = item.field_value || '';
+                    if (el.type === 'text' && el.classList.contains('color-hex')) {
+                        const pickerId = el.id.replace('_hex', '_color');
+                        const picker = document.getElementById(pickerId);
+                        if (picker && /^#[0-9A-Fa-f]{6}$/.test(el.value)) picker.value = el.value;
+                    }
+                }
+            }
+        });
+        updateThemePreview();
+        updateFontPreview();
+        previewLogo('t_logo_url', 'logoPreview');
+        previewLogo('t_footer_logo', 'footerLogoPreview');
+    }
+
+    // === EDITOR: LOAD RECENT ACTIVITY ===
     if (!isSuperAdmin) {
         try {
             const r = await fetch('/api/dashboard/activity?limit=10');
-            const data = await r.json();
-            const activities = data.activities || [];
-            const el = document.getElementById('editorActivityList');
-            if (el) {
-                if (activities.length === 0) {
-                    el.innerHTML = '<p style="color:var(--gray-400)">No activity yet. Start by creating content!</p>';
-                } else {
-                    el.innerHTML = activities.filter(a => a.user_id === user.id || !a.user_id).slice(0, 8).map(a => {
-                        const ago = timeAgo(new Date(a.created_at));
-                        return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between"><span><strong>${a.action}</strong> ${a.entity_type || ''} — ${a.details || ''}</span><span style="color:var(--gray-400);font-size:.78rem;white-space:nowrap">${ago}</span></div>`;
-                    }).join('');
+            if (r.ok) {
+                const actData = await r.json();
+                const activities = actData.activities || [];
+                const el = document.getElementById('editorActivityList');
+                if (el) {
+                    if (activities.length === 0) {
+                        el.innerHTML = '<p style="color:var(--gray-400)">No activity yet. Start creating!</p>';
+                    } else {
+                        el.innerHTML = activities.slice(0, 8).map(a => {
+                            const ago = timeAgo(new Date(a.created_at));
+                            return '<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between"><span><strong>' + a.action + '</strong> ' + (a.entity_type||'') + ' — ' + (a.details||'') + '</span><span style="color:var(--gray-400);font-size:.78rem;white-space:nowrap">' + ago + '</span></div>';
+                        }).join('');
+                    }
                 }
             }
         } catch(e) {}
