@@ -884,6 +884,9 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
 app.get('/settings', authRequired, roleRequired('super_admin'), (req, res) => {
     servePage(res, 'settings');
 });
+app.get('/master-control', authRequired, roleRequired('super_admin'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'master-control.html'));
+});
 
 // Settings API - Get all settings
 app.get('/api/settings', apiAuth, async (req, res) => {
