@@ -83,12 +83,12 @@ function filterPosts() {
         <tr id="row-${p.id}">
             <td><div class="post-thumb">${p.cover_image ? `<img src="${p.cover_image}" onerror="this.parentElement.innerHTML='📝'">` : '📝'}</div></td>
             <td class="post-title-col">
-                <strong><a href="/blog/edit/${p.id}" style="color:var(--navy)">${p.title}</a></strong>
+                <strong><a href="/blog/edit/${p.id}" target="_blank" style="color:var(--navy)">${p.title}</a></strong>
                 <span class="post-slug">/blog/${p.slug}/</span>
                 <div class="post-actions" style="margin-top:4px">
-                    <a href="/blog/edit/${p.id}" class="action-edit">Edit</a>
+                    <a href="/blog/edit/${p.id}" target="_blank" class="action-edit">Edit</a>
                     <button class="action-quick" onclick="toggleQuickEdit(${p.id})">Quick Edit</button>
-                    ${p.status === 'published' ? `<a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>` : `<a href="/blog/edit/${p.id}" class="action-view" style="background:#FFF7ED;color:#D97706;border-color:#FED7AA">Preview</a>`}
+                    ${p.status === 'published' ? `<a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>` : `<a href="/blog/edit/${p.id}" target="_blank" class="action-view" style="background:#FFF7ED;color:#D97706;border-color:#FED7AA">Preview</a>`}
                     <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
                 </div>
             </td>
