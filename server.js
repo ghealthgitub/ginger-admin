@@ -1034,59 +1034,6 @@ app.get('/api/theme-templates/:key', apiAuth, async (req, res) => {
 });
 
 // Sample data for template preview
-app.get('/api/theme-templates/preview-data/:key', apiAuth, async (req, res) => {
-    try {
-        const key = req.params.key;
-        let data = {};
-        if (key === 'blog-detail') {
-            const r = await pool.query("SELECT bp.*, u.name as author_name FROM blog_posts bp LEFT JOIN users u ON bp.author_id=u.id WHERE bp.status='published' ORDER BY bp.created_at DESC LIMIT 1");
-            data = { post: r.rows[0] || { title:'Sample Blog Post', content:'<p>This is a preview of your blog post template.</p><h2>Section Heading</h2><p>More content here with details about the topic.</p>', author_name:'Ginger Healthcare', read_time:5, category:'Health', excerpt:'Sample excerpt text', cover_image:'' } };
-        } else if (key === 'destination-detail') {
-            const r = await pool.query("SELECT * FROM destinations WHERE status='active' LIMIT 1");
-            const dest = r.rows[0] || { name:'India', flag:'🇮🇳', slug:'india', tagline:'World-class healthcare at affordable prices', description:'India is a leading medical tourism destination.', hospital_count:20, doctor_count:40, avg_savings:'60-80%' };
-            const h = await pool.query("SELECT * FROM hospitals WHERE status='active' LIMIT 3");
-            const d = await pool.query("SELECT d.*, h.name as hospital_name FROM doctors d LEFT JOIN hospitals h ON d.hospital_id=h.id WHERE d.status='active' LIMIT 3");
-            data = { destination: dest, hospitals: h.rows, doctors: d.rows };
-        } else if (key === 'specialty-detail') {
-            const r = await pool.query("SELECT * FROM specialties WHERE status='active' LIMIT 1");
-            const spec = r.rows[0] || { name:'Cardiac Surgery', icon:'❤️', slug:'cardiac-surgery', description:'Advanced cardiac procedures' };
-            const t = await pool.query("SELECT * FROM treatments WHERE status='active' LIMIT 4");
-            data = { specialty: spec, treatments: t.rows };
-        } else if (key === 'treatment-detail') {
-            const r = await pool.query("SELECT t.*, s.icon as specialty_icon FROM treatments t LEFT JOIN specialties s ON t.specialty_id=s.id WHERE t.status='active' LIMIT 1");
-            const treat = r.rows[0] || { name:'Knee Replacement', description:'Total knee replacement surgery', cost_range_usd:'$4,000-$8,000', duration:'2-3 hours', recovery_time:'4-6 weeks', specialty_icon:'🦴' };
-            const c = await pool.query("SELECT tc.*, d.name as dest_name, d.flag_emoji as dest_flag FROM treatment_costs tc LEFT JOIN destinations d ON tc.destination_id=d.id LIMIT 3");
-            data = { treatment: treat, costs: c.rows };
-        } else if (key === 'hospital-detail') {
-            const r = await pool.query("SELECT h.*, d.name as country FROM hospitals h LEFT JOIN destinations d ON h.destination_id=d.id WHERE h.status='active' LIMIT 1");
-            const hosp = r.rows[0] || { name:'Apollo Hospital', city:'New Delhi', country:'India', beds:700, established:1983, rating:4.8, accreditations:['JCI','NABH'] };
-            const docs = await pool.query("SELECT * FROM doctors WHERE status='active' LIMIT 3");
-            data = { hospital: hosp, doctors: docs.rows };
-        } else if (key === 'doctor-detail') {
-            const r = await pool.query("SELECT d.*, h.name as hospital_name, h.slug as hospital_slug FROM doctors d LEFT JOIN hospitals h ON d.hospital_id=h.id WHERE d.status='active' LIMIT 1");
-            data = { doctor: r.rows[0] || { name:'Dr. Sharma', title:'Senior Cardiologist', specialty:'Cardiac Surgery', experience_years:20, description:'Leading cardiac surgeon', hospital_name:'Apollo Hospital', hospital_slug:'apollo-hospital' } };
-        } else if (key === 'blog-list') {
-            const r = await pool.query("SELECT * FROM blog_posts WHERE status='published' ORDER BY created_at DESC LIMIT 6");
-            data = { posts: r.rows };
-        } else if (key === 'destinations-list') {
-            const r = await pool.query("SELECT * FROM destinations WHERE status='active' ORDER BY sort_order");
-            data = { destinations: r.rows };
-        } else if (key === 'specialties-list') {
-            const r = await pool.query("SELECT * FROM specialties WHERE status='active' ORDER BY sort_order");
-            data = { specialties: r.rows };
-        } else if (key === 'results') {
-            const r = await pool.query("SELECT * FROM testimonials WHERE status='published' ORDER BY created_at DESC LIMIT 6");
-            data = { testimonials: r.rows };
-        }
-        res.json(data);
-    } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// Template Studio page
-app.get('/theme-templates/edit/:key', authRequired, roleRequired('super_admin'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'template-studio.html'));
-});
-
 app.put('/api/theme-templates/:key', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         const { label, category, description, html_template, css, is_active } = req.body;
