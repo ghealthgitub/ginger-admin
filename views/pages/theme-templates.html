@@ -121,6 +121,7 @@ function render() {
         h += '<div class="tt-hdr-desc">' + t.desc + '</div>';
         h += '</div><div class="tt-hdr-acts">';
         h += '<div class="tt-toggle' + (on ? ' on' : '') + '" onclick="this.classList.toggle(\'on\')"></div>';
+        h += '<a href="/theme-templates/edit/' + t.key + '" class="btn-save" style="text-decoration:none;background:#0B2545" target="_blank">🎨 Edit Studio</a> ';
         h += '<button class="btn-save" onclick="doSave(\'' + t.key + '\')">💾 Save</button>';
         if (s) h += ' <button class="btn-rst" onclick="doReset(\'' + t.key + '\')">↩ Reset</button>';
         h += '</div></div>';

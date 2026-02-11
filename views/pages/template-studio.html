@@ -1,0 +1,418 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Studio | Ginger Admin</title>
+<link rel="stylesheet" href="/css/admin.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif}
+.studio{display:flex;height:100vh;flex-direction:column}
+.studio-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:#0B2545;color:#fff;flex-shrink:0}
+.studio-topbar__left{display:flex;align-items:center;gap:12px}
+.studio-topbar__back{color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:6px;transition:all .2s}
+.studio-topbar__back:hover{background:rgba(255,255,255,.1);color:#fff}
+.studio-topbar__title{font-weight:600;font-size:1rem}
+.studio-topbar__icon{font-size:1.2rem}
+.studio-topbar__right{display:flex;align-items:center;gap:10px}
+.studio-btn{padding:8px 18px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:6px}
+.studio-btn--save{background:#0EA5A0;color:#fff}
+.studio-btn--save:hover{background:#0c918c}
+.studio-btn--preview{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.studio-btn--preview:hover{background:rgba(255,255,255,.2)}
+.studio-btn--preview.active{background:#0EA5A0;border-color:#0EA5A0}
+.studio-saved{color:#34D399;font-weight:600;font-size:.82rem;display:none;align-items:center;gap:4px}
+.studio-body{display:flex;flex:1;overflow:hidden}
+.panel-code{width:50%;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #1e1e2e}
+.panel-preview{width:50%;display:flex;flex-direction:column;overflow:hidden;background:#f5f5f5}
+.panel-code.full{width:100%}
+.panel-preview.full{width:100%}
+.panel-code.hidden,.panel-preview.hidden{display:none}
+.code-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#181825;border-bottom:1px solid #313244;flex-shrink:0}
+.code-tabs{display:flex;gap:2px}
+.code-tab{padding:6px 14px;font-size:.78rem;font-weight:600;color:#6c7086;cursor:pointer;border-radius:6px;transition:all .2s;border:none;background:none}
+.code-tab.active{color:#cdd6f4;background:#313244}
+.code-tab:hover:not(.active){color:#a6adc8}
+.code-info{font-size:.72rem;color:#585b70}
+.code-editor{flex:1;overflow:hidden;position:relative}
+.code-editor textarea{width:100%;height:100%;background:#1e1e2e;color:#cdd6f4;font-family:'Fira Code','Consolas',monospace;font-size:.82rem;line-height:1.7;padding:16px 20px;border:none;outline:none;resize:none;tab-size:4}
+.code-editor textarea::selection{background:rgba(14,165,160,.3)}
+.code-editor textarea::placeholder{color:#45475a}
+.preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
+.preview-toolbar__title{font-size:.82rem;font-weight:600;color:#0B2545;display:flex;align-items:center;gap:6px}
+.preview-toolbar__actions{display:flex;gap:6px}
+.preview-device{padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.75rem;cursor:pointer;background:#fff;color:#6b7280;transition:all .15s}
+.preview-device.active{background:#0B2545;color:#fff;border-color:#0B2545}
+.preview-frame-wrap{flex:1;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:16px;background:#e5e7eb}
+.preview-frame-wrap iframe{background:#fff;border:none;box-shadow:0 2px 20px rgba(0,0,0,.12);border-radius:8px;transition:width .3s}
+.vars-bar{padding:8px 16px;background:#11111b;border-bottom:1px solid #313244;display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.vars-bar__label{font-size:.72rem;color:#585b70;font-weight:600;margin-right:4px}
+.vars-bar .vt{display:inline-block;padding:2px 8px;font-size:.7rem;font-family:'Fira Code',monospace;background:#313244;color:#a6adc8;border-radius:4px;cursor:pointer;transition:all .15s}
+.vars-bar .vt:hover{background:#0EA5A0;color:#fff}
+.drag-handle{width:5px;background:#1e1e2e;cursor:col-resize;flex-shrink:0;transition:background .2s;position:relative}
+.drag-handle:hover,.drag-handle.dragging{background:#0EA5A0}
+.drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#585b70;font-size:10px}
+@media(max-width:900px){.panel-code,.panel-preview{width:100%}.panel-preview{display:none}.drag-handle{display:none}}
+</style>
+</head><body>
+<div class="studio">
+    <!-- TOPBAR -->
+    <div class="studio-topbar">
+        <div class="studio-topbar__left">
+            <a href="/theme-templates" class="studio-topbar__back">← Back</a>
+            <span class="studio-topbar__icon" id="tplIcon">📄</span>
+            <span class="studio-topbar__title" id="tplTitle">Template Studio</span>
+        </div>
+        <div class="studio-topbar__right">
+            <span class="studio-saved" id="savedMsg">✅ Saved!</span>
+            <button class="studio-btn studio-btn--preview" id="btnToggleView" onclick="toggleView()">📱 Split View</button>
+            <button class="studio-btn studio-btn--save" onclick="saveTemplate()">💾 Save Template</button>
+        </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="studio-body">
+        <!-- CODE PANEL -->
+        <div class="panel-code" id="panelCode">
+            <div class="code-toolbar">
+                <div class="code-tabs">
+                    <button class="code-tab active" onclick="switchCodeTab('html',this)">HTML / EJS</button>
+                    <button class="code-tab" onclick="switchCodeTab('css',this)">Custom CSS</button>
+                </div>
+                <div class="code-info" id="codeInfo">0 lines</div>
+            </div>
+            <div class="vars-bar" id="varsBar">
+                <span class="vars-bar__label">VARIABLES:</span>
+            </div>
+            <div class="code-editor">
+                <textarea id="htmlEditor" placeholder="Enter your EJS template code here..." spellcheck="false"></textarea>
+                <textarea id="cssEditor" placeholder="/* Custom CSS for this template */" spellcheck="false" style="display:none"></textarea>
+            </div>
+        </div>
+
+        <!-- DRAG HANDLE -->
+        <div class="drag-handle" id="dragHandle"></div>
+
+        <!-- PREVIEW PANEL -->
+        <div class="panel-preview" id="panelPreview">
+            <div class="preview-toolbar">
+                <div class="preview-toolbar__title">👁️ Live Preview</div>
+                <div class="preview-toolbar__actions">
+                    <button class="preview-device active" data-w="100%" onclick="setDevice(this)">🖥 Desktop</button>
+                    <button class="preview-device" data-w="768px" onclick="setDevice(this)">📱 Tablet</button>
+                    <button class="preview-device" data-w="375px" onclick="setDevice(this)">📱 Mobile</button>
+                    <button class="preview-device" data-w="refresh" onclick="renderPreview()">🔄</button>
+                </div>
+            </div>
+            <div class="preview-frame-wrap" id="previewWrap">
+                <iframe id="previewFrame" style="width:100%;height:100%"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var templateKey = window.location.pathname.split('/').pop();
+var templateData = null;
+var previewData = null;
+var siteCSS = '';
+var currentCodeTab = 'html';
+var previewTimer = null;
+var viewMode = 'split'; // split | code | preview
+
+// Template metadata
+var TMETA = {
+    'blog-detail':{label:'Blog Post',icon:'📝',vars:'post.title,post.content,post.excerpt,post.author_name,post.read_time,post.category,post.cover_image'},
+    'destination-detail':{label:'Destination',icon:'🌍',vars:'destination.name,destination.flag,destination.tagline,destination.description,destination.hospital_count,destination.doctor_count,destination.avg_savings,hospitals[],doctors[]'},
+    'specialty-detail':{label:'Specialty',icon:'🏷️',vars:'specialty.name,specialty.icon,specialty.description,specialty.long_description,treatments[]'},
+    'treatment-detail':{label:'Treatment',icon:'💊',vars:'treatment.name,treatment.description,treatment.long_description,treatment.cost_range_usd,treatment.duration,treatment.recovery_time,treatment.specialty_icon,costs[]'},
+    'hospital-detail':{label:'Hospital',icon:'🏥',vars:'hospital.name,hospital.description,hospital.city,hospital.country,hospital.beds,hospital.established,hospital.rating,hospital.accreditations,doctors[]'},
+    'doctor-detail':{label:'Doctor',icon:'👨‍⚕️',vars:'doctor.name,doctor.title,doctor.specialty,doctor.experience_years,doctor.description,doctor.qualifications,doctor.hospital_name,doctor.hospital_slug'},
+    'blog-list':{label:'Blog Listing',icon:'📝',vars:'posts[].title,posts[].slug,posts[].excerpt,posts[].category,posts[].read_time'},
+    'destinations-list':{label:'Destinations Listing',icon:'🌍',vars:'destinations[].name,destinations[].slug,destinations[].flag'},
+    'specialties-list':{label:'Specialties Listing',icon:'🏷️',vars:'specialties[].name,specialties[].slug,specialties[].icon'},
+    'results':{label:'Results / Testimonials',icon:'⭐',vars:'testimonials[].patient_name,testimonials[].quote,testimonials[].rating'},
+    'get-quote':{label:'Get Quote Form',icon:'📋',vars:''},
+    'cost-calculator':{label:'Cost Calculator',icon:'🧮',vars:''},
+    'contact':{label:'Contact Page',icon:'📞',vars:''}
+};
+
+// ===== INIT =====
+async function init() {
+    var meta = TMETA[templateKey];
+    if (!meta) { document.body.innerHTML = '<h2 style="padding:40px">Template not found: ' + templateKey + '</h2>'; return; }
+
+    document.getElementById('tplTitle').textContent = meta.label + ' Template';
+    document.getElementById('tplIcon').textContent = meta.icon;
+    document.title = meta.label + ' Template Studio | Ginger Admin';
+
+    // Build variables bar
+    if (meta.vars) {
+        var vb = document.getElementById('varsBar');
+        meta.vars.split(',').forEach(function(v) {
+            var sp = document.createElement('span');
+            sp.className = 'vt';
+            sp.textContent = '<%= ' + v.trim() + ' %>';
+            sp.onclick = function() {
+                navigator.clipboard.writeText('<%= ' + v.trim() + ' %>');
+                sp.style.background = '#0EA5A0'; sp.style.color = '#fff';
+                setTimeout(function(){ sp.style.background = ''; sp.style.color = ''; }, 600);
+            };
+            vb.appendChild(sp);
+        });
+    }
+
+    // Load saved template (if exists)
+    try {
+        var r = await fetch('/api/theme-templates/' + templateKey);
+        if (r.ok) {
+            templateData = await r.json();
+            document.getElementById('htmlEditor').value = templateData.html_template || '';
+            document.getElementById('cssEditor').value = templateData.css || '';
+        }
+    } catch(e) {}
+
+    // If no saved template, load default from theme-templates page
+    if (!document.getElementById('htmlEditor').value) {
+        try {
+            var r2 = await fetch('/theme-templates');
+            if (r2.ok) {
+                var html = await r2.text();
+                var m = html.match(/id="tpl-defaults"[^>]*>([\s\S]*?)<\/script>/);
+                if (m) {
+                    var defaults = JSON.parse(m[1]);
+                    if (defaults[templateKey]) {
+                        document.getElementById('htmlEditor').value = defaults[templateKey];
+                    }
+                }
+            }
+        } catch(e) {}
+    }
+
+    // Load preview data from DB
+    try {
+        var r3 = await fetch('/api/theme-templates/preview-data/' + templateKey);
+        if (r3.ok) previewData = await r3.json();
+    } catch(e) {}
+
+    // Load site CSS for preview
+    try {
+        var r4 = await fetch('https://ginger.healthcare/css/style.css');
+        if (r4.ok) siteCSS = await r4.text();
+    } catch(e) {
+        siteCSS = ':root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--font-display:"Playfair Display",serif;--font-body:"DM Sans",sans-serif;--radius-sm:8px;--radius-md:12px}body{font-family:var(--font-body);color:var(--gray-500)}';
+    }
+
+    updateLineCount();
+    renderPreview();
+
+    // Live preview on typing (debounced)
+    document.getElementById('htmlEditor').addEventListener('input', function() {
+        updateLineCount();
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(renderPreview, 600);
+    });
+    document.getElementById('cssEditor').addEventListener('input', function() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(renderPreview, 600);
+    });
+}
+
+// ===== RENDER PREVIEW =====
+function renderPreview() {
+    var ejs = document.getElementById('htmlEditor').value;
+    var css = document.getElementById('cssEditor').value;
+    var frame = document.getElementById('previewFrame');
+
+    // Simple EJS-to-HTML conversion for preview
+    var html = ejs;
+    if (previewData) {
+        // Replace <%= var %> with actual values
+        html = html.replace(/<%=\s*([\w\.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
+            try {
+                var cleanExpr = expr.split('||')[0].trim();
+                var fallback = expr.split('||')[1];
+                if (fallback) fallback = fallback.trim().replace(/^['"]|['"]$/g, '');
+                var val = resolveValue(previewData, cleanExpr);
+                if (val === undefined || val === null) val = fallback || '';
+                if (Array.isArray(val)) val = val.join(', ');
+                return String(val);
+            } catch(e) { return match; }
+        });
+        // Replace <%- var %> (unescaped) same way
+        html = html.replace(/<%-\s*([\w\.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
+            try {
+                var cleanExpr = expr.split('||')[0].trim();
+                var fallback = expr.split('||')[1];
+                if (fallback) fallback = fallback.trim().replace(/^['"]|['"]$/g, '');
+                var val = resolveValue(previewData, cleanExpr);
+                if (val === undefined || val === null) val = fallback || '';
+                return String(val);
+            } catch(e) { return match; }
+        });
+        // Handle forEach loops: <% items.forEach(x => { %> ... <% }); %>
+        html = html.replace(/<%\s*(\w+)\.forEach\(\s*(?:\(?\s*(\w+)(?:\s*,\s*\w+)?\s*\)?\s*=>|function\s*\(\s*(\w+)\s*\))\s*\{?\s*%>([\s\S]*?)<%\s*\}?\);?\s*%>/g, function(match, arrName, itemVar1, itemVar2, body) {
+            var itemVar = itemVar1 || itemVar2;
+            var arr = resolveValue(previewData, arrName);
+            if (!Array.isArray(arr) || arr.length === 0) return '';
+            return arr.map(function(item) {
+                return body.replace(/<%=\s*(\w+)\.([\w.]+)\s*%>/g, function(m, v, prop) {
+                    if (v === itemVar) return item[prop] !== undefined ? String(item[prop]) : '';
+                    return m;
+                });
+            }).join('');
+        });
+        // Handle if blocks: <% if (condition) { %> ... <% } %>
+        html = html.replace(/<%\s*if\s*\(([^)]+)\)\s*\{\s*%>([\s\S]*?)<%\s*\}\s*%>/g, function(match, cond, body) {
+            try {
+                var cleanCond = cond.replace(/(\w+(?:\.\w+)+)/g, function(path) {
+                    var val = resolveValue(previewData, path);
+                    if (val === undefined) return 'undefined';
+                    if (typeof val === 'string') return '"' + val + '"';
+                    return String(val);
+                });
+                // Replace .length with actual length
+                cleanCond = cleanCond.replace(/"(\d+)"/g, '$1');
+                if (eval(cleanCond)) return body;
+                return '';
+            } catch(e) { return body; }
+        });
+        // Clean up any remaining EJS tags
+        html = html.replace(/<%[\s\S]*?%>/g, '');
+    }
+
+    // Build full preview HTML
+    var previewHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    previewHtml += '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">';
+    previewHtml += '<style>' + siteCSS + '</style>';
+    if (css) previewHtml += '<style>' + css + '</style>';
+    previewHtml += '</head><body>';
+    // Add a mini site header for context
+    previewHtml += '<div style="background:#0B2545;padding:12px 32px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="background:#F26522;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem">G</div><span style="color:#fff;font-weight:600;font-family:DM Sans,sans-serif">Ginger Healthcare</span></div><div style="display:flex;gap:16px;align-items:center"><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Destinations</a><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Specialties</a><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Blog</a><span style="background:#0EA5A0;color:#fff;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600">Get Free Quote</span></div></div>';
+    previewHtml += html;
+    previewHtml += '</body></html>';
+
+    frame.srcdoc = previewHtml;
+}
+
+function resolveValue(obj, path) {
+    var parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
+    var val = obj;
+    for (var i = 0; i < parts.length; i++) {
+        if (val === undefined || val === null) return undefined;
+        val = val[parts[i]];
+    }
+    return val;
+}
+
+// ===== CODE TABS =====
+function switchCodeTab(tab, el) {
+    currentCodeTab = tab;
+    document.querySelectorAll('.code-tab').forEach(function(t){t.classList.remove('active')});
+    el.classList.add('active');
+    document.getElementById('htmlEditor').style.display = tab === 'html' ? '' : 'none';
+    document.getElementById('cssEditor').style.display = tab === 'css' ? '' : 'none';
+    updateLineCount();
+}
+
+function updateLineCount() {
+    var ed = currentCodeTab === 'html' ? document.getElementById('htmlEditor') : document.getElementById('cssEditor');
+    var lines = (ed.value || '').split('\n').length;
+    document.getElementById('codeInfo').textContent = lines + ' lines';
+}
+
+// ===== VIEW MODES =====
+function toggleView() {
+    var modes = ['split', 'code', 'preview'];
+    var idx = (modes.indexOf(viewMode) + 1) % modes.length;
+    viewMode = modes[idx];
+    var pc = document.getElementById('panelCode');
+    var pp = document.getElementById('panelPreview');
+    var dh = document.getElementById('dragHandle');
+    var btn = document.getElementById('btnToggleView');
+    pc.className = 'panel-code'; pp.className = 'panel-preview'; dh.style.display = '';
+    if (viewMode === 'code') { pp.classList.add('hidden'); dh.style.display = 'none'; pc.classList.add('full'); btn.textContent = '👁️ Show Preview'; }
+    else if (viewMode === 'preview') { pc.classList.add('hidden'); dh.style.display = 'none'; pp.classList.add('full'); btn.textContent = '✏️ Show Code'; btn.classList.add('active'); }
+    else { btn.textContent = '📱 Split View'; btn.classList.remove('active'); }
+    if (viewMode !== 'code') renderPreview();
+}
+
+// ===== RESPONSIVE PREVIEW =====
+function setDevice(el) {
+    var w = el.getAttribute('data-w');
+    if (w === 'refresh') { renderPreview(); return; }
+    document.querySelectorAll('.preview-device').forEach(function(d){d.classList.remove('active')});
+    el.classList.add('active');
+    document.getElementById('previewFrame').style.width = w;
+}
+
+// ===== SAVE =====
+async function saveTemplate() {
+    var meta = TMETA[templateKey];
+    try {
+        var r = await fetch('/api/theme-templates/' + templateKey, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                label: meta.label,
+                category: templateKey.includes('list') || templateKey === 'results' ? 'listing' : templateKey === 'get-quote' || templateKey === 'cost-calculator' || templateKey === 'contact' ? 'page' : 'detail',
+                description: '',
+                html_template: document.getElementById('htmlEditor').value,
+                css: document.getElementById('cssEditor').value,
+                is_active: true
+            })
+        });
+        if (r.ok) {
+            templateData = await r.json();
+            var msg = document.getElementById('savedMsg');
+            msg.style.display = 'flex';
+            setTimeout(function(){msg.style.display='none'}, 3000);
+        } else { alert('Save failed'); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ===== DRAG HANDLE =====
+(function() {
+    var handle = document.getElementById('dragHandle');
+    var codePanel = document.getElementById('panelCode');
+    var dragging = false;
+    handle.addEventListener('mousedown', function(e) {
+        dragging = true; handle.classList.add('dragging');
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        var pct = (e.clientX / window.innerWidth) * 100;
+        pct = Math.max(25, Math.min(75, pct));
+        codePanel.style.width = pct + '%';
+    });
+    document.addEventListener('mouseup', function() {
+        dragging = false; handle.classList.remove('dragging');
+    });
+})();
+
+// ===== TAB SUPPORT IN TEXTAREA =====
+document.getElementById('htmlEditor').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        var s = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = s + 4;
+    }
+});
+document.getElementById('cssEditor').addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        var s = this.selectionStart, end = this.selectionEnd;
+        this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = s + 4;
+    }
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveTemplate(); }
+});
+
+init();
+</script>
+</body></html>
