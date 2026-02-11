@@ -1013,6 +1013,60 @@ app.put('/api/settings', apiAuth, async (req, res) => {
     } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ============== THEME TEMPLATES ==============
+app.get('/theme-templates', authRequired, roleRequired('super_admin'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'theme-templates.html'));
+});
+
+app.get('/api/theme-templates', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM theme_templates ORDER BY category, label');
+        res.json(result.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/theme-templates/:key', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM theme_templates WHERE template_key=$1', [req.params.key]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Template not found' });
+        res.json(result.rows[0]);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/theme-templates/:key', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const { label, category, description, html_template, css, is_active } = req.body;
+        const result = await pool.query(
+            `INSERT INTO theme_templates (template_key, label, category, description, html_template, css, is_active, updated_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+             ON CONFLICT (template_key) DO UPDATE SET label=$2, category=$3, description=$4, html_template=$5, css=$6, is_active=$7, updated_by=$8, updated_at=NOW()
+             RETURNING *`,
+            [req.params.key, label, category || 'detail', description, html_template, css, is_active !== false, req.user.id]
+        );
+        await logActivity(req.user.id, 'update', 'theme_template', result.rows[0].id, `Updated template: ${label}`);
+        res.json(result.rows[0]);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/theme-templates/:key', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        await pool.query('DELETE FROM theme_templates WHERE template_key=$1', [req.params.key]);
+        await logActivity(req.user.id, 'delete', 'theme_template', null, `Deleted template: ${req.params.key}`);
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Public API for website to fetch templates
+app.get('/api/public/templates', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    try {
+        const result = await pool.query('SELECT template_key, html_template, css FROM theme_templates WHERE is_active=true');
+        const map = {};
+        result.rows.forEach(r => { map[r.template_key] = { html: r.html_template, css: r.css }; });
+        res.json(map);
+    } catch(e) { res.json({}); }
+});
+
 // ============== STARTUP ==============
 async function startServer() {
     try {

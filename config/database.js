@@ -285,6 +285,23 @@ async function initDB() {
         // Add focus_keywords column if not exists
         await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keywords TEXT`);
 
+        // Theme Templates table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS theme_templates (
+                id SERIAL PRIMARY KEY,
+                template_key VARCHAR(100) UNIQUE NOT NULL,
+                label VARCHAR(200) NOT NULL,
+                category VARCHAR(50) NOT NULL DEFAULT 'detail',
+                description TEXT,
+                html_template TEXT NOT NULL,
+                css TEXT,
+                is_active BOOLEAN DEFAULT true,
+                updated_by INTEGER REFERENCES users(id),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+
         console.log('✅ Database tables initialized');
     } catch (err) {
         console.error('❌ Database init error:', err.message);

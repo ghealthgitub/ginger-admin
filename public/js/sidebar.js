@@ -71,6 +71,7 @@ window.gingerUser = (async function() {
         { href: '/ai-assistant', icon: '🤖', label: 'AI Assistant', roles: ['super_admin'] },
         { href: '/users', icon: '👥', label: 'Users', roles: ['super_admin'] },
         { href: '/settings', icon: '⚙️', label: 'Settings', roles: ['super_admin'] },
+        { href: '/theme-templates', icon: '🎨', label: 'Theme Templates', roles: ['super_admin'] },
     ];
 
     let navHTML = '';
