@@ -67,6 +67,7 @@ window.gingerUser = (async function() {
         { href: '/static-pages', icon: '📄', label: 'Static Pages', roles: ['super_admin', 'editor'] },
         { href: '/page-content', icon: '🔧', label: 'Page Content', roles: ['super_admin'] },
         { href: '/media', icon: '🖼️', label: 'Media Library', roles: ['super_admin', 'editor'] },
+        { href: '/theme-templates', icon: '🎨', label: 'Theme Templates', roles: ['super_admin'] },
         { section: 'Tools', roles: ['super_admin'] },
         { href: '/ai-assistant', icon: '🤖', label: 'AI Assistant', roles: ['super_admin'] },
         { href: '/users', icon: '👥', label: 'Users', roles: ['super_admin'] },
