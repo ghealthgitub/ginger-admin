@@ -244,6 +244,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#F0F2F5;height:100vh;
             <button class="feat-img-btn" onclick="openMediaGallery()">🖼️ Gallery</button>
         </div>
         <input type="hidden" id="coverImage">
+        <input type="text" id="coverImageDisplay" class="pl-input" placeholder="Image URL will appear here" style="margin-top:6px;font-size:.75rem" oninput="document.getElementById('coverImage').value=this.value">
     </div>
 
     <!-- Status -->
@@ -476,21 +477,43 @@ function renderTags() {
 }
 
 // ===== FEATURED IMAGE =====
-function handleFeatImage(input) {
+async function handleFeatImage(input) {
     const file = input.files[0];
     if (!file) return;
-    // For now, create object URL for preview. In production, upload to server.
-    const url = URL.createObjectURL(file);
-    document.getElementById('featImgPreview').src = url;
-    document.getElementById('featImgPreview').style.display = 'block';
-    document.getElementById('coverImage').value = url;
+    const preview = document.getElementById('featImgPreview');
+    const coverInput = document.getElementById('coverImage');
+    // Show temporary preview while uploading
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+    coverInput.value = 'Uploading...';
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (r.ok) {
+            const data = await r.json();
+            preview.src = data.url;
+            coverInput.value = data.url;
+            document.getElementById('coverImageDisplay').value = data.url;
+        } else {
+            alert('Image upload failed');
+            coverInput.value = '';
+            preview.style.display = 'none';
+        }
+    } catch(e) {
+        alert('Upload error: ' + e.message);
+        coverInput.value = '';
+        preview.style.display = 'none';
+    }
 }
 function promptImageUrl() {
-    const url = prompt('Enter image URL:');
+    var curUrl = document.getElementById('coverImage').value || '';
+    var url = prompt('Enter image URL:', curUrl);
     if (url) {
         document.getElementById('featImgPreview').src = url;
         document.getElementById('featImgPreview').style.display = 'block';
         document.getElementById('coverImage').value = url;
+        document.getElementById('coverImageDisplay').value = url;
     }
 }
 function openMediaGallery() {
@@ -575,6 +598,7 @@ async function loadPost() {
         document.getElementById('category').value = postData.category || '';
         document.getElementById('status').value = postData.status || 'draft';
         document.getElementById('coverImage').value = postData.cover_image || '';
+        document.getElementById('coverImageDisplay').value = postData.cover_image || '';
         if (postData.cover_image) {
             document.getElementById('featImgPreview').src = postData.cover_image;
             document.getElementById('featImgPreview').style.display = 'block';
