@@ -458,6 +458,24 @@ Just describe what you want in plain English!</div>
 <!-- ===================== TAB 3: GLOBAL SETTINGS ===================== -->
 <div class="tab-content" id="tab-global" data-role="super_admin">
     
+    <!-- Maintenance Mode -->
+    <div class="section" id="maintenanceSection">
+        <div class="section__title"><span>🚧</span> Maintenance Mode</div>
+        <div class="section__desc" style="font-size:.85rem;color:var(--gray-500);margin:-8px 0 12px">When enabled, the public website shows a "Coming Soon" page to all visitors. Bypass with <code style="background:var(--gray-100);padding:2px 6px;border-radius:4px;font-size:.82rem">?bypass=ginger2026</code></div>
+        <div style="display:flex;align-items:center;gap:16px;padding:12px 0">
+            <div style="display:flex;align-items:center;gap:10px">
+                <span id="maintenanceDot" style="width:12px;height:12px;border-radius:50%;background:#059669;display:inline-block;transition:background .3s"></span>
+                <span id="maintenanceLabel" style="font-weight:600;font-size:.92rem;color:var(--navy)">Site is Live</span>
+            </div>
+            <button class="btn btn--outline btn--sm" id="maintenanceToggleBtn" onclick="toggleMaintenance()" style="margin-left:auto;padding:10px 24px;font-size:.85rem">
+                🚧 Enable Maintenance
+            </button>
+        </div>
+        <div id="maintenanceWarning" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:12px 16px;font-size:.85rem;color:#92400E;margin-top:8px">
+            ⚠️ <strong>Maintenance mode is ON.</strong> Your website is not accessible to the public. <a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" style="color:#92400E;font-weight:600">Preview with bypass →</a>
+        </div>
+    </div>
+
     <!-- Header & Navigation -->
     <div class="section">
         <div class="section__title"><span>🧭</span> Header & Navigation</div>
@@ -1232,6 +1250,67 @@ async function downloadBackup() {
     }
 }
 
+// ===== MAINTENANCE MODE =====
+let maintenanceEnabled = false;
+
+async function loadMaintenanceStatus() {
+    try {
+        const r = await fetch('/api/maintenance/status');
+        if (!r.ok) return;
+        const d = await r.json();
+        maintenanceEnabled = d.maintenance;
+        updateMaintenanceUI();
+    } catch(e) { console.error('Maintenance status error:', e); }
+}
+
+function updateMaintenanceUI() {
+    const dot = document.getElementById('maintenanceDot');
+    const label = document.getElementById('maintenanceLabel');
+    const btn = document.getElementById('maintenanceToggleBtn');
+    const warning = document.getElementById('maintenanceWarning');
+    if (!dot) return;
+    if (maintenanceEnabled) {
+        dot.style.background = '#F59E0B';
+        label.textContent = 'Maintenance Mode Active';
+        label.style.color = '#92400E';
+        btn.innerHTML = '🟢 Disable Maintenance';
+        btn.style.borderColor = '#059669';
+        btn.style.color = '#059669';
+        warning.style.display = 'block';
+    } else {
+        dot.style.background = '#059669';
+        label.textContent = 'Site is Live';
+        label.style.color = 'var(--navy)';
+        btn.innerHTML = '🚧 Enable Maintenance';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        warning.style.display = 'none';
+    }
+}
+
+async function toggleMaintenance() {
+    if (!confirm(maintenanceEnabled 
+        ? 'Disable maintenance mode? The site will be live and accessible to everyone.' 
+        : 'Enable maintenance mode? The public website will be hidden from visitors.')) return;
+    try {
+        const r = await fetch('/api/maintenance/toggle', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: !maintenanceEnabled })
+        });
+        if (r.ok) {
+            maintenanceEnabled = !maintenanceEnabled;
+            updateMaintenanceUI();
+            const msg = document.getElementById('savedMsg');
+            msg.textContent = maintenanceEnabled ? '🚧 Maintenance mode enabled' : '🟢 Site is now live!';
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        } else {
+            alert('Failed to toggle maintenance mode');
+        }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
 // ===== SINGLE INIT CALL =====
 async function initDashboard() {
     let data = null;
@@ -1411,6 +1490,7 @@ async function initDashboard() {
         updateFontPreview();
         previewLogo('t_logo_url', 'logoPreview');
         previewLogo('t_footer_logo', 'footerLogoPreview');
+        loadMaintenanceStatus();
     }
 
     // === EDITOR: LOAD RECENT ACTIVITY ===
