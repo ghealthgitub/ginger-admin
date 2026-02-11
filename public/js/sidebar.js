@@ -95,6 +95,7 @@ window.gingerUser = (async function() {
         </div>
         <nav class="sidebar__nav">${navHTML}</nav>
         <div class="sidebar__footer">
+            ${role === 'super_admin' ? '<a id="sidebarBackupBtn" style="display:block;padding:10px 16px;margin:0 12px 8px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s">💾 Download Backup</a>' : ''}
             <div class="sidebar__user">
                 <div class="sidebar__user-avatar" id="userAvatar">${initials}</div>
                 <div class="sidebar__user-info">
@@ -104,6 +105,82 @@ window.gingerUser = (async function() {
             </div>
             <a href="/logout" class="sidebar__logout">Logout →</a>
         </div>`;
+
+    // Smart backup button logic
+    if (role === 'super_admin') {
+        const bBtn = document.getElementById('sidebarBackupBtn');
+        if (bBtn) {
+            // Check if backup is due
+            function isBackupDue(lastBackup) {
+                if (!lastBackup) return true;
+                const last = new Date(lastBackup);
+                const now = new Date();
+                // Build today's 5:00 PM IST (11:30 UTC)
+                const todayDeadline = new Date(now);
+                todayDeadline.setUTCHours(11, 30, 0, 0);
+                // If it's past 5 PM IST and last backup was before today's deadline
+                if (now >= todayDeadline && last < todayDeadline) return true;
+                // If last backup was before yesterday's deadline
+                const yesterdayDeadline = new Date(todayDeadline);
+                yesterdayDeadline.setDate(yesterdayDeadline.getDate() - 1);
+                if (last < yesterdayDeadline) return true;
+                return false;
+            }
+
+            function setNormal() {
+                bBtn.style.background = 'rgba(14,165,160,.08)';
+                bBtn.style.border = '1px solid rgba(14,165,160,.2)';
+                bBtn.style.color = 'var(--teal)';
+                bBtn.style.animation = 'none';
+            }
+            function setUrgent() {
+                bBtn.style.background = '#FEF3C7';
+                bBtn.style.border = '1.5px solid #F59E0B';
+                bBtn.style.color = '#92400E';
+                bBtn.style.animation = 'backupPulse 2s ease-in-out infinite';
+                bBtn.textContent = '⚠️ Backup Due!';
+            }
+
+            // Add pulse animation
+            if (!document.getElementById('backupPulseStyle')) {
+                const style = document.createElement('style');
+                style.id = 'backupPulseStyle';
+                style.textContent = '@keyframes backupPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.3)}50%{box-shadow:0 0 12px 4px rgba(245,158,11,.4)}}';
+                document.head.appendChild(style);
+            }
+
+            // Check status
+            fetch('/api/backup/status').then(r=>r.json()).then(data=>{
+                if (isBackupDue(data.last_backup)) { setUrgent(); } else { setNormal(); }
+            }).catch(()=>{ setNormal(); });
+
+            // Click handler
+            bBtn.onclick = async function() {
+                bBtn.textContent = '⏳ Downloading...';
+                bBtn.style.animation = 'none';
+                try {
+                    const r = await fetch('/api/backup/download');
+                    const bl = await r.blob();
+                    const u = URL.createObjectURL(bl);
+                    const a = document.createElement('a');
+                    a.href = u;
+                    a.download = 'ginger-backup-' + new Date().toISOString().slice(0,10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(u);
+                    bBtn.textContent = '✅ Backup Complete!';
+                    setNormal();
+                    bBtn.style.background = '#D1FAE5';
+                    bBtn.style.border = '1.5px solid #059669';
+                    bBtn.style.color = '#065F46';
+                    setTimeout(() => { bBtn.textContent = '💾 Download Backup'; setNormal(); }, 4000);
+                } catch(e) {
+                    alert('Backup failed');
+                    bBtn.textContent = '💾 Download Backup';
+                    setNormal();
+                }
+            };
+        }
+    }
 
     return user;
 })();

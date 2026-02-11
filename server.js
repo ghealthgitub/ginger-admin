@@ -927,6 +927,13 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
 });
 
 // ============== DATABASE BACKUP ==============
+app.get('/api/backup/status', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const result = await pool.query("SELECT field_value FROM page_content WHERE page='system' AND section='backup' AND field_key='last_backup'");
+        res.json({ last_backup: result.rows.length ? result.rows[0].field_value : null });
+    } catch(e) { res.json({ last_backup: null }); }
+});
+
 app.get('/api/backup/download', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         const tables = [
@@ -954,6 +961,14 @@ app.get('/api/backup/download', apiAuth, roleRequired('super_admin'), async (req
                 backup[table] = { count: 0, rows: [], error: e.message };
             }
         }
+        // Save last backup timestamp
+        await pool.query(`
+            INSERT INTO page_content (page, section, field_key, field_value, field_type, updated_by)
+            VALUES ('system', 'backup', 'last_backup', $1, 'text', $2)
+            ON CONFLICT (page, section, field_key)
+            DO UPDATE SET field_value = $1, updated_by = $2, updated_at = NOW()
+        `, [new Date().toISOString(), req.user.id]);
+
         const filename = `ginger-backup-${new Date().toISOString().slice(0,10)}.json`;
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

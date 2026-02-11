@@ -148,7 +148,7 @@
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Dashboard</h1><div class="topbar__actions"><a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="btn btn--teal" style="font-size:.82rem">🌐 Preview Site</a><button class="btn btn--outline" onclick="downloadBackup()" id="backupBtn" style="display:none;font-size:.82rem">💾 Backup</button><button class="btn btn--primary" onclick="saveAll()" id="saveAllBtn" style="display:none">💾 Save All Changes</button></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Dashboard</h1><div class="topbar__actions"><a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="btn btn--teal" style="font-size:.82rem">🌐 Preview Site</a><button class="btn btn--primary" onclick="saveAll()" id="saveAllBtn" style="display:none">💾 Save All Changes</button></div></header>
 <div class="content">
 <div id="savedMsg" class="saved-msg">✅ Changes saved! Site updated instantly.</div>
 
@@ -1217,9 +1217,6 @@ async function toggleUserStatus(id, currentActive) {
 
 // ===== DATABASE BACKUP =====
 async function downloadBackup() {
-    const btn = document.getElementById('backupBtn');
-    btn.textContent = '⏳ Downloading...';
-    btn.disabled = true;
     try {
         const r = await fetch('/api/backup/download');
         if (!r.ok) throw new Error('Backup failed');
@@ -1230,13 +1227,9 @@ async function downloadBackup() {
         a.download = 'ginger-backup-' + new Date().toISOString().slice(0,10) + '.json';
         a.click();
         URL.revokeObjectURL(url);
-        btn.textContent = '✅ Downloaded!';
-        setTimeout(() => { btn.textContent = '💾 Backup'; }, 3000);
     } catch(e) {
         alert('Backup failed: ' + e.message);
-        btn.textContent = '💾 Backup';
     }
-    btn.disabled = false;
 }
 
 // ===== SINGLE INIT CALL =====
@@ -1260,7 +1253,6 @@ async function initDashboard() {
         document.querySelectorAll('.mcp-tab')[0].classList.add('active');
         document.getElementById('tab-ai').classList.add('active');
         document.getElementById('saveAllBtn').style.display = '';
-        document.getElementById('backupBtn').style.display = '';
         document.getElementById('pageTitle').textContent = '🎛️ Command Center';
         return;
     }
@@ -1307,7 +1299,58 @@ async function initDashboard() {
             const active = (p === item.href || (item.href==='/blog' && p.startsWith('/blog/'))) ? ' sidebar__link--active' : '';
             navHTML += '<a href="'+item.href+'" class="sidebar__link'+active+'"><span class="sidebar__link-icon">'+item.icon+'</span> '+item.label+'</a>';
         });
-        sidebar.innerHTML = '<div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav">'+navHTML+'</nav><div class="sidebar__footer"><div class="sidebar__user"><div class="sidebar__user-avatar">'+initials+'</div><div class="sidebar__user-info"><div class="sidebar__user-name">'+user.name+'</div><div class="sidebar__user-role">'+role.replace('_',' ').toUpperCase()+'</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div>';
+        const backupLink = isSuperAdmin ? '<a id="dashBackupBtn" style="display:block;padding:10px 16px;margin:0 12px 8px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;transition:all .2s">💾 Download Backup</a>' : '';
+        sidebar.innerHTML = '<div class="sidebar__logo"><div class="sidebar__logo-icon">G</div><div class="sidebar__logo-text"><span>Ginger</span> <span>Admin</span></div></div><nav class="sidebar__nav">'+navHTML+'</nav><div class="sidebar__footer">'+backupLink+'<div class="sidebar__user"><div class="sidebar__user-avatar">'+initials+'</div><div class="sidebar__user-info"><div class="sidebar__user-name">'+user.name+'</div><div class="sidebar__user-role">'+role.replace('_',' ').toUpperCase()+'</div></div></div><a href="/logout" class="sidebar__logout">Logout →</a></div>';
+
+    // Smart backup button
+    if (isSuperAdmin) {
+        const bBtn = document.getElementById('dashBackupBtn');
+        if (bBtn) {
+            function isBackupDue(lastBackup) {
+                if (!lastBackup) return true;
+                const last = new Date(lastBackup);
+                const now = new Date();
+                const todayDeadline = new Date(now);
+                todayDeadline.setUTCHours(11, 30, 0, 0);
+                if (now >= todayDeadline && last < todayDeadline) return true;
+                const yesterdayDeadline = new Date(todayDeadline);
+                yesterdayDeadline.setDate(yesterdayDeadline.getDate() - 1);
+                if (last < yesterdayDeadline) return true;
+                return false;
+            }
+            function setNormal() {
+                bBtn.style.background = 'rgba(14,165,160,.08)';
+                bBtn.style.border = '1px solid rgba(14,165,160,.2)';
+                bBtn.style.color = 'var(--teal)';
+                bBtn.style.animation = 'none';
+            }
+            function setUrgent() {
+                bBtn.style.background = '#FEF3C7';
+                bBtn.style.border = '1.5px solid #F59E0B';
+                bBtn.style.color = '#92400E';
+                bBtn.style.animation = 'backupPulse 2s ease-in-out infinite';
+                bBtn.textContent = '⚠️ Backup Due!';
+            }
+            if (!document.getElementById('backupPulseStyle')) {
+                const s = document.createElement('style');
+                s.id = 'backupPulseStyle';
+                s.textContent = '@keyframes backupPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.3)}50%{box-shadow:0 0 12px 4px rgba(245,158,11,.4)}}';
+                document.head.appendChild(s);
+            }
+            fetch('/api/backup/status').then(r=>r.json()).then(d=>{
+                if (isBackupDue(d.last_backup)) setUrgent(); else setNormal();
+            }).catch(()=>setNormal());
+
+            bBtn.onclick = async function() {
+                bBtn.textContent = '⏳ Downloading...';
+                bBtn.style.animation = 'none';
+                try { await downloadBackup(); bBtn.textContent = '✅ Backup Complete!'; setNormal();
+                    bBtn.style.background = '#D1FAE5'; bBtn.style.border = '1.5px solid #059669'; bBtn.style.color = '#065F46';
+                    setTimeout(() => { bBtn.textContent = '💾 Download Backup'; setNormal(); }, 4000);
+                } catch(e) { alert('Backup failed'); bBtn.textContent = '💾 Download Backup'; setNormal(); }
+            };
+        }
+    }
     }
 
     // === PAGE TITLE ===
@@ -1316,7 +1359,6 @@ async function initDashboard() {
     // === SAVE & BACKUP BUTTONS ===
     if (isSuperAdmin) {
         document.getElementById('saveAllBtn').style.display = '';
-        document.getElementById('backupBtn').style.display = '';
     }
 
     // === HIDE ELEMENTS NOT FOR THIS ROLE ===
