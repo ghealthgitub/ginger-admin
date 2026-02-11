@@ -926,6 +926,45 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
     }
 });
 
+// ============== DATABASE BACKUP ==============
+app.get('/api/backup/download', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const tables = [
+            'users', 'blog_posts', 'specialties', 'treatments', 'destinations',
+            'hospitals', 'doctors', 'testimonials', 'submissions', 'page_content',
+            'media', 'activity_log', 'treatment_costs', 'static_pages',
+            'hospital_specialties', 'doctor_treatments'
+        ];
+        const backup = {
+            metadata: {
+                created_at: new Date().toISOString(),
+                created_by: req.user.name,
+                version: '1.0',
+                tables: tables.length
+            }
+        };
+        for (const table of tables) {
+            try {
+                const result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+                backup[table] = {
+                    count: result.rows.length,
+                    rows: result.rows
+                };
+            } catch(e) {
+                backup[table] = { count: 0, rows: [], error: e.message };
+            }
+        }
+        const filename = `ginger-backup-${new Date().toISOString().slice(0,10)}.json`;
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        await logActivity(req.user.id, 'download_backup', 'system', null, 'Downloaded full database backup');
+        res.json(backup);
+    } catch(err) {
+        console.error('Backup error:', err.message);
+        res.status(500).json({ error: 'Backup failed' });
+    }
+});
+
 // ============== SETTINGS ==============
 app.get('/settings', authRequired, roleRequired('super_admin'), (req, res) => {
     servePage(res, 'settings');

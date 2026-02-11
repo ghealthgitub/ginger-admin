@@ -148,7 +148,7 @@
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Dashboard</h1><div class="topbar__actions"><a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="btn btn--teal" style="font-size:.82rem">🌐 Preview Site</a><button class="btn btn--primary" onclick="saveAll()" id="saveAllBtn" style="display:none">💾 Save All Changes</button></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Dashboard</h1><div class="topbar__actions"><a href="https://ginger.healthcare/?bypass=ginger2026" target="_blank" class="btn btn--teal" style="font-size:.82rem">🌐 Preview Site</a><button class="btn btn--outline" onclick="downloadBackup()" id="backupBtn" style="display:none;font-size:.82rem">💾 Backup</button><button class="btn btn--primary" onclick="saveAll()" id="saveAllBtn" style="display:none">💾 Save All Changes</button></div></header>
 <div class="content">
 <div id="savedMsg" class="saved-msg">✅ Changes saved! Site updated instantly.</div>
 
@@ -1215,6 +1215,30 @@ async function toggleUserStatus(id, currentActive) {
     } catch(e) { alert('Error'); }
 }
 
+// ===== DATABASE BACKUP =====
+async function downloadBackup() {
+    const btn = document.getElementById('backupBtn');
+    btn.textContent = '⏳ Downloading...';
+    btn.disabled = true;
+    try {
+        const r = await fetch('/api/backup/download');
+        if (!r.ok) throw new Error('Backup failed');
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ginger-backup-' + new Date().toISOString().slice(0,10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        btn.textContent = '✅ Downloaded!';
+        setTimeout(() => { btn.textContent = '💾 Backup'; }, 3000);
+    } catch(e) {
+        alert('Backup failed: ' + e.message);
+        btn.textContent = '💾 Backup';
+    }
+    btn.disabled = false;
+}
+
 // ===== SINGLE INIT CALL =====
 async function initDashboard() {
     let data = null;
@@ -1236,6 +1260,7 @@ async function initDashboard() {
         document.querySelectorAll('.mcp-tab')[0].classList.add('active');
         document.getElementById('tab-ai').classList.add('active');
         document.getElementById('saveAllBtn').style.display = '';
+        document.getElementById('backupBtn').style.display = '';
         document.getElementById('pageTitle').textContent = '🎛️ Command Center';
         return;
     }
@@ -1288,9 +1313,10 @@ async function initDashboard() {
     // === PAGE TITLE ===
     document.getElementById('pageTitle').textContent = isSuperAdmin ? '🎛️ Command Center' : '📊 Dashboard';
 
-    // === SAVE BUTTON ===
+    // === SAVE & BACKUP BUTTONS ===
     if (isSuperAdmin) {
         document.getElementById('saveAllBtn').style.display = '';
+        document.getElementById('backupBtn').style.display = '';
     }
 
     // === HIDE ELEMENTS NOT FOR THIS ROLE ===
