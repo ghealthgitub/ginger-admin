@@ -5,45 +5,35 @@
 <script src="/js/sidebar.js" defer></script>
 <style>
 .tt-page{max-width:1200px;margin:0 auto;padding:24px}
-.tt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.tt-header h2{font-family:var(--font-display,'Playfair Display',serif);font-size:1.5rem;color:var(--navy,#0B2545)}
-.tt-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;border-bottom:2px solid var(--gray-100,#F3F4F6);margin-bottom:24px}
-.tt-tab{padding:10px 18px;font-size:.85rem;font-weight:500;color:var(--gray-500,#6B7280);border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap;transition:all .2s;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px}
-.tt-tab:hover{color:var(--navy,#0B2545);background:var(--gray-50,#F9FAFB)}
-.tt-tab.active{color:var(--teal,#0EA5A0);border-bottom-color:var(--teal,#0EA5A0);font-weight:600;background:rgba(14,165,160,.05)}
-.tt-tab .tt-tab__badge{display:inline-block;background:var(--gray-200,#E5E7EB);color:var(--gray-600,#4B5563);font-size:.72rem;padding:1px 6px;border-radius:10px;margin-left:6px}
-.tt-tab.active .tt-tab__badge{background:var(--teal,#0EA5A0);color:#fff}
-.tt-card{background:#fff;border:1px solid var(--gray-200,#E5E7EB);border-radius:12px;overflow:hidden}
-.tt-card__header{padding:16px 20px;border-bottom:1px solid var(--gray-100,#F3F4F6);display:flex;justify-content:space-between;align-items:center}
-.tt-card__title{font-weight:600;color:var(--navy,#0B2545)}
-.tt-card__desc{font-size:.82rem;color:var(--gray-400,#9CA3AF);margin-top:2px}
-.tt-card__actions{display:flex;gap:8px;align-items:center}
-.tt-editor{position:relative}
-.tt-editor textarea{width:100%;min-height:420px;font-family:'Fira Code','Consolas','Monaco',monospace;font-size:.82rem;line-height:1.65;padding:20px;border:none;outline:none;resize:vertical;background:#1e1e2e;color:#cdd6f4;tab-size:4}
-.tt-editor textarea::placeholder{color:#585b70}
-.tt-status{padding:12px 20px;border-top:1px solid var(--gray-100,#F3F4F6);display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--gray-400,#9CA3AF)}
-.tt-status__saved{color:#059669;font-weight:600;display:none}
-.tt-vars{background:var(--gray-50,#F9FAFB);border:1px solid var(--gray-200,#E5E7EB);border-radius:8px;padding:16px;margin-bottom:16px}
-.tt-vars__title{font-weight:600;font-size:.85rem;color:var(--navy,#0B2545);margin-bottom:8px}
-.tt-vars__grid{display:flex;flex-wrap:wrap;gap:6px}
-.tt-var{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--gray-200,#E5E7EB);padding:4px 10px;border-radius:6px;font-size:.78rem;font-family:monospace;color:var(--gray-600,#4B5563);cursor:pointer;transition:all .15s}
-.tt-var:hover{background:var(--teal,#0EA5A0);color:#fff;border-color:var(--teal,#0EA5A0)}
-.tt-var:active{transform:scale(.95)}
-.tt-preview{border:1px solid var(--gray-200,#E5E7EB);border-radius:8px;overflow:hidden;margin-top:16px}
-.tt-preview__bar{padding:8px 16px;background:var(--gray-50,#F9FAFB);border-bottom:1px solid var(--gray-200,#E5E7EB);font-size:.82rem;color:var(--gray-500,#6B7280);display:flex;justify-content:space-between}
-.tt-preview iframe{width:100%;height:500px;border:none}
-.tt-content{display:none}
-.tt-content.active{display:block}
-.btn--save{background:var(--teal,#0EA5A0);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s}
-.btn--save:hover{background:#0c918c}
-.btn--reset{background:transparent;color:var(--gray-500,#6B7280);border:1px solid var(--gray-200,#E5E7EB);padding:8px 16px;border-radius:8px;font-size:.82rem;cursor:pointer;transition:all .2s}
-.btn--reset:hover{background:var(--gray-50,#F9FAFB)}
-.tt-toggle{position:relative;width:44px;height:24px;border-radius:12px;background:var(--gray-300,#D1D5DB);cursor:pointer;transition:background .2s}
-.tt-toggle.on{background:var(--teal,#0EA5A0)}
-.tt-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.tt-toggle.on::after{left:23px}
+.tt-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:2px;border-bottom:2px solid #F3F4F6;margin-bottom:24px}
+.tt-tab{padding:10px 18px;font-size:.85rem;font-weight:500;color:#6B7280;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap;transition:all .2s;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tt-tab:hover{color:#0B2545;background:#F9FAFB}
+.tt-tab.active{color:#0EA5A0;border-bottom-color:#0EA5A0;font-weight:600;background:rgba(14,165,160,.05)}
+.tt-badge{display:inline-block;background:#E5E7EB;color:#4B5563;font-size:.72rem;padding:1px 6px;border-radius:10px;margin-left:6px}
+.tt-tab.active .tt-badge{background:#0EA5A0;color:#fff}
+.tt-card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;margin-bottom:20px}
+.tt-hdr{padding:16px 20px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center}
+.tt-hdr-title{font-weight:600;color:#0B2545}
+.tt-hdr-desc{font-size:.82rem;color:#9CA3AF;margin-top:2px}
+.tt-hdr-acts{display:flex;gap:8px;align-items:center}
+.tt-vars{background:#F9FAFB;border-bottom:1px solid #F3F4F6;padding:12px 20px}
+.tt-vars b{font-size:.82rem;color:#0B2545;margin-right:8px}
+.tt-var{display:inline-block;background:#fff;border:1px solid #E5E7EB;padding:3px 8px;border-radius:5px;font-size:.75rem;font-family:monospace;color:#4B5563;cursor:pointer;margin:2px;transition:all .15s}
+.tt-var:hover{background:#0EA5A0;color:#fff;border-color:#0EA5A0}
+.tt-editor textarea{width:100%;min-height:350px;font-family:'Consolas','Monaco',monospace;font-size:.82rem;line-height:1.6;padding:16px 20px;border:none;outline:none;resize:vertical;background:#1e1e2e;color:#cdd6f4;display:block;box-sizing:border-box}
+.tt-css-hdr{padding:6px 20px;background:#F9FAFB;font-size:.78rem;color:#6B7280;font-weight:600;border-top:1px solid #E5E7EB}
+.tt-css textarea{min-height:100px}
+.tt-foot{padding:10px 20px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;font-size:.82rem;color:#9CA3AF}
+.tt-saved{color:#059669;font-weight:600;display:none}
+.tt-toggle{position:relative;width:42px;height:22px;border-radius:11px;background:#D1D5DB;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tt-toggle.on{background:#0EA5A0}
+.tt-toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tt-toggle.on::after{left:22px}
+.btn-save{background:#0EA5A0;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-weight:600;font-size:.82rem;cursor:pointer}
+.btn-save:hover{background:#0c918c}
+.btn-rst{background:transparent;color:#6B7280;border:1px solid #E5E7EB;padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer}
+.btn-rst:hover{background:#F9FAFB}
 .tt-info{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:14px 16px;font-size:.85rem;color:#1E40AF;margin-bottom:20px;line-height:1.6}
-@media(max-width:768px){.tt-tabs{flex-wrap:nowrap}.tt-card__header{flex-direction:column;gap:10px}.tt-editor textarea{min-height:300px}}
 </style>
 </head><body>
 <aside class="sidebar" id="sidebar"></aside>
@@ -58,320 +48,150 @@
 <div class="tt-page">
 
 <div class="tt-info">
-    <strong>🎨 Theme Templates</strong> control the layout of every page on your website — like Elementor's Theme Builder. 
-    Edit a template here, and it instantly applies to <strong>all pages</strong> of that type. 
-    Use <code style="background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px">{{ variable }}</code> placeholders for dynamic content. Click any variable tag below to copy it.
+    <strong>🎨 Theme Templates</strong> control the layout of every page on your website — like Elementor's Theme Builder.
+    Edit a template here, and it instantly applies to <strong>all pages</strong> of that type.
+    Use <code style="background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px">{{ variable }}</code> placeholders for dynamic content. Click any variable tag to copy it.
 </div>
 
-<!-- CATEGORY TABS -->
-<div class="tt-tabs" id="ttTabs">
-    <button class="tt-tab active" onclick="switchCategory('detail')">📄 Detail Pages <span class="tt-tab__badge" id="badge-detail">6</span></button>
-    <button class="tt-tab" onclick="switchCategory('listing')">📋 Listing Pages <span class="tt-tab__badge" id="badge-listing">4</span></button>
-    <button class="tt-tab" onclick="switchCategory('page')">📝 Static Pages <span class="tt-tab__badge" id="badge-page">3</span></button>
+<div class="tt-tabs">
+    <button class="tt-tab active" onclick="switchCat('detail',this)">📄 Detail Pages <span class="tt-badge">6</span></button>
+    <button class="tt-tab" onclick="switchCat('listing',this)">📋 Listing Pages <span class="tt-badge">4</span></button>
+    <button class="tt-tab" onclick="switchCat('page',this)">📝 Static Pages <span class="tt-badge">3</span></button>
 </div>
 
-<!-- TEMPLATE CARDS — built dynamically by JS -->
-<div id="templateContainer"></div>
+<div id="container"></div>
 
 </div>
 </main>
-
 <script>
-// ===== TEMPLATE DEFINITIONS =====
-const TEMPLATES = {
-    // DETAIL PAGES
-    'blog-detail': {
-        label: 'Blog Post',
-        category: 'detail',
-        icon: '📝',
-        description: 'Single blog article page',
-        variables: ['post.title','post.content','post.excerpt','post.author_name','post.read_time','post.category','post.tags','post.cover_image','post.published_at','post.meta_title','post.meta_description'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → <a href="/blog/">Blog</a> → {{post.title}}</div><h1><em>{{post.title}}</em></h1><p>By {{post.author_name}} · {{post.read_time}} min read</p></div></div>
-<div class="content-section">{{{post.content}}}</div>`
-    },
-    'destination-detail': {
-        label: 'Destination',
-        category: 'detail',
-        icon: '🌍',
-        description: 'Country/destination page with hospitals and doctors',
-        variables: ['destination.name','destination.flag','destination.tagline','destination.description','destination.hospital_count','destination.doctor_count','destination.avg_savings','hospitals[]','doctors[]'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → <a href="/destinations/">Destinations</a> → {{destination.name}}</div><h1>{{destination.flag}} Medical Tourism in <em>{{destination.name}}</em></h1><p>{{destination.tagline}}</p></div></div>
-<div class="section">
-    <div class="grid-3" style="margin-bottom:40px">
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">🏥</div><div class="info-card__title">{{destination.hospital_count}}+ Hospitals</div><div class="info-card__text">JCI & NABH accredited</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">💰</div><div class="info-card__title">Save {{destination.avg_savings}}</div><div class="info-card__text">Compared to USA/UK prices</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">👨‍⚕️</div><div class="info-card__title">{{destination.doctor_count}}+ Doctors</div><div class="info-card__text">Internationally trained specialists</div></div>
-    </div>
-    {{#if destination.description}}<div class="content-section" style="padding:0 0 40px"><h2>Why Choose {{destination.name}}?</h2><p>{{destination.description}}</p></div>{{/if}}
-    {{#each hospitals}}<a href="/hospitals/{{this.slug}}/" class="info-card"><div class="info-card__icon">🏥</div><div class="info-card__title">{{this.name}}</div><div class="info-card__text">{{this.city}}</div></a>{{/each}}
-    <div style="text-align:center;padding:20px 0"><a href="/get-quote/" class="btn btn--primary btn--large">📋 Get Free Quote for {{destination.name}}</a></div>
-</div>`
-    },
-    'specialty-detail': {
-        label: 'Specialty',
-        category: 'detail',
-        icon: '🏷️',
-        description: 'Specialty page with treatments listed',
-        variables: ['specialty.name','specialty.icon','specialty.description','specialty.long_description','treatments[]'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → <a href="/specialties/">Specialties</a> → {{specialty.name}}</div><h1>{{specialty.icon}} <em>{{specialty.name}}</em></h1><p>{{specialty.description}}</p></div></div>
-<div class="section">
-    {{#if specialty.long_description}}<div class="content-section" style="padding:0 0 40px"><p>{{{specialty.long_description}}}</p></div>{{/if}}
-    <h2 style="font-family:var(--font-display);color:var(--navy);margin-bottom:20px">Treatments Under {{specialty.name}}</h2>
-    <div class="grid-3" style="margin-bottom:40px">{{#each treatments}}<a href="/treatments/{{this.slug}}/" class="info-card"><div class="info-card__title">{{this.name}}</div><div class="info-card__text">{{this.description}}</div></a>{{/each}}</div>
-    <div style="text-align:center;padding:20px 0"><a href="/get-quote/" class="btn btn--primary btn--large">📋 Get Free Quote for {{specialty.name}}</a></div>
-</div>`
-    },
-    'treatment-detail': {
-        label: 'Treatment',
-        category: 'detail',
-        icon: '💊',
-        description: 'Treatment page with costs by destination',
-        variables: ['treatment.name','treatment.description','treatment.long_description','treatment.cost_range_usd','treatment.duration','treatment.recovery_time','treatment.specialty_name','treatment.specialty_icon','costs[]'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → <a href="/specialties/">Specialties</a> → {{treatment.name}}</div><h1>{{treatment.specialty_icon}} <em>{{treatment.name}}</em></h1><p>{{treatment.description}}</p></div></div>
-<div class="section">
-    <div class="grid-3" style="margin-bottom:40px">
-        {{#if treatment.cost_range_usd}}<div class="info-card" style="text-align:center"><div class="info-card__icon">💰</div><div class="info-card__title">From {{treatment.cost_range_usd}}</div><div class="info-card__text">All-inclusive pricing</div></div>{{/if}}
-        {{#if treatment.duration}}<div class="info-card" style="text-align:center"><div class="info-card__icon">⏱️</div><div class="info-card__title">{{treatment.duration}}</div><div class="info-card__text">Procedure duration</div></div>{{/if}}
-        {{#if treatment.recovery_time}}<div class="info-card" style="text-align:center"><div class="info-card__icon">🏠</div><div class="info-card__title">{{treatment.recovery_time}}</div><div class="info-card__text">Recovery time</div></div>{{/if}}
-    </div>
-    {{#if treatment.long_description}}<div class="content-section" style="padding:0 0 40px">{{{treatment.long_description}}}</div>{{/if}}
-    {{#each costs}}<div class="info-card" style="text-align:center"><div style="font-size:1.5rem;margin-bottom:6px">{{this.dest_flag}}</div><div class="info-card__title">{{this.dest_name}}</div><div style="color:var(--ginger);font-family:var(--font-display);font-size:1.4rem;font-weight:700;margin:8px 0">${{this.cost_min_usd}} – ${{this.cost_max_usd}}</div></div>{{/each}}
-    <div style="text-align:center;padding:20px 0"><a href="/get-quote/" class="btn btn--primary btn--large">📋 Get Free Quote for {{treatment.name}}</a></div>
-</div>`
-    },
-    'hospital-detail': {
-        label: 'Hospital',
-        category: 'detail',
-        icon: '🏥',
-        description: 'Hospital profile with doctors',
-        variables: ['hospital.name','hospital.description','hospital.city','hospital.country','hospital.beds','hospital.established','hospital.rating','hospital.accreditations','doctors[]'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Hospitals → {{hospital.name}}</div><h1>🏥 <em>{{hospital.name}}</em></h1><p>{{hospital.city}}, {{hospital.country}}</p></div></div>
-<div class="section">
-    <div class="grid-4" style="margin-bottom:40px">
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">🛏️</div><div class="info-card__title">{{hospital.beds}} Beds</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">📅</div><div class="info-card__title">Est. {{hospital.established}}</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">⭐</div><div class="info-card__title">{{hospital.rating}} Rating</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">🏅</div><div class="info-card__title">{{hospital.accreditations}}</div></div>
-    </div>
-    {{#if hospital.description}}<div class="content-section" style="padding:0 0 40px"><p>{{hospital.description}}</p></div>{{/if}}
-    {{#each doctors}}<a href="/doctors/{{this.slug}}/" class="info-card"><div class="info-card__icon">👨‍⚕️</div><div class="info-card__title">{{this.name}}</div><div class="info-card__text">{{this.specialty}} · {{this.experience_years}} yrs</div></a>{{/each}}
-    <div style="text-align:center;padding:20px 0"><a href="/get-quote/" class="btn btn--primary btn--large">📋 Get Quote from {{hospital.name}}</a></div>
-</div>`
-    },
-    'doctor-detail': {
-        label: 'Doctor',
-        category: 'detail',
-        icon: '👨‍⚕️',
-        description: 'Doctor profile page',
-        variables: ['doctor.name','doctor.title','doctor.specialty','doctor.experience_years','doctor.description','doctor.qualifications','doctor.hospital_name','doctor.hospital_slug','doctor.image','doctor.languages'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Doctors → {{doctor.name}}</div><h1>👨‍⚕️ <em>{{doctor.name}}</em></h1><p>{{doctor.title}}</p></div></div>
-<div class="section">
-    <div class="grid-3" style="margin-bottom:40px">
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">🎓</div><div class="info-card__title">{{doctor.specialty}}</div><div class="info-card__text">Specialization</div></div>
-        <div class="info-card" style="text-align:center"><div class="info-card__icon">📅</div><div class="info-card__title">{{doctor.experience_years}}+ Years</div><div class="info-card__text">Experience</div></div>
-        {{#if doctor.hospital_name}}<a href="/hospitals/{{doctor.hospital_slug}}/" class="info-card" style="text-align:center"><div class="info-card__icon">🏥</div><div class="info-card__title">{{doctor.hospital_name}}</div><div class="info-card__text">Hospital</div></a>{{/if}}
-    </div>
-    {{#if doctor.description}}<div class="content-section" style="padding:0 0 40px"><p>{{doctor.description}}</p></div>{{/if}}
-    <div style="text-align:center;padding:20px 0"><a href="/book-consultation/" class="btn btn--primary btn--large">📞 Book Consultation with {{doctor.name}}</a></div>
-</div>`
-    },
-    // LISTING PAGES
-    'blog-list': {
-        label: 'Blog Listing',
-        category: 'listing',
-        icon: '📝',
-        description: 'Blog index page with all posts',
-        variables: ['posts[]','posts[].title','posts[].slug','posts[].excerpt','posts[].category','posts[].read_time','posts[].cover_image'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Blog</div><h1>Health & <em>Travel Insights</em></h1><p>Expert guides, patient stories, and tips for your medical journey</p></div></div>
-<div class="section">
-    <div class="blog-grid">{{#each posts}}<a href="/blog/{{this.slug}}/" class="blog-card"><div class="blog-card__img" style="background:linear-gradient(135deg,#134e6f,#0B2545)"><span>📝</span>{{#if this.category}}<div class="blog-card__badge" style="background:var(--teal)">{{this.category}}</div>{{/if}}</div><div class="blog-card__body"><div class="blog-card__title">{{this.title}}</div><div class="blog-card__excerpt">{{this.excerpt}}</div><div class="blog-card__footer"><span>{{this.read_time}} min</span><span class="blog-card__read">Read →</span></div></div></a>{{/each}}</div>
-</div>`
-    },
-    'destinations-list': {
-        label: 'Destinations Listing',
-        category: 'listing',
-        icon: '🌍',
-        description: 'All destinations overview page',
-        variables: ['destinations[]','destinations[].name','destinations[].slug','destinations[].flag','destinations[].hospital_count','destinations[].avg_savings'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Destinations</div><h1>Treatment <em>Destinations</em></h1><p>World-class healthcare across 5 countries</p></div></div>
-<div class="section"><div class="dest-grid">{{#each destinations}}<a href="/destinations/{{this.slug}}/" class="dest-card"><div class="dest-card__bg" style="background:linear-gradient(135deg,#1a5276,#0B2545)"></div><div class="dest-card__overlay"></div><div class="dest-card__body"><span class="dest-card__flag">{{this.flag}}</span><div class="dest-card__name">{{this.name}}</div><div class="dest-card__count">{{this.hospital_count}}+ hospitals · Save {{this.avg_savings}}</div></div></a>{{/each}}</div></div>`
-    },
-    'specialties-list': {
-        label: 'Specialties Listing',
-        category: 'listing',
-        icon: '🏷️',
-        description: 'All specialties overview page',
-        variables: ['specialties[]','specialties[].name','specialties[].slug','specialties[].icon'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Specialties</div><h1>Medical <em>Specialties</em></h1><p>Browse all specialties</p></div></div>
-<div class="section"><div class="spec-scroll">{{#each specialties}}<a href="/specialties/{{this.slug}}/" class="spec-card"><span class="spec-card__icon">{{this.icon}}</span><div class="spec-card__name">{{this.name}}</div></a>{{/each}}</div></div>`
-    },
-    'results': {
-        label: 'Results / Testimonials',
-        category: 'listing',
-        icon: '⭐',
-        description: 'Patient testimonials page',
-        variables: ['testimonials[]','testimonials[].patient_name','testimonials[].patient_country','testimonials[].patient_flag','testimonials[].quote','testimonials[].rating','testimonials[].specialty','testimonials[].destination','testimonials[].avatar_color'],
-        defaultHtml: `<div class="page-hero"><div class="page-hero__inner"><div class="page-hero__breadcrumb"><a href="/">Home</a> → Results</div><h1>Real Patients. <em>Real Results.</em></h1><p>Hear from the people we've helped</p></div></div>
-<div class="section"><div class="test-grid">{{#each testimonials}}<div class="test-card"><div class="test-card__quote-mark">❝</div><div class="test-card__stars">{{stars this.rating}}</div><div class="test-card__text">"{{this.quote}}"</div><div class="test-card__author"><div class="test-card__avatar" style="background:{{this.avatar_color}}">{{initials this.patient_name}}</div><div><div class="test-card__name">{{this.patient_name}}</div><div class="test-card__meta">{{this.patient_flag}} {{this.patient_country}} · {{this.specialty}} · {{this.destination}}</div></div></div></div>{{/each}}</div></div>`
-    },
-    // STATIC/SPECIAL PAGES
-    'get-quote': {
-        label: 'Get Quote Form',
-        category: 'page',
-        icon: '📋',
-        description: 'Multi-step quote request form',
-        variables: ['treatments[]','destinations[]','specialties[]'],
-        defaultHtml: '<!-- Quote form template - edit to customize the form layout -->'
-    },
-    'cost-calculator': {
-        label: 'Cost Calculator',
-        category: 'page',
-        icon: '🧮',
-        description: 'Interactive cost calculator page',
-        variables: ['treatments[]','destinations[]'],
-        defaultHtml: '<!-- Cost calculator template - edit to customize -->'
-    },
-    'contact': {
-        label: 'Contact Page',
-        category: 'page',
-        icon: '📞',
-        description: 'Contact us page with form',
-        variables: [],
-        defaultHtml: '<!-- Contact page template -->'
-    }
-};
+var curCat = 'detail';
+var saved = {};
+var T = [
+{key:'blog-detail',label:'Blog Post',cat:'detail',icon:'📝',desc:'Single blog article page',vars:'post.title,post.content,post.excerpt,post.author_name,post.read_time,post.category,post.cover_image'},
+{key:'destination-detail',label:'Destination',cat:'detail',icon:'🌍',desc:'Country/destination page with hospitals & doctors',vars:'destination.name,destination.flag,destination.tagline,destination.description,destination.hospital_count,destination.doctor_count,destination.avg_savings,hospitals[],doctors[]'},
+{key:'specialty-detail',label:'Specialty',cat:'detail',icon:'🏷️',desc:'Specialty page with treatments listed',vars:'specialty.name,specialty.icon,specialty.description,specialty.long_description,treatments[]'},
+{key:'treatment-detail',label:'Treatment',cat:'detail',icon:'💊',desc:'Treatment page with costs by destination',vars:'treatment.name,treatment.description,treatment.long_description,treatment.cost_range_usd,treatment.duration,treatment.recovery_time,treatment.specialty_icon,costs[]'},
+{key:'hospital-detail',label:'Hospital',cat:'detail',icon:'🏥',desc:'Hospital profile page with doctors',vars:'hospital.name,hospital.description,hospital.city,hospital.country,hospital.beds,hospital.established,hospital.rating,hospital.accreditations,doctors[]'},
+{key:'doctor-detail',label:'Doctor',cat:'detail',icon:'👨‍⚕️',desc:'Doctor profile page',vars:'doctor.name,doctor.title,doctor.specialty,doctor.experience_years,doctor.description,doctor.qualifications,doctor.hospital_name,doctor.hospital_slug'},
+{key:'blog-list',label:'Blog Listing',cat:'listing',icon:'📝',desc:'Blog index page with all posts',vars:'posts[].title,posts[].slug,posts[].excerpt,posts[].category,posts[].read_time'},
+{key:'destinations-list',label:'Destinations Listing',cat:'listing',icon:'🌍',desc:'All destinations overview page',vars:'destinations[].name,destinations[].slug,destinations[].flag,destinations[].hospital_count,destinations[].avg_savings'},
+{key:'specialties-list',label:'Specialties Listing',cat:'listing',icon:'🏷️',desc:'All specialties overview page',vars:'specialties[].name,specialties[].slug,specialties[].icon'},
+{key:'results',label:'Results / Testimonials',cat:'listing',icon:'⭐',desc:'Patient testimonials page',vars:'testimonials[].patient_name,testimonials[].quote,testimonials[].rating,testimonials[].specialty,testimonials[].destination'},
+{key:'get-quote',label:'Get Quote Form',cat:'page',icon:'📋',desc:'Multi-step quote request form',vars:'treatments[],destinations[],specialties[]'},
+{key:'cost-calculator',label:'Cost Calculator',cat:'page',icon:'🧮',desc:'Interactive cost calculator page',vars:'treatments[],destinations[]'},
+{key:'contact',label:'Contact Page',cat:'page',icon:'📞',desc:'Contact us page with form',vars:''}
+];
 
-let currentCategory = 'detail';
-let savedTemplates = {};
+function switchCat(cat, el) {
+    curCat = cat;
+    document.querySelectorAll('.tt-tab').forEach(function(t){t.classList.remove('active')});
+    el.classList.add('active');
+    render();
+}
 
-// ===== LOAD SAVED TEMPLATES FROM DB =====
-async function loadTemplates() {
-    try {
-        const r = await fetch('/api/theme-templates');
-        if (r.ok) {
-            const data = await r.json();
-            data.forEach(t => { savedTemplates[t.template_key] = t; });
+function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+}
+
+function render() {
+    var c = document.getElementById('container');
+    var h = '';
+    for (var i = 0; i < T.length; i++) {
+        var t = T[i];
+        if (t.cat !== curCat) continue;
+        var s = saved[t.key];
+        var html = s ? s.html_template : (t.defaultHtml || '<!-- Edit this template for ' + t.label + ' pages -->');
+        var css = s ? (s.css || '') : '';
+        var on = s ? s.is_active : true;
+        var when = s ? new Date(s.updated_at).toLocaleString() : 'Never (using default)';
+        var vars = t.vars ? t.vars.split(',') : [];
+
+        h += '<div class="tt-card" id="card-' + t.key + '">';
+
+        // Header
+        h += '<div class="tt-hdr"><div>';
+        h += '<div class="tt-hdr-title">' + t.icon + ' ' + t.label + '</div>';
+        h += '<div class="tt-hdr-desc">' + t.desc + '</div>';
+        h += '</div><div class="tt-hdr-acts">';
+        h += '<div class="tt-toggle' + (on ? ' on' : '') + '" onclick="this.classList.toggle(\'on\')"></div>';
+        h += '<button class="btn-save" onclick="doSave(\'' + t.key + '\')">💾 Save</button>';
+        if (s) h += ' <button class="btn-rst" onclick="doReset(\'' + t.key + '\')">↩ Reset</button>';
+        h += '</div></div>';
+
+        // Variables
+        if (vars.length > 0 && vars[0]) {
+            h += '<div class="tt-vars"><b>Variables:</b>';
+            for (var v = 0; v < vars.length; v++) {
+                h += '<span class="tt-var" onclick="cpVar(\'' + vars[v] + '\',this)">{{ ' + vars[v] + ' }}</span>';
+            }
+            h += '</div>';
         }
-    } catch(e) { console.error('Load templates error:', e); }
-    renderTemplates();
+
+        // HTML Editor
+        h += '<div class="tt-editor"><textarea id="html-' + t.key + '" placeholder="Enter HTML template...">' + esc(html) + '</textarea></div>';
+
+        // CSS Editor
+        h += '<div class="tt-css-hdr">Custom CSS (optional)</div>';
+        h += '<div class="tt-editor tt-css"><textarea id="css-' + t.key + '" placeholder="/* Custom CSS */">' + esc(css) + '</textarea></div>';
+
+        // Footer
+        h += '<div class="tt-foot"><span>Last saved: ' + when + '</span><span class="tt-saved" id="sv-' + t.key + '">✅ Saved!</span></div>';
+        h += '</div>';
+    }
+    c.innerHTML = h;
 }
 
-// ===== SWITCH CATEGORY =====
-function switchCategory(cat) {
-    currentCategory = cat;
-    document.querySelectorAll('.tt-tab').forEach(t => t.classList.remove('active'));
-    event.target.closest('.tt-tab').classList.add('active');
-    renderTemplates();
-}
-
-// ===== RENDER TEMPLATE CARDS =====
-function renderTemplates() {
-    const container = document.getElementById('templateContainer');
-    const items = Object.entries(TEMPLATES).filter(([k,v]) => v.category === currentCategory);
-    
-    container.innerHTML = items.map(([key, tmpl]) => {
-        const saved = savedTemplates[key];
-        const html = saved ? saved.html_template : tmpl.defaultHtml;
-        const css = saved ? (saved.css || '') : '';
-        const isActive = saved ? saved.is_active : true;
-        const lastSaved = saved ? new Date(saved.updated_at).toLocaleString() : 'Never (using default)';
-        
-        return `
-        <div class="tt-card" style="margin-bottom:20px" id="card-${key}">
-            <div class="tt-card__header">
-                <div>
-                    <div class="tt-card__title">${tmpl.icon} ${tmpl.label}</div>
-                    <div class="tt-card__desc">${tmpl.description}</div>
-                </div>
-                <div class="tt-card__actions">
-                    <div class="tt-toggle ${isActive ? 'on' : ''}" onclick="toggleActive('${key}',this)" title="Toggle active"></div>
-                    <button class="btn--save" onclick="saveTemplate('${key}')">💾 Save</button>
-                    ${saved ? '<button class="btn--reset" onclick="resetTemplate(\''+key+'\')">↩ Reset</button>' : ''}
-                </div>
-            </div>
-            <div class="tt-vars">
-                <div class="tt-vars__title">Available Variables — click to copy</div>
-                <div class="tt-vars__grid">
-                    ${tmpl.variables.map(v => `<span class="tt-var" onclick="copyVar('${v}',this)">{{ ${v} }}</span>`).join('')}
-                </div>
-            </div>
-            <div class="tt-editor">
-                <textarea id="html-${key}" placeholder="Enter HTML template...">${escapeHtml(html)}</textarea>
-            </div>
-            ${css || saved ? `<div class="tt-editor" style="border-top:1px solid var(--gray-200)"><div style="padding:8px 20px;background:var(--gray-50);font-size:.78rem;color:var(--gray-500);font-weight:600">Custom CSS (optional)</div><textarea id="css-${key}" placeholder="/* Custom CSS for this template */" style="min-height:120px">${escapeHtml(css)}</textarea></div>` : ''}
-            <div class="tt-status">
-                <span>Last saved: ${lastSaved}</span>
-                <span class="tt-status__saved" id="saved-${key}">✅ Saved!</span>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// ===== SAVE TEMPLATE =====
-async function saveTemplate(key) {
-    const tmpl = TEMPLATES[key];
-    const html = document.getElementById('html-' + key).value;
-    const cssEl = document.getElementById('css-' + key);
-    const css = cssEl ? cssEl.value : '';
-    const isActive = document.querySelector('#card-' + key + ' .tt-toggle').classList.contains('on');
-    
+async function doSave(key) {
+    var t = T.find(function(x){return x.key===key});
+    var htmlVal = document.getElementById('html-' + key).value;
+    var cssVal = document.getElementById('css-' + key).value;
+    var card = document.getElementById('card-' + key);
+    var on = card.querySelector('.tt-toggle').classList.contains('on');
     try {
-        const r = await fetch('/api/theme-templates/' + key, {
+        var r = await fetch('/api/theme-templates/' + key, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                label: tmpl.label,
-                category: tmpl.category,
-                description: tmpl.description,
-                html_template: html,
-                css: css,
-                is_active: isActive
-            })
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ label:t.label, category:t.cat, description:t.desc, html_template:htmlVal, css:cssVal, is_active:on })
         });
         if (r.ok) {
-            const data = await r.json();
-            savedTemplates[key] = data;
-            const el = document.getElementById('saved-' + key);
+            var d = await r.json();
+            saved[key] = d;
+            var el = document.getElementById('sv-' + key);
             el.style.display = 'inline';
-            setTimeout(() => el.style.display = 'none', 3000);
-        } else {
-            alert('Failed to save template');
-        }
+            setTimeout(function(){el.style.display='none'},3000);
+        } else { alert('Save failed'); }
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-// ===== RESET TO DEFAULT =====
-async function resetTemplate(key) {
-    if (!confirm('Reset this template to the default? Your custom changes will be lost.')) return;
+async function doReset(key) {
+    if (!confirm('Reset to default? Your custom changes will be lost.')) return;
     try {
-        const r = await fetch('/api/theme-templates/' + key, { method: 'DELETE' });
-        if (r.ok) {
-            delete savedTemplates[key];
-            renderTemplates();
-        }
+        await fetch('/api/theme-templates/' + key, {method:'DELETE'});
+        delete saved[key];
+        render();
     } catch(e) { alert('Error: ' + e.message); }
 }
 
-// ===== TOGGLE ACTIVE =====
-function toggleActive(key, el) {
-    el.classList.toggle('on');
-}
-
-// ===== COPY VARIABLE =====
-function copyVar(v, el) {
+function cpVar(v, el) {
     navigator.clipboard.writeText('{{' + v + '}}');
-    el.style.background = 'var(--teal)';
+    el.style.background = '#0EA5A0';
     el.style.color = '#fff';
-    el.style.borderColor = 'var(--teal)';
-    setTimeout(() => { el.style.background = ''; el.style.color = ''; el.style.borderColor = ''; }, 800);
+    el.style.borderColor = '#0EA5A0';
+    setTimeout(function(){el.style.background='';el.style.color='';el.style.borderColor=''},800);
 }
 
-// ===== HELPERS =====
-function escapeHtml(str) {
-    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ===== INIT =====
-loadTemplates();
+// Load saved templates then render
+(async function(){
+    try {
+        var r = await fetch('/api/theme-templates');
+        if (r.ok) {
+            var data = await r.json();
+            data.forEach(function(t){saved[t.template_key]=t});
+        }
+    } catch(e) { console.log('Templates API not available yet'); }
+    render();
+})();
 </script>
 </body></html>
