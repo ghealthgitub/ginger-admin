@@ -8,6 +8,7 @@ const { authRequired, roleRequired, apiAuth, logActivity } = require('./middlewa
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -516,9 +517,23 @@ app.get('/media', authRequired, (req, res) => {
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
     filename: (req, file, cb) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, unique + ext);
+        // Keep original name, make it URL-safe
+        const ext = path.extname(file.originalname).toLowerCase();
+        let base = path.basename(file.originalname, path.extname(file.originalname))
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')   // replace non-alphanumeric with dashes
+            .replace(/^-|-$/g, '')           // trim leading/trailing dashes
+            .substring(0, 80);               // limit length
+        if (!base) base = 'file';
+        // Handle duplicates: ivf.jpg → ivf.jpg, ivf-1.jpg, ivf-2.jpg
+        let finalName = base + ext;
+        let counter = 1;
+        const uploadDir = path.join(__dirname, 'uploads');
+        while (fs.existsSync(path.join(uploadDir, finalName))) {
+            finalName = base + '-' + counter + ext;
+            counter++;
+        }
+        cb(null, finalName);
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
@@ -550,7 +565,6 @@ app.delete('/api/media/:id', apiAuth, roleRequired('super_admin'), async (req, r
     try {
         const file = await pool.query('SELECT * FROM media WHERE id = $1', [req.params.id]);
         if (file.rows.length > 0) {
-            const fs = require('fs');
             const filepath = path.join(__dirname, file.rows[0].url);
             if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
             await pool.query('DELETE FROM media WHERE id = $1', [req.params.id]);

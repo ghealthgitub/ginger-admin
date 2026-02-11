@@ -55,6 +55,42 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#F0F2F5;height:100vh;
 .feat-img-btn{padding:5px 10px;border-radius:5px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-family:inherit;transition:all .2s}
 .feat-img-btn:hover{border-color:var(--teal);color:var(--teal)}
 
+/* Media Picker Modal */
+.mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.mp-overlay.active{display:flex}
+.mp-modal{background:#fff;border-radius:14px;width:100%;max-width:860px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.mp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-200)}
+.mp-header h3{font-family:var(--font-display);font-size:1.1rem;color:var(--navy);margin:0}
+.mp-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.mp-close:hover{background:var(--gray-100);color:var(--navy)}
+.mp-tabs{display:flex;gap:0;border-bottom:1px solid var(--gray-200)}
+.mp-tab{padding:10px 20px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray-400);border-bottom:2px solid transparent;font-family:inherit}
+.mp-tab:hover{color:var(--navy)}
+.mp-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.mp-body{flex:1;overflow-y:auto;padding:16px 20px}
+.mp-upload-zone{border:2px dashed var(--gray-300);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.mp-upload-zone:hover{border-color:var(--ginger);background:rgba(242,101,34,.03)}
+.mp-search{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;font-family:inherit;margin-bottom:12px}
+.mp-search:focus{border-color:var(--teal);outline:none}
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:1;background:var(--gray-100)}
+.mp-item:hover{border-color:var(--teal)}
+.mp-item.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.3)}
+.mp-item.selected::after{content:'✓';position:absolute;top:6px;right:6px;width:22px;height:22px;background:var(--teal);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+.mp-item img{width:100%;height:100%;object-fit:cover}
+.mp-sidebar{width:220px;border-left:1px solid var(--gray-200);padding:16px;display:none;flex-shrink:0}
+.mp-sidebar.active{display:block}
+.mp-sidebar__img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;margin-bottom:10px;background:var(--gray-100)}
+.mp-sidebar__name{font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:4px;word-break:break-all}
+.mp-sidebar__meta{font-size:.7rem;color:var(--gray-400);margin-bottom:10px}
+.mp-sidebar label{font-size:.72rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:3px}
+.mp-sidebar input{width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.78rem;font-family:inherit;margin-bottom:8px}
+.mp-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50)}
+.mp-footer__info{font-size:.8rem;color:var(--gray-400)}
+.mp-set-btn{padding:8px 20px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+.mp-set-btn:hover{background:#0c918c}
+.mp-set-btn:disabled{background:var(--gray-300);cursor:not-allowed}
+
 /* Tags input */
 .tags-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border:1.5px solid var(--gray-200);border-radius:6px;min-height:36px;cursor:text}
 .tags-wrap:focus-within{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.1)}
@@ -237,14 +273,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#F0F2F5;height:100vh;
     <!-- Featured Image -->
     <div class="pl-section">
         <div class="pl-label">Featured Image</div>
-        <img class="feat-img-preview" id="featImgPreview">
-        <div class="feat-img-btns">
-            <label class="feat-img-btn">📁 Browse<input type="file" accept="image/*" style="display:none" onchange="handleFeatImage(this)"></label>
-            <button class="feat-img-btn" onclick="promptImageUrl()">🔗 URL</button>
-            <button class="feat-img-btn" onclick="openMediaGallery()">🖼️ Gallery</button>
+        <div id="featImgBox" style="cursor:pointer" onclick="openMediaPicker()">
+            <img class="feat-img-preview" id="featImgPreview">
+            <div id="featImgEmpty" style="border:2px dashed var(--gray-200);border-radius:8px;padding:20px;text-align:center;color:var(--gray-400);font-size:.8rem">
+                <div style="font-size:1.5rem;margin-bottom:4px">🖼️</div>
+                Click to set featured image
+            </div>
+        </div>
+        <div id="featImgActions" style="display:none;margin-top:6px;display:flex;gap:6px;align-items:center">
+            <span id="featImgName" style="font-size:.72rem;color:var(--gray-500);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+            <button class="feat-img-btn" onclick="openMediaPicker()">Change</button>
+            <button class="feat-img-btn" onclick="removeFeatImage()" style="color:#EF4444">Remove</button>
         </div>
         <input type="hidden" id="coverImage">
-        <input type="text" id="coverImageDisplay" class="pl-input" placeholder="Image URL will appear here" style="margin-top:6px;font-size:.75rem" oninput="document.getElementById('coverImage').value=this.value">
     </div>
 
     <!-- Status -->
@@ -477,49 +518,6 @@ function renderTags() {
 }
 
 // ===== FEATURED IMAGE =====
-async function handleFeatImage(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const preview = document.getElementById('featImgPreview');
-    const coverInput = document.getElementById('coverImage');
-    // Show temporary preview while uploading
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = 'block';
-    coverInput.value = 'Uploading...';
-    try {
-        const fd = new FormData();
-        fd.append('file', file);
-        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
-        if (r.ok) {
-            const data = await r.json();
-            preview.src = data.url;
-            coverInput.value = data.url;
-            document.getElementById('coverImageDisplay').value = data.url;
-        } else {
-            alert('Image upload failed');
-            coverInput.value = '';
-            preview.style.display = 'none';
-        }
-    } catch(e) {
-        alert('Upload error: ' + e.message);
-        coverInput.value = '';
-        preview.style.display = 'none';
-    }
-}
-function promptImageUrl() {
-    var curUrl = document.getElementById('coverImage').value || '';
-    var url = prompt('Enter image URL:', curUrl);
-    if (url) {
-        document.getElementById('featImgPreview').src = url;
-        document.getElementById('featImgPreview').style.display = 'block';
-        document.getElementById('coverImage').value = url;
-        document.getElementById('coverImageDisplay').value = url;
-    }
-}
-function openMediaGallery() {
-    window.open('/media', 'media', 'width=800,height=600');
-}
-
 // ===== EDITOR TABS =====
 function showTab(tab) {
     if (tab === 'preview') {
@@ -598,10 +596,12 @@ async function loadPost() {
         document.getElementById('category').value = postData.category || '';
         document.getElementById('status').value = postData.status || 'draft';
         document.getElementById('coverImage').value = postData.cover_image || '';
-        document.getElementById('coverImageDisplay').value = postData.cover_image || '';
         if (postData.cover_image) {
             document.getElementById('featImgPreview').src = postData.cover_image;
             document.getElementById('featImgPreview').style.display = 'block';
+            document.getElementById('featImgEmpty').style.display = 'none';
+            document.getElementById('featImgActions').style.display = 'flex';
+            document.getElementById('featImgName').textContent = postData.cover_image.split('/').pop();
         }
         if (postData.tags && postData.tags.length) { tags = postData.tags; renderTags(); }
         quill.root.innerHTML = postData.content || '';
@@ -654,7 +654,13 @@ async function savePost(statusOverride) {
             } else {
                 const saved = document.getElementById('savedIndicator');
                 saved.style.display = 'inline';
-                setTimeout(() => saved.style.display = 'none', 3000);
+                if (result.status === 'published' && result.slug) {
+                    saved.innerHTML = '✅ Published! <a href="https://ginger.healthcare/blog/' + result.slug + '/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Post →</a>';
+                    setTimeout(() => saved.style.display = 'none', 8000);
+                } else {
+                    saved.innerHTML = '✅ Saved!';
+                    setTimeout(() => saved.style.display = 'none', 3000);
+                }
             }
         } else {
             const e = await r.json();
@@ -819,4 +825,206 @@ document.getElementById('dragRight').removeEventListener('mousedown', ()=>{});
 
 // Auth
 // Auth handled by server-side authRequired middleware
+
+// ===== MEDIA PICKER MODAL =====
+</script>
+
+<!-- Media Picker Modal -->
+<div class="mp-overlay" id="mediaPicker">
+<div class="mp-modal">
+    <div class="mp-header">
+        <h3>Featured Image</h3>
+        <button class="mp-close" onclick="closeMediaPicker()">&times;</button>
+    </div>
+    <div class="mp-tabs">
+        <button class="mp-tab active" onclick="mpSwitchTab('library',this)">Media Library</button>
+        <button class="mp-tab" onclick="mpSwitchTab('upload',this)">Upload Files</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden">
+        <div class="mp-body" id="mpBody">
+            <!-- Library view (default) -->
+            <div id="mpLibraryView">
+                <input type="text" class="mp-search" id="mpSearch" placeholder="Search media..." oninput="mpFilter()">
+                <div class="mp-grid" id="mpGrid"><div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div></div>
+            </div>
+            <!-- Upload view -->
+            <div id="mpUploadView" style="display:none">
+                <div class="mp-upload-zone" id="mpUploadZone">
+                    <input type="file" id="mpFileInput" style="display:none" accept="image/*" multiple onchange="mpUploadFiles(this)">
+                    <div style="font-size:2rem;margin-bottom:8px">📁</div>
+                    <p style="color:var(--gray-500)"><strong>Click to upload</strong> or drag and drop</p>
+                    <p style="font-size:.8rem;color:var(--gray-400)">JPG, PNG, WebP — Max 10MB</p>
+                    <div id="mpUploadProgress" style="display:none;margin-top:10px;font-size:.85rem;color:var(--teal);font-weight:600"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mp-sidebar" id="mpSidebar">
+            <img class="mp-sidebar__img" id="mpSidebarImg">
+            <div class="mp-sidebar__name" id="mpSidebarName"></div>
+            <div class="mp-sidebar__meta" id="mpSidebarMeta"></div>
+            <label>Alt Text</label>
+            <input type="text" id="mpAltText" placeholder="Describe the image">
+            <p style="font-size:.65rem;color:var(--gray-400);margin:0 0 8px;line-height:1.4"><a href="https://moz.com/learn/seo/alt-text" target="_blank" style="color:var(--teal)">Learn how to describe the purpose of the image.</a> Leave empty if purely decorative.</p>
+            <label>Title</label>
+            <input type="text" id="mpTitle" placeholder="Image title">
+            <label>Caption</label>
+            <textarea id="mpCaption" rows="2" placeholder="Caption" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.78rem;font-family:inherit;margin-bottom:8px;resize:vertical"></textarea>
+            <label>File URL</label>
+            <input type="text" id="mpFileUrl" readonly style="background:var(--gray-50);cursor:pointer" onclick="mpCopyUrl()">
+            <button onclick="mpCopyUrl()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:.72rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-500);margin-bottom:8px;font-family:inherit">Copy URL to clipboard</button>
+            <div id="mpCopyMsg" style="display:none;font-size:.72rem;color:var(--teal);font-weight:600">✅ Copied!</div>
+        </div>
+    </div>
+    <div class="mp-footer">
+        <div class="mp-footer__info" id="mpFooterInfo"></div>
+        <button class="mp-set-btn" id="mpSetBtn" disabled onclick="mpSetFeaturedImage()">Set Featured Image</button>
+    </div>
+</div>
+</div>
+
+<script>
+var mpMedia = [];
+var mpSelected = null;
+
+function openMediaPicker() {
+    document.getElementById('mediaPicker').classList.add('active');
+    mpLoadMedia();
+}
+function closeMediaPicker() {
+    document.getElementById('mediaPicker').classList.remove('active');
+}
+
+function mpSwitchTab(tab, btn) {
+    document.querySelectorAll('.mp-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('mpLibraryView').style.display = tab === 'library' ? '' : 'none';
+    document.getElementById('mpUploadView').style.display = tab === 'upload' ? '' : 'none';
+    if (tab === 'library') mpLoadMedia();
+}
+
+async function mpLoadMedia() {
+    try {
+        var r = await fetch('/api/media');
+        if (r.ok) mpMedia = await r.json();
+    } catch(e) { mpMedia = []; }
+    mpRenderGrid();
+}
+
+function mpRenderGrid() {
+    var grid = document.getElementById('mpGrid');
+    var search = (document.getElementById('mpSearch').value || '').toLowerCase();
+    var filtered = mpMedia.filter(function(m) {
+        if (!m.mime_type || m.mime_type.indexOf('image') !== 0) return false;
+        if (search && (m.original_name || '').toLowerCase().indexOf(search) === -1) return false;
+        return true;
+    });
+    document.getElementById('mpFooterInfo').textContent = filtered.length + ' images';
+    if (!filtered.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)"><div style="font-size:2rem;margin-bottom:8px">🖼️</div>No images found</div>';
+        return;
+    }
+    grid.innerHTML = filtered.map(function(m) {
+        var sel = mpSelected && mpSelected.id === m.id ? ' selected' : '';
+        return '<div class="mp-item' + sel + '" onclick="mpSelectItem(' + m.id + ')" data-id="' + m.id + '"><img src="' + m.url + '" alt="' + (m.original_name||'') + '"></div>';
+    }).join('');
+}
+
+function mpFilter() { mpRenderGrid(); }
+
+function mpSelectItem(id) {
+    var item = null;
+    for (var i = 0; i < mpMedia.length; i++) {
+        if (mpMedia[i].id === id) { item = mpMedia[i]; break; }
+    }
+    if (!item) return;
+    mpSelected = item;
+    // Update grid selection
+    document.querySelectorAll('.mp-item').forEach(function(el) {
+        el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+    });
+    // Update sidebar
+    var sidebar = document.getElementById('mpSidebar');
+    sidebar.classList.add('active');
+    document.getElementById('mpSidebarImg').src = item.url;
+    var fname = item.original_name || item.filename || '';
+    document.getElementById('mpSidebarName').textContent = fname;
+    var size = item.size ? (item.size < 1048576 ? (item.size/1024).toFixed(0) + ' KB' : (item.size/1048576).toFixed(1) + ' MB') : '';
+    var date = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) : '';
+    document.getElementById('mpSidebarMeta').textContent = date + (size ? ' · ' + size : '');
+    document.getElementById('mpAltText').value = item.alt_text || '';
+    document.getElementById('mpTitle').value = fname.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    document.getElementById('mpCaption').value = '';
+    document.getElementById('mpFileUrl').value = window.location.origin + item.url;
+    // Enable set button
+    document.getElementById('mpSetBtn').disabled = false;
+}
+
+function mpCopyUrl() {
+    var url = document.getElementById('mpFileUrl').value;
+    navigator.clipboard.writeText(url).then(function() {
+        var msg = document.getElementById('mpCopyMsg');
+        msg.style.display = 'block';
+        setTimeout(function(){ msg.style.display = 'none'; }, 2000);
+    }).catch(function() {
+        document.getElementById('mpFileUrl').select();
+    });
+}
+
+function mpSetFeaturedImage() {
+    if (!mpSelected) return;
+    var url = mpSelected.url;
+    var alt = document.getElementById('mpAltText').value;
+    // Set the cover image
+    document.getElementById('coverImage').value = url;
+    document.getElementById('featImgPreview').src = url;
+    document.getElementById('featImgPreview').style.display = 'block';
+    document.getElementById('featImgPreview').alt = alt || '';
+    document.getElementById('featImgEmpty').style.display = 'none';
+    document.getElementById('featImgActions').style.display = 'flex';
+    document.getElementById('featImgName').textContent = mpSelected.original_name || 'Image';
+    closeMediaPicker();
+}
+
+function removeFeatImage() {
+    document.getElementById('coverImage').value = '';
+    document.getElementById('featImgPreview').style.display = 'none';
+    document.getElementById('featImgPreview').src = '';
+    document.getElementById('featImgEmpty').style.display = '';
+    document.getElementById('featImgActions').style.display = 'none';
+}
+
+async function mpUploadFiles(input) {
+    var files = input.files;
+    if (!files.length) return;
+    var prog = document.getElementById('mpUploadProgress');
+    prog.style.display = 'block';
+    for (var i = 0; i < files.length; i++) {
+        prog.textContent = 'Uploading ' + (i+1) + ' of ' + files.length + '...';
+        var fd = new FormData();
+        fd.append('file', files[i]);
+        try {
+            await fetch('/api/media/upload', { method: 'POST', body: fd });
+        } catch(e) {}
+    }
+    prog.textContent = '✅ Done! Switching to library...';
+    input.value = '';
+    setTimeout(function() {
+        prog.style.display = 'none';
+        // Switch to library tab
+        document.querySelectorAll('.mp-tab').forEach(function(t,i){ t.classList.toggle('active', i===0); });
+        document.getElementById('mpLibraryView').style.display = '';
+        document.getElementById('mpUploadView').style.display = 'none';
+        mpLoadMedia();
+    }, 800);
+}
+
+// Upload zone click/drag
+(function(){
+    var zone = document.getElementById('mpUploadZone');
+    if (!zone) return;
+    zone.addEventListener('click', function(e){ if(e.target.tagName!=='INPUT') document.getElementById('mpFileInput').click(); });
+    zone.addEventListener('dragover', function(e){ e.preventDefault(); zone.style.borderColor='var(--ginger)'; });
+    zone.addEventListener('dragleave', function(){ zone.style.borderColor=''; });
+    zone.addEventListener('drop', function(e){ e.preventDefault(); zone.style.borderColor=''; if(e.dataTransfer.files.length){document.getElementById('mpFileInput').files=e.dataTransfer.files; mpUploadFiles(document.getElementById('mpFileInput'));} });
+})();
 </script></body></html>
