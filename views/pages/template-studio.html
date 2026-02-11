@@ -6,412 +6,436 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif}
+
+/* STUDIO LAYOUT */
 .studio{display:flex;height:100vh;flex-direction:column}
-.studio-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:#0B2545;color:#fff;flex-shrink:0}
+.studio-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:50px;background:#0B2545;color:#fff;flex-shrink:0}
 .studio-topbar__left{display:flex;align-items:center;gap:12px}
-.studio-topbar__back{color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:6px;transition:all .2s}
+.studio-topbar__back{color:rgba(255,255,255,.6);text-decoration:none;font-size:.82rem;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;transition:all .2s}
 .studio-topbar__back:hover{background:rgba(255,255,255,.1);color:#fff}
-.studio-topbar__title{font-weight:600;font-size:1rem}
-.studio-topbar__icon{font-size:1.2rem}
-.studio-topbar__right{display:flex;align-items:center;gap:10px}
-.studio-btn{padding:8px 18px;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:6px}
-.studio-btn--save{background:#0EA5A0;color:#fff}
-.studio-btn--save:hover{background:#0c918c}
-.studio-btn--preview{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
-.studio-btn--preview:hover{background:rgba(255,255,255,.2)}
-.studio-btn--preview.active{background:#0EA5A0;border-color:#0EA5A0}
-.studio-saved{color:#34D399;font-weight:600;font-size:.82rem;display:none;align-items:center;gap:4px}
+.studio-topbar__title{font-weight:600;font-size:.95rem}
+.studio-topbar__right{display:flex;align-items:center;gap:8px}
+.sbtn{padding:7px 16px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:5px}
+.sbtn--save{background:#0EA5A0;color:#fff}
+.sbtn--save:hover{background:#0c918c}
+.sbtn--toggle{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15)}
+.sbtn--toggle:hover{background:rgba(255,255,255,.2)}
+.saved-msg{color:#34D399;font-weight:600;font-size:.8rem;display:none;align-items:center;gap:4px}
+
+/* BODY PANELS */
 .studio-body{display:flex;flex:1;overflow:hidden}
-.panel-code{width:50%;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #1e1e2e}
-.panel-preview{width:50%;display:flex;flex-direction:column;overflow:hidden;background:#f5f5f5}
-.panel-code.full{width:100%}
-.panel-preview.full{width:100%}
-.panel-code.hidden,.panel-preview.hidden{display:none}
-.code-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#181825;border-bottom:1px solid #313244;flex-shrink:0}
+
+/* LEFT PANEL - CODE + AI */
+.panel-left{width:45%;display:flex;flex-direction:column;overflow:hidden;background:#181825;flex-shrink:0}
+.panel-left.full{width:100%}
+.panel-left.hidden{display:none}
+
+/* Code toolbar */
+.code-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#11111b;border-bottom:1px solid #313244;flex-shrink:0}
 .code-tabs{display:flex;gap:2px}
-.code-tab{padding:6px 14px;font-size:.78rem;font-weight:600;color:#6c7086;cursor:pointer;border-radius:6px;transition:all .2s;border:none;background:none}
+.code-tab{padding:5px 12px;font-size:.75rem;font-weight:600;color:#585b70;cursor:pointer;border-radius:5px;transition:all .2s;border:none;background:none}
 .code-tab.active{color:#cdd6f4;background:#313244}
 .code-tab:hover:not(.active){color:#a6adc8}
-.code-info{font-size:.72rem;color:#585b70}
-.code-editor{flex:1;overflow:hidden;position:relative}
-.code-editor textarea{width:100%;height:100%;background:#1e1e2e;color:#cdd6f4;font-family:'Fira Code','Consolas',monospace;font-size:.82rem;line-height:1.7;padding:16px 20px;border:none;outline:none;resize:none;tab-size:4}
-.code-editor textarea::selection{background:rgba(14,165,160,.3)}
-.code-editor textarea::placeholder{color:#45475a}
-.preview-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-.preview-toolbar__title{font-size:.82rem;font-weight:600;color:#0B2545;display:flex;align-items:center;gap:6px}
-.preview-toolbar__actions{display:flex;gap:6px}
-.preview-device{padding:4px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:.75rem;cursor:pointer;background:#fff;color:#6b7280;transition:all .15s}
-.preview-device.active{background:#0B2545;color:#fff;border-color:#0B2545}
-.preview-frame-wrap{flex:1;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:16px;background:#e5e7eb}
-.preview-frame-wrap iframe{background:#fff;border:none;box-shadow:0 2px 20px rgba(0,0,0,.12);border-radius:8px;transition:width .3s}
-.vars-bar{padding:8px 16px;background:#11111b;border-bottom:1px solid #313244;display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
-.vars-bar__label{font-size:.72rem;color:#585b70;font-weight:600;margin-right:4px}
-.vars-bar .vt{display:inline-block;padding:2px 8px;font-size:.7rem;font-family:'Fira Code',monospace;background:#313244;color:#a6adc8;border-radius:4px;cursor:pointer;transition:all .15s}
-.vars-bar .vt:hover{background:#0EA5A0;color:#fff}
-.drag-handle{width:5px;background:#1e1e2e;cursor:col-resize;flex-shrink:0;transition:background .2s;position:relative}
+.code-info{font-size:.7rem;color:#45475a}
+
+/* Variables bar */
+.vars-bar{padding:6px 14px;background:#1e1e2e;border-bottom:1px solid #313244;display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex-shrink:0}
+.vars-bar b{font-size:.68rem;color:#45475a;margin-right:3px}
+.vt{display:inline-block;padding:2px 6px;font-size:.66rem;font-family:'Fira Code',monospace;background:#313244;color:#a6adc8;border-radius:3px;cursor:pointer;transition:all .12s}
+.vt:hover{background:#0EA5A0;color:#fff}
+
+/* Code editor */
+.code-wrap{flex:1;overflow:hidden;min-height:0}
+.code-wrap textarea{width:100%;height:100%;background:#1e1e2e;color:#cdd6f4;font-family:'Fira Code','Consolas',monospace;font-size:.78rem;line-height:1.65;padding:12px 16px;border:none;outline:none;resize:none;tab-size:4;display:block}
+.code-wrap textarea::selection{background:rgba(14,165,160,.3)}
+.code-wrap textarea.hidden{display:none}
+
+/* AI PROMPT SECTION */
+.ai-section{border-top:1px solid #313244;flex-shrink:0;background:#11111b}
+.ai-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;cursor:pointer}
+.ai-header span{font-size:.78rem;font-weight:600;color:#a6adc8}
+.ai-header .ai-toggle{font-size:.7rem;color:#585b70}
+.ai-body{display:none;padding:0 14px 12px}
+.ai-body.open{display:block}
+.ai-input-wrap{display:flex;gap:6px}
+.ai-input{flex:1;background:rgba(255,255,255,.05);border:1px solid #313244;border-radius:8px;padding:10px 12px;color:#cdd6f4;font-size:.82rem;font-family:inherit;resize:none;min-height:60px;max-height:120px;line-height:1.5;outline:none}
+.ai-input:focus{border-color:#0EA5A0}
+.ai-input::placeholder{color:#45475a}
+.ai-send{background:#0EA5A0;color:#fff;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-size:.82rem;font-weight:600;align-self:flex-end;height:38px;transition:background .2s}
+.ai-send:hover{background:#0c918c}
+.ai-send:disabled{opacity:.5;cursor:not-allowed}
+.ai-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.ai-chip{padding:4px 10px;font-size:.72rem;background:rgba(255,255,255,.06);border:1px solid #313244;border-radius:20px;color:#a6adc8;cursor:pointer;transition:all .15s}
+.ai-chip:hover{background:rgba(14,165,160,.2);border-color:#0EA5A0;color:#0EA5A0}
+.ai-status{font-size:.75rem;color:#585b70;padding:6px 0;display:none}
+.ai-status.show{display:block}
+
+/* DRAG HANDLE */
+.drag-handle{width:4px;background:#313244;cursor:col-resize;flex-shrink:0;transition:background .2s}
 .drag-handle:hover,.drag-handle.dragging{background:#0EA5A0}
-.drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#585b70;font-size:10px}
-@media(max-width:900px){.panel-code,.panel-preview{width:100%}.panel-preview{display:none}.drag-handle{display:none}}
+
+/* RIGHT PANEL - PREVIEW */
+.panel-right{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#e5e7eb}
+.panel-right.full{width:100%}
+.panel-right.hidden{display:none}
+.preview-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
+.preview-bar__title{font-size:.8rem;font-weight:600;color:#0B2545;display:flex;align-items:center;gap:5px}
+.preview-bar__actions{display:flex;gap:4px}
+.pdev{padding:3px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:.7rem;cursor:pointer;background:#fff;color:#6b7280;transition:all .12s}
+.pdev.active{background:#0B2545;color:#fff;border-color:#0B2545}
+.preview-wrap{flex:1;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:0;background:#e5e7eb}
+.preview-wrap iframe{background:#fff;border:none;transition:width .3s;width:100%;height:100%}
 </style>
 </head><body>
 <div class="studio">
-    <!-- TOPBAR -->
     <div class="studio-topbar">
         <div class="studio-topbar__left">
             <a href="/theme-templates" class="studio-topbar__back">← Back</a>
-            <span class="studio-topbar__icon" id="tplIcon">📄</span>
+            <span id="tplIcon">📄</span>
             <span class="studio-topbar__title" id="tplTitle">Template Studio</span>
         </div>
         <div class="studio-topbar__right">
-            <span class="studio-saved" id="savedMsg">✅ Saved!</span>
-            <button class="studio-btn studio-btn--preview" id="btnToggleView" onclick="toggleView()">📱 Split View</button>
-            <button class="studio-btn studio-btn--save" onclick="saveTemplate()">💾 Save Template</button>
+            <span class="saved-msg" id="savedMsg">✅ Saved!</span>
+            <button class="sbtn sbtn--toggle" onclick="toggleView()">⇆ Toggle View</button>
+            <button class="sbtn sbtn--save" onclick="saveTemplate()">💾 Save Template</button>
         </div>
     </div>
-
-    <!-- BODY -->
     <div class="studio-body">
-        <!-- CODE PANEL -->
-        <div class="panel-code" id="panelCode">
-            <div class="code-toolbar">
+        <!-- LEFT: CODE + AI -->
+        <div class="panel-left" id="panelLeft">
+            <div class="code-bar">
                 <div class="code-tabs">
-                    <button class="code-tab active" onclick="switchCodeTab('html',this)">HTML / EJS</button>
-                    <button class="code-tab" onclick="switchCodeTab('css',this)">Custom CSS</button>
+                    <button class="code-tab active" onclick="switchTab('html',this)">HTML / EJS</button>
+                    <button class="code-tab" onclick="switchTab('css',this)">Custom CSS</button>
                 </div>
                 <div class="code-info" id="codeInfo">0 lines</div>
             </div>
-            <div class="vars-bar" id="varsBar">
-                <span class="vars-bar__label">VARIABLES:</span>
+            <div class="vars-bar" id="varsBar"><b>VARS:</b></div>
+            <div class="code-wrap" id="codeWrap">
+                <textarea id="htmlEditor" spellcheck="false" placeholder="Your EJS template code..."></textarea>
+                <textarea id="cssEditor" spellcheck="false" placeholder="/* Custom CSS */" class="hidden"></textarea>
             </div>
-            <div class="code-editor">
-                <textarea id="htmlEditor" placeholder="Enter your EJS template code here..." spellcheck="false"></textarea>
-                <textarea id="cssEditor" placeholder="/* Custom CSS for this template */" spellcheck="false" style="display:none"></textarea>
-            </div>
-        </div>
-
-        <!-- DRAG HANDLE -->
-        <div class="drag-handle" id="dragHandle"></div>
-
-        <!-- PREVIEW PANEL -->
-        <div class="panel-preview" id="panelPreview">
-            <div class="preview-toolbar">
-                <div class="preview-toolbar__title">👁️ Live Preview</div>
-                <div class="preview-toolbar__actions">
-                    <button class="preview-device active" data-w="100%" onclick="setDevice(this)">🖥 Desktop</button>
-                    <button class="preview-device" data-w="768px" onclick="setDevice(this)">📱 Tablet</button>
-                    <button class="preview-device" data-w="375px" onclick="setDevice(this)">📱 Mobile</button>
-                    <button class="preview-device" data-w="refresh" onclick="renderPreview()">🔄</button>
+            <!-- AI PROMPT -->
+            <div class="ai-section">
+                <div class="ai-header" onclick="toggleAI()">
+                    <span>🤖 AI Design Assistant</span>
+                    <span class="ai-toggle" id="aiToggle">▲ Show</span>
+                </div>
+                <div class="ai-body" id="aiBody">
+                    <div class="ai-chips">
+                        <span class="ai-chip" onclick="aiQuick('Make the design more modern and visually attractive')">✨ Modernize</span>
+                        <span class="ai-chip" onclick="aiQuick('Reduce spacing, make it tighter and cleaner')">📐 Tighten</span>
+                        <span class="ai-chip" onclick="aiQuick('Add a CTA button section at the bottom')">🔘 Add CTA</span>
+                        <span class="ai-chip" onclick="aiQuick('Make it more colorful with brand colors')">🎨 Colorize</span>
+                        <span class="ai-chip" onclick="aiQuick('Improve typography - better fonts, sizes, hierarchy')">🔤 Typography</span>
+                        <span class="ai-chip" onclick="aiQuick('Add hover effects and smooth transitions')">✨ Animations</span>
+                        <span class="ai-chip" onclick="aiQuick('Make it mobile-friendly responsive')">📱 Responsive</span>
+                    </div>
+                    <div class="ai-input-wrap">
+                        <textarea class="ai-input" id="aiPrompt" placeholder="Describe what you want to change... e.g. 'Make the blog title bigger, add a sidebar with related posts, reduce paragraph spacing'" rows="2"></textarea>
+                        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">Send ✨</button>
+                    </div>
+                    <div class="ai-status" id="aiStatus">🔄 AI is working...</div>
                 </div>
             </div>
-            <div class="preview-frame-wrap" id="previewWrap">
-                <iframe id="previewFrame" style="width:100%;height:100%"></iframe>
+        </div>
+        <div class="drag-handle" id="dragHandle"></div>
+        <!-- RIGHT: PREVIEW -->
+        <div class="panel-right" id="panelRight">
+            <div class="preview-bar">
+                <div class="preview-bar__title">👁️ Live Preview</div>
+                <div class="preview-bar__actions">
+                    <button class="pdev active" data-w="100%" onclick="setDev(this)">🖥 Desktop</button>
+                    <button class="pdev" data-w="768px" onclick="setDev(this)">📱 Tablet</button>
+                    <button class="pdev" data-w="375px" onclick="setDev(this)">📱 Mobile</button>
+                    <button class="pdev" onclick="renderPreview()">🔄</button>
+                </div>
             </div>
+            <div class="preview-wrap"><iframe id="previewFrame"></iframe></div>
         </div>
     </div>
 </div>
-
 <script>
-var templateKey = window.location.pathname.split('/').pop();
-var templateData = null;
-var previewData = null;
-var siteCSS = '';
-var currentCodeTab = 'html';
-var previewTimer = null;
-var viewMode = 'split'; // split | code | preview
+var TK = window.location.pathname.split('/').pop();
+var tplData = null, prevData = null, siteCSS = '', curTab = 'html', prevTimer = null, viewMode = 'split';
 
-// Template metadata
-var TMETA = {
-    'blog-detail':{label:'Blog Post',icon:'📝',vars:'post.title,post.content,post.excerpt,post.author_name,post.read_time,post.category,post.cover_image'},
-    'destination-detail':{label:'Destination',icon:'🌍',vars:'destination.name,destination.flag,destination.tagline,destination.description,destination.hospital_count,destination.doctor_count,destination.avg_savings,hospitals[],doctors[]'},
-    'specialty-detail':{label:'Specialty',icon:'🏷️',vars:'specialty.name,specialty.icon,specialty.description,specialty.long_description,treatments[]'},
-    'treatment-detail':{label:'Treatment',icon:'💊',vars:'treatment.name,treatment.description,treatment.long_description,treatment.cost_range_usd,treatment.duration,treatment.recovery_time,treatment.specialty_icon,costs[]'},
-    'hospital-detail':{label:'Hospital',icon:'🏥',vars:'hospital.name,hospital.description,hospital.city,hospital.country,hospital.beds,hospital.established,hospital.rating,hospital.accreditations,doctors[]'},
-    'doctor-detail':{label:'Doctor',icon:'👨‍⚕️',vars:'doctor.name,doctor.title,doctor.specialty,doctor.experience_years,doctor.description,doctor.qualifications,doctor.hospital_name,doctor.hospital_slug'},
-    'blog-list':{label:'Blog Listing',icon:'📝',vars:'posts[].title,posts[].slug,posts[].excerpt,posts[].category,posts[].read_time'},
-    'destinations-list':{label:'Destinations Listing',icon:'🌍',vars:'destinations[].name,destinations[].slug,destinations[].flag'},
-    'specialties-list':{label:'Specialties Listing',icon:'🏷️',vars:'specialties[].name,specialties[].slug,specialties[].icon'},
-    'results':{label:'Results / Testimonials',icon:'⭐',vars:'testimonials[].patient_name,testimonials[].quote,testimonials[].rating'},
-    'get-quote':{label:'Get Quote Form',icon:'📋',vars:''},
-    'cost-calculator':{label:'Cost Calculator',icon:'🧮',vars:''},
-    'contact':{label:'Contact Page',icon:'📞',vars:''}
+var META = {
+    'blog-detail':{label:'Blog Post',icon:'📝',cat:'detail',vars:'post.title,post.content,post.excerpt,post.author_name,post.read_time,post.category,post.cover_image'},
+    'destination-detail':{label:'Destination',icon:'🌍',cat:'detail',vars:'destination.name,destination.flag,destination.tagline,destination.description,destination.hospital_count,destination.doctor_count,destination.avg_savings,hospitals[],doctors[]'},
+    'specialty-detail':{label:'Specialty',icon:'🏷️',cat:'detail',vars:'specialty.name,specialty.icon,specialty.description,specialty.long_description,treatments[]'},
+    'treatment-detail':{label:'Treatment',icon:'💊',cat:'detail',vars:'treatment.name,treatment.description,treatment.long_description,treatment.cost_range_usd,treatment.duration,treatment.recovery_time,treatment.specialty_icon,costs[]'},
+    'hospital-detail':{label:'Hospital',icon:'🏥',cat:'detail',vars:'hospital.name,hospital.description,hospital.city,hospital.country,hospital.beds,hospital.established,hospital.rating,hospital.accreditations,doctors[]'},
+    'doctor-detail':{label:'Doctor',icon:'👨‍⚕️',cat:'detail',vars:'doctor.name,doctor.title,doctor.specialty,doctor.experience_years,doctor.description,doctor.qualifications,doctor.hospital_name,doctor.hospital_slug'},
+    'blog-list':{label:'Blog Listing',icon:'📝',cat:'listing',vars:'posts[].title,posts[].slug,posts[].excerpt,posts[].category,posts[].read_time'},
+    'destinations-list':{label:'Destinations Listing',icon:'🌍',cat:'listing',vars:'destinations[].name,destinations[].slug,destinations[].flag'},
+    'specialties-list':{label:'Specialties Listing',icon:'🏷️',cat:'listing',vars:'specialties[].name,specialties[].slug,specialties[].icon'},
+    'results':{label:'Results',icon:'⭐',cat:'listing',vars:'testimonials[].patient_name,testimonials[].quote,testimonials[].rating'},
+    'get-quote':{label:'Get Quote',icon:'📋',cat:'page',vars:''},'cost-calculator':{label:'Cost Calculator',icon:'🧮',cat:'page',vars:''},'contact':{label:'Contact',icon:'📞',cat:'page',vars:''}
 };
 
-// ===== INIT =====
+// Static header/footer HTML for preview
+var PREVIEW_HEADER = '<div class="topbar"><div class="topbar__inner"><div class="topbar__contact"><a href="#">✉ info@ginger.healthcare</a><a href="#">💬 WhatsApp Us</a></div><div>🌐 English</div></div></div><nav id="mainNav"><div class="nav__inner"><a href="/" class="logo"><div class="logo__icon">G</div><div class="logo__text"><span>Ginger</span> <span>Healthcare</span></div></a><div class="nav__links"><a href="#" class="nav__link">Destinations</a><a href="#" class="nav__link">Specialties</a><a href="#" class="nav__link">How It Works</a><a href="#" class="nav__link">Cost Calculator</a><a href="#" class="nav__link">Results</a><a href="#" class="nav__link nav__link--active">Blog</a></div><div class="nav__cta"><a href="#" class="btn btn--ghost" style="padding:10px 20px;font-size:.88rem">📞 Free Consult</a><a href="#" class="btn btn--primary">Get Free Quote</a></div></div></nav>';
+
+var PREVIEW_FOOTER = '<div class="section" style="padding-bottom:48px"><div class="final-cta"><div class="final-cta__bg"></div><div class="final-cta__orb1"></div><div class="final-cta__orb2"></div><div class="final-cta__inner"><h2>Your Health Deserves the <em>Best — Not the Most Expensive</em></h2><p>Join 5,000+ patients from 60+ countries who chose world-class care at a fraction of the cost.</p><div class="final-cta__btns"><a href="#" class="btn btn--primary btn--large">📋 Request an Estimate</a><a href="#" class="btn btn--white btn--large">📞 Speak to a Counselor</a></div><div class="final-cta__trust"><span>🔒 100% Free</span><span>🏥 JCI Accredited</span><span>📞 24/7 Support</span><span>🤝 No Obligation</span></div></div></div></div><footer class="footer"><div class="footer__inner"><div class="footer__grid"><div class="footer__brand"><a href="/" class="logo"><div class="logo__icon">G</div><div class="logo__text"><span>Ginger</span> <span>Healthcare</span></div></a><p>Making world-class healthcare accessible to everyone.</p></div><div><div class="footer__col-title">Destinations</div><ul class="footer__links"><li><a href="#">🇮🇳 India</a></li><li><a href="#">🇹🇷 Turkey</a></li><li><a href="#">🇹🇭 Thailand</a></li></ul></div><div><div class="footer__col-title">Resources</div><ul class="footer__links"><li><a href="#">How It Works</a></li><li><a href="#">Cost Calculator</a></li><li><a href="#">Blog</a></li><li><a href="#">FAQ</a></li></ul></div><div><div class="footer__col-title">Company</div><ul class="footer__links"><li><a href="#">About Us</a></li><li><a href="#">Contact</a></li><li><a href="#">Privacy Policy</a></li></ul></div></div><div class="footer__bottom"><span>© 2026 Ginger Healthcare. All rights reserved.</span><span>New Delhi, India</span></div></div></footer>';
+
 async function init() {
-    var meta = TMETA[templateKey];
-    if (!meta) { document.body.innerHTML = '<h2 style="padding:40px">Template not found: ' + templateKey + '</h2>'; return; }
+    var m = META[TK];
+    if (!m) { document.body.innerHTML = '<h2 style="padding:40px">Template not found: '+TK+'</h2>'; return; }
+    document.getElementById('tplTitle').textContent = m.label + ' Template';
+    document.getElementById('tplIcon').textContent = m.icon;
+    document.title = m.label + ' Studio | Ginger Admin';
 
-    document.getElementById('tplTitle').textContent = meta.label + ' Template';
-    document.getElementById('tplIcon').textContent = meta.icon;
-    document.title = meta.label + ' Template Studio | Ginger Admin';
-
-    // Build variables bar
-    if (meta.vars) {
+    // Build vars bar
+    if (m.vars) {
         var vb = document.getElementById('varsBar');
-        meta.vars.split(',').forEach(function(v) {
-            var sp = document.createElement('span');
-            sp.className = 'vt';
-            sp.textContent = '<%= ' + v.trim() + ' %>';
-            sp.onclick = function() {
-                navigator.clipboard.writeText('<%= ' + v.trim() + ' %>');
-                sp.style.background = '#0EA5A0'; sp.style.color = '#fff';
-                setTimeout(function(){ sp.style.background = ''; sp.style.color = ''; }, 600);
-            };
+        m.vars.split(',').forEach(function(v) {
+            var sp = document.createElement('span'); sp.className='vt';
+            sp.textContent = '<%= '+v.trim()+' %>';
+            sp.onclick = function(){ navigator.clipboard.writeText('<%= '+v.trim()+' %>'); sp.style.background='#0EA5A0';sp.style.color='#fff';setTimeout(function(){sp.style.background='';sp.style.color=''},500); };
             vb.appendChild(sp);
         });
     }
 
-    // Load saved template (if exists)
-    try {
-        var r = await fetch('/api/theme-templates/' + templateKey);
-        if (r.ok) {
-            templateData = await r.json();
-            document.getElementById('htmlEditor').value = templateData.html_template || '';
-            document.getElementById('cssEditor').value = templateData.css || '';
-        }
-    } catch(e) {}
+    // Load saved template
+    try { var r=await fetch('/api/theme-templates/'+TK); if(r.ok){tplData=await r.json();document.getElementById('htmlEditor').value=tplData.html_template||'';document.getElementById('cssEditor').value=tplData.css||'';} } catch(e){}
 
-    // If no saved template, load default from theme-templates page
+    // If no saved, load defaults
     if (!document.getElementById('htmlEditor').value) {
-        try {
-            var r2 = await fetch('/theme-templates');
-            if (r2.ok) {
-                var html = await r2.text();
-                var m = html.match(/id="tpl-defaults"[^>]*>([\s\S]*?)<\/script>/);
-                if (m) {
-                    var defaults = JSON.parse(m[1]);
-                    if (defaults[templateKey]) {
-                        document.getElementById('htmlEditor').value = defaults[templateKey];
-                    }
-                }
-            }
-        } catch(e) {}
+        try { var r2=await fetch('/theme-templates'); if(r2.ok){var h=await r2.text();var mt=h.match(/id="tpl-defaults"[^>]*>([\s\S]*?)<\/script>/);if(mt){var defs=JSON.parse(mt[1]);if(defs[TK])document.getElementById('htmlEditor').value=defs[TK];}} } catch(e){}
     }
 
-    // Load preview data from DB
-    try {
-        var r3 = await fetch('/api/theme-templates/preview-data/' + templateKey);
-        if (r3.ok) previewData = await r3.json();
-    } catch(e) {}
+    // Load preview data
+    try { var r3=await fetch('/api/theme-templates/preview-data/'+TK); if(r3.ok) prevData=await r3.json(); } catch(e){}
 
-    // Load site CSS for preview
-    try {
-        var r4 = await fetch('https://ginger.healthcare/css/style.css');
-        if (r4.ok) siteCSS = await r4.text();
-    } catch(e) {
-        siteCSS = ':root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--font-display:"Playfair Display",serif;--font-body:"DM Sans",sans-serif;--radius-sm:8px;--radius-md:12px}body{font-family:var(--font-body);color:var(--gray-500)}';
+    // Load site CSS
+    try { var r4=await fetch('/css/site-preview.css'); if(r4.ok) siteCSS=await r4.text(); } catch(e){}
+    if (!siteCSS) {
+        try { var r5=await fetch('https://ginger.healthcare/css/style.css'); if(r5.ok) siteCSS=await r5.text(); } catch(e){}
     }
+    if (!siteCSS) siteCSS = ':root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--white:#fff;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151;--ginger-light:#FF8A50;--font-display:"Playfair Display",serif;--font-body:"DM Sans",sans-serif;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--shadow-sm:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08)}body{font-family:var(--font-body);color:var(--gray-600);line-height:1.6}a{color:inherit;text-decoration:none}';
 
-    updateLineCount();
+    updateLines();
     renderPreview();
 
-    // Live preview on typing (debounced)
-    document.getElementById('htmlEditor').addEventListener('input', function() {
-        updateLineCount();
-        clearTimeout(previewTimer);
-        previewTimer = setTimeout(renderPreview, 600);
-    });
-    document.getElementById('cssEditor').addEventListener('input', function() {
-        clearTimeout(previewTimer);
-        previewTimer = setTimeout(renderPreview, 600);
-    });
+    document.getElementById('htmlEditor').addEventListener('input', debouncePreview);
+    document.getElementById('cssEditor').addEventListener('input', debouncePreview);
+
+    // Open AI panel by default
+    toggleAI();
 }
 
-// ===== RENDER PREVIEW =====
+function debouncePreview() { updateLines(); clearTimeout(prevTimer); prevTimer = setTimeout(renderPreview, 500); }
+
+// ===== PREVIEW RENDERING =====
 function renderPreview() {
     var ejs = document.getElementById('htmlEditor').value;
     var css = document.getElementById('cssEditor').value;
     var frame = document.getElementById('previewFrame');
+    var html = processEJS(ejs);
 
-    // Simple EJS-to-HTML conversion for preview
-    var html = ejs;
-    if (previewData) {
-        // Replace <%= var %> with actual values
-        html = html.replace(/<%=\s*([\w\.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
-            try {
-                var cleanExpr = expr.split('||')[0].trim();
-                var fallback = expr.split('||')[1];
-                if (fallback) fallback = fallback.trim().replace(/^['"]|['"]$/g, '');
-                var val = resolveValue(previewData, cleanExpr);
-                if (val === undefined || val === null) val = fallback || '';
-                if (Array.isArray(val)) val = val.join(', ');
-                return String(val);
-            } catch(e) { return match; }
-        });
-        // Replace <%- var %> (unescaped) same way
-        html = html.replace(/<%-\s*([\w\.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
-            try {
-                var cleanExpr = expr.split('||')[0].trim();
-                var fallback = expr.split('||')[1];
-                if (fallback) fallback = fallback.trim().replace(/^['"]|['"]$/g, '');
-                var val = resolveValue(previewData, cleanExpr);
-                if (val === undefined || val === null) val = fallback || '';
-                return String(val);
-            } catch(e) { return match; }
-        });
-        // Handle forEach loops: <% items.forEach(x => { %> ... <% }); %>
-        html = html.replace(/<%\s*(\w+)\.forEach\(\s*(?:\(?\s*(\w+)(?:\s*,\s*\w+)?\s*\)?\s*=>|function\s*\(\s*(\w+)\s*\))\s*\{?\s*%>([\s\S]*?)<%\s*\}?\);?\s*%>/g, function(match, arrName, itemVar1, itemVar2, body) {
-            var itemVar = itemVar1 || itemVar2;
-            var arr = resolveValue(previewData, arrName);
-            if (!Array.isArray(arr) || arr.length === 0) return '';
-            return arr.map(function(item) {
-                return body.replace(/<%=\s*(\w+)\.([\w.]+)\s*%>/g, function(m, v, prop) {
-                    if (v === itemVar) return item[prop] !== undefined ? String(item[prop]) : '';
-                    return m;
-                });
-            }).join('');
-        });
-        // Handle if blocks: <% if (condition) { %> ... <% } %>
-        html = html.replace(/<%\s*if\s*\(([^)]+)\)\s*\{\s*%>([\s\S]*?)<%\s*\}\s*%>/g, function(match, cond, body) {
-            try {
-                var cleanCond = cond.replace(/(\w+(?:\.\w+)+)/g, function(path) {
-                    var val = resolveValue(previewData, path);
-                    if (val === undefined) return 'undefined';
-                    if (typeof val === 'string') return '"' + val + '"';
-                    return String(val);
-                });
-                // Replace .length with actual length
-                cleanCond = cleanCond.replace(/"(\d+)"/g, '$1');
-                if (eval(cleanCond)) return body;
-                return '';
-            } catch(e) { return body; }
-        });
-        // Clean up any remaining EJS tags
-        html = html.replace(/<%[\s\S]*?%>/g, '');
-    }
-
-    // Build full preview HTML
-    var previewHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    previewHtml += '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">';
-    previewHtml += '<style>' + siteCSS + '</style>';
-    if (css) previewHtml += '<style>' + css + '</style>';
-    previewHtml += '</head><body>';
-    // Add a mini site header for context
-    previewHtml += '<div style="background:#0B2545;padding:12px 32px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="background:#F26522;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem">G</div><span style="color:#fff;font-weight:600;font-family:DM Sans,sans-serif">Ginger Healthcare</span></div><div style="display:flex;gap:16px;align-items:center"><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Destinations</a><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Specialties</a><a style="color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem">Blog</a><span style="background:#0EA5A0;color:#fff;padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600">Get Free Quote</span></div></div>';
-    previewHtml += html;
-    previewHtml += '</body></html>';
-
-    frame.srcdoc = previewHtml;
+    var doc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    doc += '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">';
+    doc += '<style>' + siteCSS + '</style>';
+    if (css) doc += '<style>' + css + '</style>';
+    doc += '</head><body>';
+    doc += PREVIEW_HEADER;
+    doc += html;
+    doc += PREVIEW_FOOTER;
+    doc += '</body></html>';
+    frame.srcdoc = doc;
 }
 
-function resolveValue(obj, path) {
-    var parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
-    var val = obj;
-    for (var i = 0; i < parts.length; i++) {
-        if (val === undefined || val === null) return undefined;
-        val = val[parts[i]];
-    }
-    return val;
+function processEJS(ejs) {
+    var html = ejs;
+    if (!prevData) return html;
+    // Replace <%- var %> (unescaped HTML output)
+    html = html.replace(/<%-\s*([\w.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
+        return resolveExpr(expr);
+    });
+    // Replace <%= var %>
+    html = html.replace(/<%=\s*([\w.\[\]]+(?:\s*\|\|\s*[^%]+)?)\s*%>/g, function(match, expr) {
+        return escHtml(resolveExpr(expr));
+    });
+    // forEach loops
+    html = html.replace(/<%\s*(\w+)\.forEach\(\s*(?:\(?\s*(\w+)(?:\s*,\s*\w+)?\s*\)?\s*=>|function\s*\(\s*(\w+)\s*\))\s*\{?\s*%>([\s\S]*?)<%\s*\}?\);?\s*%>/g, function(match, arrName, v1, v2, body) {
+        var iv = v1 || v2;
+        var arr = resolveVal(prevData, arrName);
+        if (!Array.isArray(arr) || !arr.length) return '';
+        return arr.map(function(item) {
+            var b = body;
+            // Replace item.prop refs
+            b = b.replace(/<%[=-]\s*(\w+)\.([\w.]+)\s*%>/g, function(m, v, prop) {
+                if (v === iv) return item[prop] !== undefined ? String(item[prop]) : '';
+                return m;
+            });
+            // Replace (item.accreditations||[]).join(', ')
+            b = b.replace(/<%=\s*\((\w+)\.([\w]+)\|\|\[\]\)\.join\([^)]*\)\s*%>/g, function(m, v, prop) {
+                if (v === iv && Array.isArray(item[prop])) return item[prop].join(', ');
+                return '';
+            });
+            return b;
+        }).join('');
+    });
+    // if blocks
+    html = html.replace(/<%\s*if\s*\(([^)]+)\)\s*\{\s*%>([\s\S]*?)<%\s*\}\s*%>/g, function(match, cond, body) {
+        try {
+            var c = cond.replace(/([\w]+(?:\.[\w]+)+)/g, function(p) {
+                var v = resolveVal(prevData, p);
+                if (v === undefined) return 'undefined';
+                if (typeof v === 'string') return JSON.stringify(v);
+                if (Array.isArray(v)) return v.length;
+                return String(v);
+            });
+            if (eval(c)) return processEJS(body);
+            return '';
+        } catch(e) { return body; }
+    });
+    // Clean remaining EJS
+    html = html.replace(/<%[\s\S]*?%>/g, '');
+    return html;
+}
+
+function resolveExpr(expr) {
+    var parts = expr.split('||');
+    var val = resolveVal(prevData, parts[0].trim());
+    if (val !== undefined && val !== null && val !== '') return String(val);
+    if (parts[1]) return parts[1].trim().replace(/^['"]|['"]$/g, '');
+    return '';
+}
+function resolveVal(obj, path) {
+    var p = path.replace(/\[(\w+)\]/g,'.$1').split('.');
+    var v = obj;
+    for (var i=0;i<p.length;i++){if(v==null)return undefined;v=v[p[i]];}
+    return v;
+}
+function escHtml(s) {
+    var d=document.createElement('div');d.textContent=s;return d.innerHTML;
 }
 
 // ===== CODE TABS =====
-function switchCodeTab(tab, el) {
-    currentCodeTab = tab;
+function switchTab(tab, el) {
+    curTab = tab;
     document.querySelectorAll('.code-tab').forEach(function(t){t.classList.remove('active')});
     el.classList.add('active');
-    document.getElementById('htmlEditor').style.display = tab === 'html' ? '' : 'none';
-    document.getElementById('cssEditor').style.display = tab === 'css' ? '' : 'none';
-    updateLineCount();
+    document.getElementById('htmlEditor').className = tab==='html'?'':'hidden';
+    document.getElementById('cssEditor').className = tab==='css'?'':'hidden';
+    updateLines();
+}
+function updateLines() {
+    var ed = curTab==='html'?document.getElementById('htmlEditor'):document.getElementById('cssEditor');
+    document.getElementById('codeInfo').textContent = (ed.value||'').split('\n').length + ' lines';
 }
 
-function updateLineCount() {
-    var ed = currentCodeTab === 'html' ? document.getElementById('htmlEditor') : document.getElementById('cssEditor');
-    var lines = (ed.value || '').split('\n').length;
-    document.getElementById('codeInfo').textContent = lines + ' lines';
-}
-
-// ===== VIEW MODES =====
+// ===== VIEW TOGGLE =====
 function toggleView() {
-    var modes = ['split', 'code', 'preview'];
-    var idx = (modes.indexOf(viewMode) + 1) % modes.length;
-    viewMode = modes[idx];
-    var pc = document.getElementById('panelCode');
-    var pp = document.getElementById('panelPreview');
-    var dh = document.getElementById('dragHandle');
-    var btn = document.getElementById('btnToggleView');
-    pc.className = 'panel-code'; pp.className = 'panel-preview'; dh.style.display = '';
-    if (viewMode === 'code') { pp.classList.add('hidden'); dh.style.display = 'none'; pc.classList.add('full'); btn.textContent = '👁️ Show Preview'; }
-    else if (viewMode === 'preview') { pc.classList.add('hidden'); dh.style.display = 'none'; pp.classList.add('full'); btn.textContent = '✏️ Show Code'; btn.classList.add('active'); }
-    else { btn.textContent = '📱 Split View'; btn.classList.remove('active'); }
-    if (viewMode !== 'code') renderPreview();
+    var modes=['split','code','preview'];
+    viewMode = modes[(modes.indexOf(viewMode)+1)%modes.length];
+    var pl=document.getElementById('panelLeft'),pr=document.getElementById('panelRight'),dh=document.getElementById('dragHandle');
+    pl.className='panel-left';pr.className='panel-right';dh.style.display='';
+    if(viewMode==='code'){pr.classList.add('hidden');dh.style.display='none';pl.classList.add('full')}
+    else if(viewMode==='preview'){pl.classList.add('hidden');dh.style.display='none';pr.classList.add('full')}
+    if(viewMode!=='code')renderPreview();
 }
 
-// ===== RESPONSIVE PREVIEW =====
-function setDevice(el) {
-    var w = el.getAttribute('data-w');
-    if (w === 'refresh') { renderPreview(); return; }
-    document.querySelectorAll('.preview-device').forEach(function(d){d.classList.remove('active')});
+// ===== DEVICE PREVIEW =====
+function setDev(el) {
+    var w=el.getAttribute('data-w');
+    if(!w){renderPreview();return}
+    document.querySelectorAll('.pdev').forEach(function(d){d.classList.remove('active')});
     el.classList.add('active');
-    document.getElementById('previewFrame').style.width = w;
+    var f=document.getElementById('previewFrame');
+    f.style.width=w;
+    if(w==='100%'){f.style.margin='0';f.style.boxShadow='none';f.style.borderRadius='0'}
+    else{f.style.margin='16px auto';f.style.boxShadow='0 2px 20px rgba(0,0,0,.12)';f.style.borderRadius='8px';f.style.height='calc(100% - 32px)'}
+}
+
+// ===== AI SECTION =====
+function toggleAI() {
+    var body=document.getElementById('aiBody'),tog=document.getElementById('aiToggle');
+    body.classList.toggle('open');
+    tog.textContent = body.classList.contains('open') ? '▼ Hide' : '▲ Show';
+}
+function aiQuick(prompt) {
+    document.getElementById('aiPrompt').value = prompt;
+    sendAI();
+}
+async function sendAI() {
+    var prompt = document.getElementById('aiPrompt').value.trim();
+    if (!prompt) return;
+    var btn=document.getElementById('aiSendBtn'), status=document.getElementById('aiStatus');
+    btn.disabled=true; status.className='ai-status show'; status.textContent='🔄 AI is working on your design...';
+
+    var currentHTML = document.getElementById('htmlEditor').value;
+    var currentCSS = document.getElementById('cssEditor').value;
+    var m = META[TK];
+
+    var sysPrompt = 'You are a web design expert for Ginger Healthcare, a medical tourism platform. You modify EJS templates to make them beautiful and professional.\n\nDesign system:\n- Colors: Navy #0B2545, Orange #F26522, Teal #0EA5A0, grays\n- Fonts: Playfair Display (headings), DM Sans (body)\n- CSS vars: --navy, --ginger, --teal, --font-display, --font-body\n- Classes available: page-hero, content-section, info-card, grid-2/3/4, section, btn, btn--primary, btn--large\n\nIMPORTANT: Return ONLY the modified template code. Do NOT include any explanation, markdown, or code fences. Just the raw HTML/EJS.\n\nThe user is editing the "' + m.label + '" template.\nAvailable variables: ' + m.vars + '\n\nCurrent HTML template:\n' + currentHTML;
+    if (currentCSS) sysPrompt += '\n\nCurrent custom CSS:\n' + currentCSS;
+
+    try {
+        var r = await fetch('/api/ai/generate', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                prompt: 'Modify this EJS template based on my request. Return ONLY the modified HTML/EJS code, no explanation, no markdown fences, no backticks. Keep all EJS tags (<%= %>, <%- %>, <% %>) intact.\n\nMy request: ' + prompt,
+                type: 'general',
+                context: 'Template: ' + m.label + '\nAvailable variables: ' + m.vars + '\nDesign system: Navy #0B2545, Orange/Ginger #F26522, Teal #0EA5A0. Fonts: Playfair Display (--font-display for headings), DM Sans (--font-body for body). CSS vars: --navy, --ginger, --teal, --ginger-light. Classes: page-hero, content-section, info-card, grid-2/3/4, section, btn, btn--primary, btn--large.\n\nCurrent template:\n' + currentHTML + (currentCSS ? '\n\nCurrent CSS:\n' + currentCSS : '')
+            })
+        });
+        if (r.ok) {
+            var data = await r.json();
+            var response = data.content || '';
+            if (typeof response === 'object' && response.length) response = response.map(function(b){return b.text||''}).join('');
+
+            // Check if response contains both HTML and CSS
+            response = response.replace(/```[\w]*\n?/g, '').trim();
+
+            if (response.indexOf('<style>') > -1) {
+                var cssMatch = response.match(/<style>([\s\S]*?)<\/style>/);
+                if (cssMatch) {
+                    document.getElementById('cssEditor').value = (currentCSS ? currentCSS + '\n' : '') + cssMatch[1].trim();
+                    response = response.replace(/<style>[\s\S]*?<\/style>/g, '').trim();
+                }
+            }
+            document.getElementById('htmlEditor').value = response;
+            status.textContent = '✅ Template updated! Check the preview →';
+            status.className = 'ai-status show';
+            renderPreview();
+            setTimeout(function(){status.className='ai-status'},4000);
+        } else {
+            status.textContent = '❌ AI request failed. Try again.';
+        }
+    } catch(e) {
+        status.textContent = '❌ Error: ' + e.message;
+    }
+    btn.disabled = false;
+    document.getElementById('aiPrompt').value = '';
 }
 
 // ===== SAVE =====
 async function saveTemplate() {
-    var meta = TMETA[templateKey];
+    var m = META[TK];
     try {
-        var r = await fetch('/api/theme-templates/' + templateKey, {
-            method: 'PUT',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-                label: meta.label,
-                category: templateKey.includes('list') || templateKey === 'results' ? 'listing' : templateKey === 'get-quote' || templateKey === 'cost-calculator' || templateKey === 'contact' ? 'page' : 'detail',
-                description: '',
-                html_template: document.getElementById('htmlEditor').value,
-                css: document.getElementById('cssEditor').value,
-                is_active: true
-            })
+        var r = await fetch('/api/theme-templates/'+TK, {
+            method:'PUT', headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ label:m.label, category:m.cat, description:'', html_template:document.getElementById('htmlEditor').value, css:document.getElementById('cssEditor').value, is_active:true })
         });
-        if (r.ok) {
-            templateData = await r.json();
-            var msg = document.getElementById('savedMsg');
-            msg.style.display = 'flex';
-            setTimeout(function(){msg.style.display='none'}, 3000);
-        } else { alert('Save failed'); }
-    } catch(e) { alert('Error: ' + e.message); }
+        if(r.ok){tplData=await r.json();var msg=document.getElementById('savedMsg');msg.style.display='flex';setTimeout(function(){msg.style.display='none'},3000)}
+        else alert('Save failed');
+    } catch(e){alert('Error: '+e.message)}
 }
 
 // ===== DRAG HANDLE =====
-(function() {
-    var handle = document.getElementById('dragHandle');
-    var codePanel = document.getElementById('panelCode');
-    var dragging = false;
-    handle.addEventListener('mousedown', function(e) {
-        dragging = true; handle.classList.add('dragging');
-        e.preventDefault();
-    });
-    document.addEventListener('mousemove', function(e) {
-        if (!dragging) return;
-        var pct = (e.clientX / window.innerWidth) * 100;
-        pct = Math.max(25, Math.min(75, pct));
-        codePanel.style.width = pct + '%';
-    });
-    document.addEventListener('mouseup', function() {
-        dragging = false; handle.classList.remove('dragging');
-    });
-})();
+(function(){var h=document.getElementById('dragHandle'),p=document.getElementById('panelLeft'),d=false;
+h.addEventListener('mousedown',function(e){d=true;h.classList.add('dragging');e.preventDefault()});
+document.addEventListener('mousemove',function(e){if(!d)return;var pct=(e.clientX/window.innerWidth)*100;pct=Math.max(25,Math.min(75,pct));p.style.width=pct+'%'});
+document.addEventListener('mouseup',function(){d=false;h.classList.remove('dragging')});})();
 
-// ===== TAB SUPPORT IN TEXTAREA =====
-document.getElementById('htmlEditor').addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        var s = this.selectionStart, end = this.selectionEnd;
-        this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
-        this.selectionStart = this.selectionEnd = s + 4;
-    }
-});
-document.getElementById('cssEditor').addEventListener('keydown', function(e) {
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        var s = this.selectionStart, end = this.selectionEnd;
-        this.value = this.value.substring(0, s) + '    ' + this.value.substring(end);
-        this.selectionStart = this.selectionEnd = s + 4;
-    }
-});
+// ===== TAB KEY =====
+['htmlEditor','cssEditor'].forEach(function(id){document.getElementById(id).addEventListener('keydown',function(e){if(e.key==='Tab'){e.preventDefault();var s=this.selectionStart;this.value=this.value.substring(0,s)+'    '+this.value.substring(this.selectionEnd);this.selectionStart=this.selectionEnd=s+4}})});
 
-// ===== KEYBOARD SHORTCUTS =====
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveTemplate(); }
-});
+// ===== CTRL+S =====
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveTemplate()}});
 
 init();
 </script>
