@@ -1040,7 +1040,7 @@ app.get('/api/theme-templates/preview-data/:key', apiAuth, async (req, res) => {
         let data = {};
         if (key === 'blog-detail') {
             const r = await pool.query("SELECT bp.*, u.name as author_name FROM blog_posts bp LEFT JOIN users u ON bp.author_id=u.id WHERE bp.status='published' ORDER BY bp.created_at DESC LIMIT 1");
-            data = { post: r.rows[0] || { title:'Sample Blog Post', content:'<p>This is a preview of your blog post template.</p>', author_name:'Ginger Healthcare', read_time:5, category:'Health', excerpt:'Sample excerpt text' } };
+            data = { post: r.rows[0] || { title:'Sample Blog Post', content:'<p>This is a preview of your blog post template.</p><h2>Section Heading</h2><p>More content here with details about the topic.</p>', author_name:'Ginger Healthcare', read_time:5, category:'Health', excerpt:'Sample excerpt text', cover_image:'' } };
         } else if (key === 'destination-detail') {
             const r = await pool.query("SELECT * FROM destinations WHERE status='active' LIMIT 1");
             const dest = r.rows[0] || { name:'India', flag:'🇮🇳', slug:'india', tagline:'World-class healthcare at affordable prices', description:'India is a leading medical tourism destination.', hospital_count:20, doctor_count:40, avg_savings:'60-80%' };
