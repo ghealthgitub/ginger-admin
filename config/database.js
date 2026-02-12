@@ -149,6 +149,12 @@ async function initDB() {
                 size INTEGER,
                 url VARCHAR(1000) NOT NULL,
                 alt_text VARCHAR(500),
+                title VARCHAR(500),
+                caption TEXT,
+                description TEXT,
+                width INTEGER,
+                height INTEGER,
+                sizes JSONB DEFAULT '{}',
                 folder VARCHAR(200) DEFAULT 'general',
                 uploaded_by INTEGER REFERENCES users(id),
                 created_at TIMESTAMP DEFAULT NOW()
@@ -303,6 +309,20 @@ async function initDB() {
         `);
 
         console.log('✅ Database tables initialized');
+
+        // Migrations for existing databases
+        const migrations = [
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS title VARCHAR(500)",
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS caption TEXT",
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS description TEXT",
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS width INTEGER",
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS height INTEGER",
+            "ALTER TABLE media ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '{}'",
+        ];
+        for (const sql of migrations) {
+            try { await client.query(sql); } catch(e) { /* column may already exist */ }
+        }
+        console.log('✅ Migrations applied');
     } catch (err) {
         console.error('❌ Database init error:', err.message);
         throw err;

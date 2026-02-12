@@ -371,7 +371,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:#F0F2F5;height:100vh;
 
 <div class="autosave-toast" id="autosaveToast">💾 Auto-saved</div>
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';document.head.appendChild(s)"></script>
 <script>
 // ===== STATE =====
 const pathParts = window.location.pathname.split('/');
@@ -874,12 +874,12 @@ document.getElementById('dragRight').removeEventListener('mousedown', ()=>{});
             <div class="mp-sidebar__name" id="mpSidebarName"></div>
             <div class="mp-sidebar__meta" id="mpSidebarMeta"></div>
             <label>Alt Text</label>
-            <input type="text" id="mpAltText" placeholder="Describe the image">
+            <input type="text" id="mpAltText" placeholder="Describe the image" oninput="mpSaveMetadata()">
             <p style="font-size:.65rem;color:var(--gray-400);margin:0 0 8px;line-height:1.4"><a href="https://moz.com/learn/seo/alt-text" target="_blank" style="color:var(--teal)">Learn how to describe the purpose of the image.</a> Leave empty if purely decorative.</p>
             <label>Title</label>
-            <input type="text" id="mpTitle" placeholder="Image title">
+            <input type="text" id="mpTitle" placeholder="Image title" oninput="mpSaveMetadata()">
             <label>Caption</label>
-            <textarea id="mpCaption" rows="2" placeholder="Caption" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.78rem;font-family:inherit;margin-bottom:8px;resize:vertical"></textarea>
+            <textarea id="mpCaption" rows="2" placeholder="Caption" oninput="mpSaveMetadata()" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.78rem;font-family:inherit;margin-bottom:8px;resize:vertical"></textarea>
             <label>File URL</label>
             <input type="text" id="mpFileUrl" readonly style="background:var(--gray-50);cursor:pointer" onclick="mpCopyUrl()">
             <button onclick="mpCopyUrl()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:.72rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-500);margin-bottom:8px;font-family:inherit">Copy URL to clipboard</button>
@@ -961,13 +961,45 @@ function mpSelectItem(id) {
     document.getElementById('mpSidebarName').textContent = fname;
     var size = item.size ? (item.size < 1048576 ? (item.size/1024).toFixed(0) + ' KB' : (item.size/1048576).toFixed(1) + ' MB') : '';
     var date = item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) : '';
-    document.getElementById('mpSidebarMeta').textContent = date + (size ? ' · ' + size : '');
+    var dims = (item.width && item.height) ? item.width + ' × ' + item.height + ' px' : '';
+    document.getElementById('mpSidebarMeta').textContent = date + (size ? ' · ' + size : '') + (dims ? ' · ' + dims : '');
+    // Load saved metadata from DB
     document.getElementById('mpAltText').value = item.alt_text || '';
-    document.getElementById('mpTitle').value = fname.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-    document.getElementById('mpCaption').value = '';
+    document.getElementById('mpTitle').value = item.title || fname.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    document.getElementById('mpCaption').value = item.caption || '';
     document.getElementById('mpFileUrl').value = window.location.origin + item.url;
-    // Enable set button
+    // Show sizes if available
+    var sizesInfo = '';
+    if (item.sizes && typeof item.sizes === 'object') {
+        var sKeys = Object.keys(item.sizes);
+        if (sKeys.length) sizesInfo = 'Sizes: ' + sKeys.join(', ');
+    }
     document.getElementById('mpSetBtn').disabled = false;
+}
+
+// Auto-save metadata when fields change
+var mpSaveTimer = null;
+function mpSaveMetadata() {
+    clearTimeout(mpSaveTimer);
+    mpSaveTimer = setTimeout(function() {
+        if (!mpSelected) return;
+        fetch('/api/media/' + mpSelected.id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                alt_text: document.getElementById('mpAltText').value,
+                title: document.getElementById('mpTitle').value,
+                caption: document.getElementById('mpCaption').value
+            })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            // Update local cache
+            if (mpSelected) {
+                mpSelected.alt_text = data.alt_text;
+                mpSelected.title = data.title;
+                mpSelected.caption = data.caption;
+            }
+        }).catch(function() {});
+    }, 1000);
 }
 
 function mpCopyUrl() {

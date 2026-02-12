@@ -514,26 +514,90 @@ app.get('/media', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'media.html'));
 });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
-    filename: (req, file, cb) => {
-        // Keep original name, make it URL-safe
-        const ext = path.extname(file.originalname).toLowerCase();
-        let base = path.basename(file.originalname, path.extname(file.originalname))
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')   // replace non-alphanumeric with dashes
-            .replace(/^-|-$/g, '')           // trim leading/trailing dashes
-            .substring(0, 80);               // limit length
-        if (!base) base = 'file';
-        // Handle duplicates: ivf.jpg → ivf.jpg, ivf-1.jpg, ivf-2.jpg
-        let finalName = base + ext;
-        let counter = 1;
-        const uploadDir = path.join(__dirname, 'uploads');
-        while (fs.existsSync(path.join(uploadDir, finalName))) {
-            finalName = base + '-' + counter + ext;
-            counter++;
+// ============== WORDPRESS-STYLE MEDIA SYSTEM ==============
+const sharp = require('sharp');
+
+// Image sizes (like WordPress registered sizes)
+const IMAGE_SIZES = {
+    thumbnail: { width: 150, height: 150, crop: true },
+    medium:    { width: 300, height: 300, crop: false },
+    large:     { width: 1024, height: 1024, crop: false }
+};
+
+// Get year/month upload directory (like WordPress /uploads/2026/02/)
+function getUploadDir() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const subdir = path.join('uploads', year, month);
+    const fullPath = path.join(__dirname, subdir);
+    if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
+    return { subdir, fullPath };
+}
+
+// Sanitize filename (WordPress-style)
+function sanitizeFilename(originalName) {
+    const ext = path.extname(originalName).toLowerCase();
+    let base = path.basename(originalName, path.extname(originalName))
+        .toLowerCase()
+        .replace(/['']/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 80);
+    if (!base) base = 'file';
+    return { base, ext };
+}
+
+// Generate unique filename in directory (WordPress-style incrementing)
+function uniqueFilename(dir, base, ext) {
+    let finalName = base + ext;
+    let counter = 1;
+    while (fs.existsSync(path.join(dir, finalName))) {
+        finalName = base + '-' + counter + ext;
+        counter++;
+    }
+    return finalName;
+}
+
+// Generate image subsizes (like wp_create_image_subsizes)
+async function createImageSubsizes(filePath, dir, base, ext) {
+    const sizes = {};
+    try {
+        const image = sharp(filePath);
+        const metadata = await image.metadata();
+
+        for (const [sizeName, sizeConfig] of Object.entries(IMAGE_SIZES)) {
+            if (metadata.width <= sizeConfig.width && metadata.height <= sizeConfig.height) continue;
+            const sizeFilename = `${base}-${sizeConfig.width}x${sizeConfig.height}${ext}`;
+            const sizePath = path.join(dir, sizeFilename);
+            try {
+                let resizer = sharp(filePath);
+                if (sizeConfig.crop) {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'cover', position: 'centre' });
+                } else {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'inside', withoutEnlargement: true });
+                }
+                const info = await resizer.toFile(sizePath);
+                sizes[sizeName] = { file: sizeFilename, width: info.width, height: info.height, size: info.size };
+            } catch(e) { console.error(`Failed to create ${sizeName}:`, e.message); }
         }
-        cb(null, finalName);
+        return { width: metadata.width, height: metadata.height, sizes };
+    } catch(e) {
+        console.error('Image processing error:', e.message);
+        return { width: null, height: null, sizes: {} };
+    }
+}
+
+// Multer storage with year/month directories
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const { fullPath } = getUploadDir();
+        cb(null, fullPath);
+    },
+    filename: (req, file, cb) => {
+        const { base, ext } = sanitizeFilename(file.originalname);
+        const { fullPath } = getUploadDir();
+        cb(null, uniqueFilename(fullPath, base, ext));
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
@@ -541,6 +605,7 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFil
     cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
 }});
 
+// GET /api/media — List all media
 app.get('/api/media', apiAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM media ORDER BY created_at DESC');
@@ -548,30 +613,75 @@ app.get('/api/media', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// POST /api/media/upload — Upload with auto-processing (like WordPress)
 app.post('/api/media/upload', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-        const url = `/uploads/${req.file.filename}`;
+        const { subdir } = getUploadDir();
+        const url = `/${subdir}/${req.file.filename}`;
+        const filePath = req.file.path;
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(req.file.filename);
+        // Auto-title from filename (like WordPress)
+        const autoTitle = path.basename(req.file.originalname, path.extname(req.file.originalname))
+            .replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        let width = null, height = null, sizes = {};
+        if (isImage) {
+            const imgData = await createImageSubsizes(filePath, path.join(__dirname, subdir),
+                path.basename(req.file.filename, path.extname(req.file.filename)), path.extname(req.file.filename));
+            width = imgData.width;
+            height = imgData.height;
+            for (const [key, val] of Object.entries(imgData.sizes)) {
+                sizes[key] = { ...val, url: `/${subdir}/${val.file}` };
+            }
+        }
         const result = await pool.query(
-            'INSERT INTO media (filename, original_name, mime_type, size, url, folder, uploaded_by) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-            [req.file.filename, req.file.originalname, req.file.mimetype, req.file.size, url, req.body.folder || 'general', req.user.id]
+            `INSERT INTO media (filename, original_name, mime_type, size, url, alt_text, title, width, height, sizes, folder, uploaded_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+            [req.file.filename, req.file.originalname, req.file.mimetype, req.file.size, url,
+             '', autoTitle, width, height, JSON.stringify(sizes), req.body.folder || 'general', req.user.id]
         );
         await logActivity(req.user.id, 'upload', 'media', result.rows[0].id, `Uploaded: ${req.file.originalname}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// PUT /api/media/:id — Update metadata (alt, title, caption, description)
+app.put('/api/media/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { alt_text, title, caption, description } = req.body;
+        const result = await pool.query(
+            `UPDATE media SET alt_text = COALESCE($1, alt_text), title = COALESCE($2, title),
+             caption = COALESCE($3, caption), description = COALESCE($4, description)
+             WHERE id = $5 RETURNING *`,
+            [alt_text, title, caption, description, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/media/:id — Delete file + all subsizes
 app.delete('/api/media/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         const file = await pool.query('SELECT * FROM media WHERE id = $1', [req.params.id]);
         if (file.rows.length > 0) {
-            const filepath = path.join(__dirname, file.rows[0].url);
-            if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+            const filePath = path.join(__dirname, file.rows[0].url);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            const sizes = file.rows[0].sizes || {};
+            for (const sizeData of Object.values(sizes)) {
+                if (sizeData.url) {
+                    const sizePath = path.join(__dirname, sizeData.url);
+                    if (fs.existsSync(sizePath)) fs.unlinkSync(sizePath);
+                }
+            }
             await pool.query('DELETE FROM media WHERE id = $1', [req.params.id]);
+            await logActivity(req.user.id, 'delete', 'media', parseInt(req.params.id), `Deleted: ${file.rows[0].original_name}`);
         }
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
+
 
 // ============== USERS MANAGEMENT ==============
 app.get('/users', authRequired, roleRequired('super_admin'), (req, res) => {
