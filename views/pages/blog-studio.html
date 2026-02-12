@@ -326,7 +326,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             </div>
         </div>
         <div class="ai-input__tools">
-            <label class="ai-tool-btn" title="Import Word document into editor"><input type="file" style="display:none" accept=".docx" onchange="importDocx(this)">📄 Import .docx</label>
+            <label class="ai-tool-btn" title="Import Word document into editor"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importDocx(this)">📄 Import files & images</label>
         </div>
     </div>
 </div>
@@ -891,6 +891,11 @@ async function savePost(statusOverride) {
         _autoSave: isAuto
     };
     if (!data.title) { if (!isAuto) alert('Title is required'); return; }
+    if (!isAuto && data.status === 'published' && !data.cover_image) {
+        alert('Please upload a Featured Image before publishing.');
+        document.querySelector('.sb-box__title').closest('.sb-box') && document.getElementById('featImgEmpty').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
     if (!data.slug) data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try {
         const url = editId ? '/api/blog/' + editId : '/api/blog';
@@ -1233,29 +1238,59 @@ async function importDocx(input) {
     if (!file) return;
     input.value = '';
     const toast = document.getElementById('autosaveToast');
-    toast.textContent = '📄 Importing document...';
-    toast.style.display = 'block';
-    const fd = new FormData();
-    fd.append('file', file);
-    try {
-        const r = await fetch('/api/import/docx', { method: 'POST', body: fd });
-        if (r.ok) {
-            const data = await r.json();
-            saveUndoSnapshot();
-            if (data.html) {
-                quill.root.innerHTML = data.html;
-                updateStats();
-                analyzeSEO();
-            }
-            toast.textContent = '✅ Imported! ' + (data.imageCount || 0) + ' image(s) uploaded';
-        } else {
-            const err = await r.json();
-            toast.textContent = '❌ Import failed: ' + (err.error || 'Unknown error');
-        }
-    } catch(e) {
-        toast.textContent = '❌ Import failed';
+
+    // Image files → upload and insert
+    if (file.type.startsWith('image/')) {
+        toast.textContent = '📤 Uploading image...'; toast.style.display = 'block';
+        const url = await uploadImageToServer(file);
+        if (url) {
+            const range = quill.getSelection(true);
+            const idx = range ? range.index : quill.getLength();
+            quill.insertEmbed(idx, 'image', url);
+            quill.insertText(idx + 1, '\n');
+            toast.textContent = '✅ Image inserted';
+        } else { toast.textContent = '❌ Upload failed'; }
+        setTimeout(() => toast.style.display = 'none', 2500);
+        return;
     }
-    setTimeout(() => toast.style.display = 'none', 4000);
+
+    // Docx files → full import with images
+    if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        toast.textContent = '📄 Importing document...'; toast.style.display = 'block';
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const r = await fetch('/api/import/docx', { method: 'POST', body: fd });
+            if (r.ok) {
+                const data = await r.json();
+                saveUndoSnapshot();
+                if (data.html) { quill.root.innerHTML = data.html; updateStats(); analyzeSEO(); }
+                toast.textContent = '✅ Imported! ' + (data.imageCount || 0) + ' image(s)';
+            } else {
+                const err = await r.json();
+                toast.textContent = '❌ ' + (err.error || 'Import failed');
+            }
+        } catch(e) { toast.textContent = '❌ Import failed'; }
+        setTimeout(() => toast.style.display = 'none', 4000);
+        return;
+    }
+
+    // Text files → insert as content
+    if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saveUndoSnapshot();
+            const text = e.target.result.replace(/\n/g, '<br>');
+            quill.root.innerHTML += text;
+            updateStats(); analyzeSEO();
+            toast.textContent = '✅ Text imported'; toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2500);
+        };
+        reader.readAsText(file);
+        return;
+    }
+
+    alert('Supported: .docx, .txt, images');
 }
 
 // ===== INSERT IMAGES FROM COMPUTER =====
