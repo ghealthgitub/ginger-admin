@@ -318,6 +318,18 @@ async function initDB() {
             "ALTER TABLE media ADD COLUMN IF NOT EXISTS width INTEGER",
             "ALTER TABLE media ADD COLUMN IF NOT EXISTS height INTEGER",
             "ALTER TABLE media ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '{}'",
+            `CREATE TABLE IF NOT EXISTS revisions (
+                id SERIAL PRIMARY KEY,
+                entity_type VARCHAR(50) NOT NULL,
+                entity_id INTEGER NOT NULL,
+                title VARCHAR(500),
+                content TEXT,
+                meta JSONB DEFAULT '{}',
+                user_id INTEGER REFERENCES users(id),
+                revision_type VARCHAR(20) DEFAULT 'manual',
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+            "CREATE INDEX IF NOT EXISTS idx_revisions_entity ON revisions(entity_type, entity_id)",
         ];
         for (const sql of migrations) {
             try { await client.query(sql); } catch(e) { /* column may already exist */ }
