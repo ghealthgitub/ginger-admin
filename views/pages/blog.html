@@ -2,131 +2,372 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/admin.css">
 <style>
-.post-thumb{width:60px;height:40px;border-radius:6px;object-fit:cover;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--gray-300)}
-.post-thumb img{width:100%;height:100%;object-fit:cover;border-radius:6px}
-.post-actions{display:flex;gap:6px;flex-wrap:wrap}
-.post-actions a,.post-actions button{font-size:.78rem;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:inherit;text-decoration:none}
-.action-edit{background:var(--gray-100);color:var(--navy);border:1px solid var(--gray-200)}.action-edit:hover{background:var(--gray-200)}
-.action-quick{background:#EBF5FF;color:#2563EB;border:1px solid #BFDBFE}.action-quick:hover{background:#DBEAFE}
-.action-view{background:#F0FDF4;color:#059669;border:1px solid #BBF7D0}.action-view:hover{background:#DCFCE7}
-.action-delete{background:#FEF2F2;color:#DC2626;border:1px solid #FECACA}.action-delete:hover{background:#FEE2E2}
+:root{--navy:#0B2545;--teal:#0EA5A0;--ginger:#F26522;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563}
 
-/* Quick Edit Inline - Full Width Row */
+/* Status Tabs */
+.status-tabs{display:flex;gap:4px;margin-bottom:16px;font-size:.85rem}
+.status-tab{padding:4px 0;color:var(--gray-500);cursor:pointer;border:none;background:none;font-family:inherit;font-size:.85rem;transition:color .2s}
+.status-tab:hover{color:var(--navy)}
+.status-tab.active{color:var(--navy);font-weight:700}
+.status-tab .count{color:var(--gray-400);font-weight:400}
+.status-tab.active .count{color:var(--teal)}
+.tab-sep{color:var(--gray-300);padding:0 6px;user-select:none}
+
+/* Toolbar */
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.bulk-bar{display:flex;gap:8px;align-items:center}
+.bulk-bar select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
+.bulk-bar .btn-apply{padding:5px 14px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;cursor:pointer;background:var(--gray-50);font-family:inherit;font-weight:600;color:var(--gray-600);transition:all .2s}
+.bulk-bar .btn-apply:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.filter-group select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
+.search-wrap{flex:1;max-width:260px;position:relative}
+.search-wrap input{width:100%;padding:6px 10px 6px 30px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--teal)}
+.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.75rem}
+.pagination-info{margin-left:auto;font-size:.82rem;color:var(--gray-500);display:flex;align-items:center;gap:8px}
+.pagination-info select{padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:.78rem;font-family:inherit}
+.pag-btn{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;background:#fff;font-size:.78rem;font-family:inherit;color:var(--gray-500)}
+.pag-btn:hover:not(:disabled){background:var(--teal);color:#fff;border-color:var(--teal)}
+.pag-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Selected bar */
+.selected-bar{background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:8px 14px;margin-bottom:10px;display:none;align-items:center;gap:12px;font-size:.82rem;color:var(--teal);font-weight:600}
+.selected-bar .btn-clear{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.78rem;font-family:inherit;text-decoration:underline}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-500);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--gray-200);text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+.data-table th:hover{color:var(--navy)}
+.data-table th .sort-icon{font-size:.6rem;margin-left:3px;opacity:.4}
+.data-table th.sorted .sort-icon{opacity:1;color:var(--teal)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--gray-100);font-size:.85rem;vertical-align:middle}
+.data-table tr:hover td{background:var(--gray-50)}
+.data-table tr.selected td{background:rgba(14,165,160,.04)}
+.cb-cell{width:36px;text-align:center}
+.cb-cell input{width:15px;height:15px;cursor:pointer;accent-color:var(--teal)}
+
+/* Post row */
+.post-thumb{width:55px;height:38px;border-radius:5px;object-fit:cover;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1rem;color:var(--gray-300);overflow:hidden;flex-shrink:0}
+.post-thumb img{width:100%;height:100%;object-fit:cover}
+.post-title-cell{min-width:200px}
+.post-title-cell strong{display:block;color:var(--navy);font-size:.88rem;line-height:1.3}
+.post-title-cell strong a{color:inherit;text-decoration:none}
+.post-title-cell strong a:hover{color:var(--teal)}
+.post-title-cell .post-slug{font-size:.7rem;color:var(--gray-400);font-family:'DM Sans',monospace;margin-top:1px}
+.row-actions{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity .15s}
+tr:hover .row-actions{opacity:1}
+.row-actions a,.row-actions button{font-size:.72rem;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:inherit;text-decoration:none;border:none;background:none;color:var(--gray-500)}
+.row-actions a:hover,.row-actions button:hover{color:var(--teal)}
+.row-actions .act-del{color:#EF4444}
+.row-actions .act-del:hover{color:#DC2626;text-decoration:underline}
+.row-actions .sep{color:var(--gray-300)}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
+.badge--published{background:#D1FAE5;color:#059669}
+.badge--draft{background:#FEF3C7;color:#D97706}
+.tag-list{font-size:.75rem;color:var(--gray-400);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date-cell{font-size:.78rem;color:var(--gray-500);white-space:nowrap}
+.date-cell .date-sub{font-size:.7rem;color:var(--gray-400)}
+.excerpt-cell{font-size:.78rem;color:var(--gray-400);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Quick Edit */
 .quick-edit-row td{background:#F0F5FF!important;border-top:2px solid var(--teal)!important;border-bottom:2px solid var(--teal)!important}
-.quick-edit{background:#F0F5FF;padding:20px 24px}
-.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.quick-edit{padding:16px 20px}
+.quick-edit__title{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--teal)}
+.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .quick-edit .form-group{margin-bottom:0}
-.quick-edit .form-label{font-size:.78rem;font-weight:700;margin-bottom:4px;color:var(--navy)}
-.quick-edit .form-input,.quick-edit .form-select,.quick-edit .form-textarea{font-size:.85rem;padding:8px 12px;background:#fff;border:1.5px solid var(--gray-300);border-radius:6px}
-.quick-edit .form-input:focus,.quick-edit .form-select:focus,.quick-edit .form-textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,128,128,.1)}
-.quick-edit__title{font-size:.82rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--teal)}
-.quick-edit__actions{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,128,128,.2)}
+.quick-edit .form-label{font-size:.75rem;font-weight:700;margin-bottom:3px;color:var(--navy);display:block}
+.quick-edit .form-input,.quick-edit .form-select,.quick-edit .form-textarea{font-size:.82rem;padding:6px 10px;background:#fff;border:1.5px solid var(--gray-300);border-radius:5px;width:100%;font-family:inherit;box-sizing:border-box}
+.quick-edit .form-input:focus,.quick-edit .form-select:focus{border-color:var(--teal);outline:none}
+.quick-edit__actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(14,165,160,.2)}
 
-.post-title-col{max-width:300px}
-.post-title-col strong{display:block;color:var(--navy);font-size:.92rem}
-.post-title-col .post-slug{font-size:.72rem;color:var(--gray-400);font-family:monospace}
-
-.toolbar{display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
-.filter-group{display:flex;gap:8px;align-items:center}
-</style><script src="/js/sidebar.js" defer></script>
+.empty-state{text-align:center;padding:40px;color:var(--gray-400);font-size:.92rem}
+.btn-new{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;transition:background .2s}
+.btn-new:hover{background:#0c918c}
+</style>
+<script src="/js/sidebar.js" defer></script>
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Blog Posts</h1><div class="topbar__actions"><a href="/blog/new" class="btn btn--primary">+ New Post</a></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Blog Posts</h1><div class="topbar__actions"><a href="/blog/new" class="btn-new" target="_blank">+ New Post</a></div></header>
 <div class="content">
+    <!-- Status Tabs -->
+    <div class="status-tabs" id="statusTabs">
+        <button class="status-tab active" onclick="setStatusTab('')" data-status="">All <span class="count" id="countAll"></span></button>
+        <span class="tab-sep">|</span>
+        <button class="status-tab" onclick="setStatusTab('published')" data-status="published">Published <span class="count" id="countPublished"></span></button>
+        <span class="tab-sep">|</span>
+        <button class="status-tab" onclick="setStatusTab('draft')" data-status="draft">Drafts <span class="count" id="countDraft"></span></button>
+    </div>
+
+    <!-- Selected Bar -->
+    <div class="selected-bar" id="selectedBar">
+        <span id="selectedCount">0 selected</span>
+        <button class="btn-clear" onclick="clearSelection()">Clear</button>
+    </div>
+
+    <!-- Toolbar -->
     <div class="toolbar">
-        <input type="text" class="search-input" placeholder="Search posts..." id="searchInput" oninput="filterPosts()" style="flex:1;max-width:400px">
+        <div class="bulk-bar">
+            <select id="bulkAction">
+                <option value="">Bulk Actions</option>
+                <option value="publish">Set Published</option>
+                <option value="draft">Set Draft</option>
+                <option value="delete">Move to Trash</option>
+            </select>
+            <button class="btn-apply" onclick="applyBulk()">Apply</button>
+        </div>
         <div class="filter-group">
-            <select class="form-select" id="catFilter" onchange="filterPosts()" style="width:auto;font-size:.85rem"><option value="">All Categories</option><option>Guide</option><option>Cost</option><option>Treatment</option><option>Patient Story</option><option>News</option><option>Tips</option></select>
-            <select class="form-select" id="statusFilter" onchange="filterPosts()" style="width:auto;font-size:.85rem"><option value="">All Status</option><option value="published">Published</option><option value="draft">Draft</option></select>
+            <select id="catFilter" onchange="filterPosts()">
+                <option value="">All Categories</option>
+                <option>Guide</option><option>Cost</option><option>Treatment</option>
+                <option>Patient Story</option><option>News</option><option>Tips</option>
+                <option>Fertility & IVF</option><option>Health Awareness</option>
+                <option>Medical Tourism</option><option>Hospital Review</option><option>Recovery & Aftercare</option>
+            </select>
+        </div>
+        <div class="search-wrap">
+            <input type="text" placeholder="Search posts..." id="searchInput" oninput="filterPosts()">
+        </div>
+        <div class="pagination-info">
+            <span id="pageInfo"></span>
+            <button class="pag-btn" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
+            <button class="pag-btn" id="nextBtn" onclick="changePage(1)" disabled>›</button>
+            <select id="perPage" onchange="perPage=parseInt(this.value);curPage=1;filterPosts()">
+                <option value="20">20</option><option value="50">50</option><option value="100">100</option>
+            </select>
         </div>
     </div>
-    <div class="card"><div class="card__body">
-        <table class="data-table"><thead><tr><th style="width:70px">Image</th><th>Title</th><th>Category</th><th>Tags</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody id="list"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody></table>
+
+    <!-- Table -->
+    <div class="card"><div class="card__body" style="padding:0;overflow-x:auto">
+        <table class="data-table">
+        <thead><tr>
+            <th class="cb-cell"><input type="checkbox" id="selectAll" onchange="toggleAllCheckboxes(this.checked)"></th>
+            <th style="width:60px">Image</th>
+            <th onclick="sortBy('title')">Title <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('category')">Category <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('tags')">Tags <span class="sort-icon">↕</span></th>
+            <th>Excerpt</th>
+            <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('date')">Date <span class="sort-icon">↕</span></th>
+        </tr></thead>
+        <tbody id="list"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody>
+        </table>
     </div></div>
 </div></main></div>
 
 <script>
-let posts = [];
+let posts = [], selectedIds = new Set(), curPage = 1, perPage = 20;
+let sortField = 'date', sortDir = 'desc', activeStatusTab = '';
+
 async function safeFetch(url, options) {
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let i = 0; i < 3; i++) {
         try {
             const r = await fetch(url, options);
-            if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1000 * (attempt + 1))); continue; }
+            if (r.status === 429) { await new Promise(ok => setTimeout(ok, 1000 * (i + 1))); continue; }
             return r;
-        } catch(e) { if (attempt === 2) throw e; await new Promise(ok => setTimeout(ok, 1000)); }
+        } catch(e) { if (i === 2) throw e; await new Promise(ok => setTimeout(ok, 1000)); }
     }
 }
+
 async function load() {
     try {
         const r = await safeFetch('/api/blog');
-        if (!r || !r.ok) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading posts. Please refresh.</td></tr>'; return; }
+        if (!r || !r.ok) { document.getElementById('list').innerHTML = '<tr><td colspan="8" class="empty-state">Error loading posts. Please refresh.</td></tr>'; return; }
         posts = await r.json();
-        document.getElementById('pageTitle').textContent = `Blog Posts (${posts.length})`;
+        updateCounts();
         filterPosts();
-    } catch(e) { document.getElementById('list').innerHTML = '<tr><td colspan="7" class="empty-state">Error loading. Please refresh.</td></tr>'; }
+    } catch(e) { document.getElementById('list').innerHTML = '<tr><td colspan="8" class="empty-state">Error loading. Please refresh.</td></tr>'; }
+}
+
+function updateCounts() {
+    const pub = posts.filter(p => p.status === 'published').length;
+    const dra = posts.filter(p => p.status === 'draft').length;
+    document.getElementById('countAll').textContent = '(' + posts.length + ')';
+    document.getElementById('countPublished').textContent = '(' + pub + ')';
+    document.getElementById('countDraft').textContent = '(' + dra + ')';
+    document.getElementById('pageTitle').textContent = 'Blog Posts (' + posts.length + ')';
+}
+
+function setStatusTab(status) {
+    activeStatusTab = status;
+    curPage = 1;
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.toggle('active', t.dataset.status === status));
+    filterPosts();
 }
 
 function filterPosts() {
     const q = document.getElementById('searchInput').value.toLowerCase();
     const cat = document.getElementById('catFilter').value;
-    const status = document.getElementById('statusFilter').value;
-    const filtered = posts.filter(p =>
-        (!q || p.title.toLowerCase().includes(q)) &&
-        (!cat || p.category === cat) &&
-        (!status || p.status === status)
+    let filtered = posts.filter(p =>
+        (!activeStatusTab || p.status === activeStatusTab) &&
+        (!q || p.title.toLowerCase().includes(q) || (p.excerpt || '').toLowerCase().includes(q)) &&
+        (!cat || p.category === cat)
     );
+
+    // Sort
+    filtered.sort((a, b) => {
+        let va, vb;
+        if (sortField === 'title') { va = a.title.toLowerCase(); vb = b.title.toLowerCase(); }
+        else if (sortField === 'category') { va = (a.category || '').toLowerCase(); vb = (b.category || '').toLowerCase(); }
+        else if (sortField === 'status') { va = a.status; vb = b.status; }
+        else if (sortField === 'tags') { va = (a.tags || []).join(','); vb = (b.tags || []).join(','); }
+        else { va = a.published_at || a.created_at || ''; vb = b.published_at || b.created_at || ''; }
+        if (va < vb) return sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Pagination
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    if (curPage > totalPages) curPage = totalPages;
+    const start = (curPage - 1) * perPage;
+    const page = filtered.slice(start, start + perPage);
+    document.getElementById('pageInfo').textContent = total + ' items · page ' + curPage + ' of ' + totalPages;
+    document.getElementById('prevBtn').disabled = curPage <= 1;
+    document.getElementById('nextBtn').disabled = curPage >= totalPages;
+
+    renderTable(page);
+}
+
+function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+function renderTable(filtered) {
     const tb = document.getElementById('list');
-    if (!filtered.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No posts found</td></tr>'; return; }
-    tb.innerHTML = filtered.map(p => `
-        <tr id="row-${p.id}">
-            <td><div class="post-thumb">${p.cover_image ? `<img src="${p.cover_image}" onerror="this.parentElement.innerHTML='📝'">` : '📝'}</div></td>
-            <td class="post-title-col">
-                <strong><a href="/blog/edit/${p.id}" target="_blank" style="color:var(--navy)">${p.title}</a></strong>
-                <span class="post-slug">/blog/${p.slug}/</span>
-                <div class="post-actions" style="margin-top:4px">
-                    <a href="/blog/edit/${p.id}" target="_blank" class="action-edit">Edit</a>
-                    <button class="action-quick" onclick="toggleQuickEdit(${p.id})">Quick Edit</button>
-                    ${p.status === 'published' ? `<a href="https://ginger.healthcare/blog/${p.slug}/" target="_blank" class="action-view">View</a>` : `<a href="/blog/edit/${p.id}" target="_blank" class="action-view" style="background:#FFF7ED;color:#D97706;border-color:#FED7AA">Preview</a>`}
-                    <button class="action-delete" onclick="deletePost(${p.id})">Trash</button>
+    if (!filtered.length) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">No posts found</td></tr>'; return; }
+    tb.innerHTML = filtered.map(p => {
+        const checked = selectedIds.has(p.id) ? 'checked' : '';
+        const selClass = selectedIds.has(p.id) ? ' selected' : '';
+        const dateStr = p.published_at ? new Date(p.published_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+        const timeStr = p.published_at ? new Date(p.published_at).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
+        const createdStr = !p.published_at ? new Date(p.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+        const tagsStr = (p.tags || []).join(', ');
+        const excerptStr = (p.excerpt || '').substring(0, 80);
+        const title = esc(p.title);
+        const cats = ['Guide','Cost','Treatment','Patient Story','News','Tips','Fertility & IVF','Health Awareness','Medical Tourism','Hospital Review','Recovery & Aftercare'];
+        const catOpts = cats.map(c => '<option' + (p.category===c?' selected':'') + '>' + c + '</option>').join('');
+        return `
+        <tr id="row-${p.id}" class="${selClass}">
+            <td class="cb-cell"><input type="checkbox" ${checked} onchange="toggleSelect(${p.id}, this.checked)"></td>
+            <td><div class="post-thumb">${p.cover_image ? '<img src="' + esc(p.cover_image) + '" onerror="this.parentElement.innerHTML=\'📝\'" loading="lazy">' : '📝'}</div></td>
+            <td class="post-title-cell">
+                <strong><a href="/blog/edit/${p.id}" target="_blank">${title}</a></strong>
+                <span class="post-slug">/blog/${esc(p.slug)}/</span>
+                <div class="row-actions">
+                    <a href="/blog/edit/${p.id}" target="_blank">Edit</a>
+                    <span class="sep">|</span>
+                    <button onclick="toggleQuickEdit(${p.id})">Quick Edit</button>
+                    <span class="sep">|</span>
+                    ${p.status === 'published' ? '<a href="https://ginger.healthcare/blog/' + esc(p.slug) + '/" target="_blank">View</a>' : '<a href="/blog/edit/' + p.id + '" target="_blank">Preview</a>'}
+                    <span class="sep">|</span>
+                    <button class="act-del" onclick="deletePost(${p.id})">Trash</button>
                 </div>
             </td>
-            <td><span class="badge" style="background:var(--gray-100);color:var(--gray-600);font-size:.75rem">${p.category || '-'}</span></td>
-            <td style="font-size:.78rem;color:var(--gray-400)">${(p.tags||[]).join(', ') || '-'}</td>
+            <td><span class="badge" style="background:var(--gray-100);color:var(--gray-600)">${esc(p.category || '—')}</span></td>
+            <td class="tag-list" title="${esc(tagsStr)}">${esc(tagsStr) || '—'}</td>
+            <td class="excerpt-cell" title="${esc(excerptStr)}">${excerptStr ? '📄 ' + esc(excerptStr) + '...' : '—'}</td>
             <td><span class="badge badge--${p.status}">${p.status}</span></td>
-            <td style="font-size:.78rem;color:var(--gray-400)">${p.published_at ? new Date(p.published_at).toLocaleDateString() : '-'}</td>
-            <td></td>
+            <td class="date-cell">${dateStr || createdStr}<br><span class="date-sub">${timeStr || 'Draft'}</span></td>
         </tr>
         <tr class="quick-edit-row" id="qe-row-${p.id}" style="display:none">
-            <td colspan="7" style="padding:0;border:none">
-                <div class="quick-edit open">
-                    <div class="quick-edit__title">QUICK EDIT</div>
+            <td colspan="8" style="padding:0;border:none">
+                <div class="quick-edit">
+                    <div class="quick-edit__title">QUICK EDIT — ${title}</div>
                     <div class="quick-edit__grid">
                         <div>
-                            <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="qe-title-${p.id}" value="${p.title}"></div>
-                            <div class="form-group" style="margin-top:12px"><label class="form-label">Slug</label><input class="form-input" id="qe-slug-${p.id}" value="${p.slug}"></div>
-                            <div class="form-group" style="margin-top:12px"><label class="form-label">Status</label><select class="form-select" id="qe-status-${p.id}"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="published" ${p.status==='published'?'selected':''}>Published</option></select></div>
+                            <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="qe-title-${p.id}" value="${esc(p.title)}"></div>
+                            <div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qe-slug-${p.id}" value="${esc(p.slug)}"></div>
+                            <div class="form-group" style="margin-top:10px"><label class="form-label">Status</label><select class="form-select" id="qe-status-${p.id}"><option value="draft" ${p.status==='draft'?'selected':''}>Draft</option><option value="published" ${p.status==='published'?'selected':''}>Published</option></select></div>
                         </div>
                         <div>
-                            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="qe-cat-${p.id}"><option value="">None</option><option ${p.category==='Guide'?'selected':''}>Guide</option><option ${p.category==='Cost'?'selected':''}>Cost</option><option ${p.category==='Treatment'?'selected':''}>Treatment</option><option ${p.category==='Patient Story'?'selected':''}>Patient Story</option><option ${p.category==='News'?'selected':''}>News</option><option ${p.category==='Tips'?'selected':''}>Tips</option></select></div>
-                            <div class="form-group" style="margin-top:12px"><label class="form-label">Read Time (min)</label><input class="form-input" type="number" id="qe-read-${p.id}" value="${p.read_time||''}"></div>
-                            <div class="form-group" style="margin-top:12px"><label class="form-label">Tags</label><input class="form-input" id="qe-tags-${p.id}" value="${(p.tags||[]).join(', ')}" placeholder="Separate tags with commas"></div>
+                            <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="qe-cat-${p.id}"><option value="">None</option>${catOpts}</select></div>
+                            <div class="form-group" style="margin-top:10px"><label class="form-label">Read Time (min)</label><input class="form-input" type="number" id="qe-read-${p.id}" value="${p.read_time||''}"></div>
+                            <div class="form-group" style="margin-top:10px"><label class="form-label">Tags</label><input class="form-input" id="qe-tags-${p.id}" value="${esc((p.tags||[]).join(', '))}" placeholder="Comma-separated"></div>
                         </div>
                         <div>
-                            <div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="qe-excerpt-${p.id}" style="min-height:140px;font-size:.85rem" placeholder="Brief summary...">${(p.excerpt||'').replace(/"/g,'&amp;quot;')}</textarea></div>
+                            <div class="form-group"><label class="form-label">Excerpt</label><textarea class="form-textarea" id="qe-excerpt-${p.id}" rows="5" style="font-size:.82rem" placeholder="Brief summary...">${esc(p.excerpt||'')}</textarea></div>
                         </div>
                     </div>
                     <div class="quick-edit__actions">
-                        <button class="btn btn--primary btn--sm" onclick="quickSave(${p.id})">💾 Update</button>
-                        <button class="btn btn--outline btn--sm" onclick="toggleQuickEdit(${p.id})">Cancel</button>
+                        <button class="btn btn--primary btn--sm" onclick="quickSave(${p.id})" style="padding:6px 16px;font-size:.82rem">💾 Update</button>
+                        <button class="btn btn--outline btn--sm" onclick="toggleQuickEdit(${p.id})" style="padding:6px 16px;font-size:.82rem">Cancel</button>
                     </div>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
+    document.getElementById('selectAll').checked = false;
 }
 
+// Selection
+function toggleSelect(id, checked) {
+    if (checked) selectedIds.add(id); else selectedIds.delete(id);
+    updateSelectionUI();
+    const row = document.getElementById('row-' + id);
+    if (row) row.classList.toggle('selected', checked);
+}
+
+function toggleAllCheckboxes(checked) {
+    document.querySelectorAll('#list input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+        const tr = cb.closest('tr');
+        const id = parseInt(tr.id.replace('row-', ''));
+        if (id) { if (checked) selectedIds.add(id); else selectedIds.delete(id); tr.classList.toggle('selected', checked); }
+    });
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const bar = document.getElementById('selectedBar');
+    if (selectedIds.size) {
+        bar.style.display = 'flex';
+        document.getElementById('selectedCount').textContent = selectedIds.size + ' post' + (selectedIds.size > 1 ? 's' : '') + ' selected';
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+function clearSelection() {
+    selectedIds.clear();
+    document.querySelectorAll('#list input[type="checkbox"]').forEach(cb => { cb.checked = false; cb.closest('tr').classList.remove('selected'); });
+    document.getElementById('selectAll').checked = false;
+    updateSelectionUI();
+}
+
+// Bulk Actions
+async function applyBulk() {
+    const action = document.getElementById('bulkAction').value;
+    if (!action) return alert('Select a bulk action');
+    if (!selectedIds.size) return alert('Select at least one post');
+    const labels = { publish: 'publish', draft: 'set to draft', delete: 'permanently delete' };
+    if (!confirm('Are you sure you want to ' + labels[action] + ' ' + selectedIds.size + ' post(s)?')) return;
+    try {
+        const r = await fetch('/api/blog/bulk', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: [...selectedIds], action })
+        });
+        const data = await r.json();
+        if (r.ok) {
+            alert('✅ ' + data.count + ' post(s) updated');
+            selectedIds.clear(); document.getElementById('bulkAction').value = '';
+            load();
+        } else { alert('Error: ' + (data.error || 'Failed')); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Sorting
+function sortBy(field) {
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = field === 'date' ? 'desc' : 'asc'; }
+    filterPosts();
+}
+
+// Pagination
+function changePage(dir) { curPage += dir; filterPosts(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+// Quick Edit
 function toggleQuickEdit(id) {
     const row = document.getElementById('qe-row-' + id);
     row.style.display = row.style.display === 'none' ? '' : 'none';
@@ -143,18 +384,19 @@ async function quickSave(id) {
         read_time: parseInt(document.getElementById('qe-read-' + id).value) || null,
         tags: tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(t => t) : []
     };
-    const r = await fetch('/api/blog/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (r.ok) { load(); } else { alert('Save failed'); }
+    try {
+        const r = await fetch('/api/blog/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (r.ok) load(); else alert('Save failed');
+    } catch(e) { alert('Save failed'); }
 }
 
 async function deletePost(id) {
-    if (!confirm('Delete this post?')) return;
-    await fetch('/api/blog/' + id, { method: 'DELETE' });
-    load();
+    if (!confirm('Delete this post permanently?')) return;
+    try { await fetch('/api/blog/' + id, { method: 'DELETE' }); selectedIds.delete(id); load(); }
+    catch(e) { alert('Delete failed'); }
 }
 
-// Load user
-// Auth handled by sidebar.js;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') clearSelection(); });
 load();
 </script>
 </body></html>

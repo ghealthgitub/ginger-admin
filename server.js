@@ -322,6 +322,32 @@ app.delete('/api/blog/:id', apiAuth, roleRequired('super_admin'), async (req, re
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Bulk actions for blog posts
+app.post('/api/blog/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No posts selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM blog_posts WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'blog_post', null, `Bulk deleted ${count} posts`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE blog_posts SET status='published', published_at=COALESCE(published_at, NOW()), updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'blog_post', null, `Bulk published ${count} posts`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE blog_posts SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'blog_post', null, `Bulk set ${count} posts to draft`);
+        } else {
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ============== TESTIMONIALS CRUD ==============
 app.get('/testimonials', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'testimonials.html'));
