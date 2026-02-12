@@ -75,7 +75,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .title-input::placeholder{color:var(--gray-300)}
 .permalink-area{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-400);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}
 .permalink-area span{color:var(--gray-400)}
-.permalink-area input{border:none;outline:none;font-family:inherit;font-size:.78rem;color:var(--teal);font-weight:500;padding:2px 4px;border-radius:3px;background:transparent;min-width:120px}
+.permalink-area input{border:none;outline:none;font-family:inherit;font-size:.78rem;color:var(--teal);font-weight:500;padding:2px 4px;border-radius:3px;background:transparent;flex:1;min-width:0}
 .permalink-area input:focus{background:var(--gray-50);border:1px solid var(--gray-200)}
 .permalink-edit{font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit}
 .permalink-edit:hover{text-decoration:underline}
@@ -1043,9 +1043,6 @@ window.appendAI = appendAI;
 window.undoChanges = undoChanges;
 window.restoreRevision = restoreRevision;
 window.updatePublishUI = updatePublishUI;
-window.openMediaPicker = openMediaPicker;
-window.closeMediaPicker = closeMediaPicker;
-window.removeFeatImage = removeFeatImage;
 
 }); // end waitForQuill
 </script>
