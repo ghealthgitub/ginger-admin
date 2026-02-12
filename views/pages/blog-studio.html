@@ -8,8 +8,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
 /* TOP BAR */
 .topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
-.topbar__back{color:var(--gray-500);font-size:.82rem;text-decoration:none;padding:6px 12px;border:1px solid var(--gray-200);border-radius:6px;transition:all .2s;font-weight:600;display:flex;align-items:center;gap:4px}
-.topbar__back:hover{color:var(--teal);border-color:var(--teal)}
+.topbar__back{color:var(--white);font-size:.82rem;text-decoration:none;padding:6px 12px;border:none;border-radius:6px;transition:all .2s;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal)}
+.topbar__back:hover{background:#0c918c}
 .topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
 .topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
@@ -79,6 +79,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .permalink-area input:focus{background:var(--gray-50);border:1px solid var(--gray-200)}
 .permalink-edit{font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit}
 .permalink-edit:hover{text-decoration:underline}
+.permalink-status{font-size:.7rem;font-weight:600;margin-left:6px;transition:all .2s}
+.permalink-status--ok{color:#059669}
+.permalink-status--taken{color:#DC2626}
+.permalink-status--checking{color:var(--gray-400)}
 
 /* Editor toolbar area */
 .editor-toolbar-area{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0}
@@ -161,6 +165,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
+/* Revisions */
+.rev-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:.78rem;cursor:pointer;transition:background .1s;margin:0 -14px;padding-left:14px;padding-right:14px}
+.rev-item:hover{background:var(--gray-50)}
+.rev-item:last-child{border:none}
+.rev-icon{width:24px;height:24px;border-radius:50%;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:.65rem;flex-shrink:0}
+.rev-icon--auto{background:#FEF3C7;color:#D97706}
+.rev-icon--manual{background:#D1FAE5;color:#059669}
+.rev-info{flex:1;min-width:0}
+.rev-user{font-weight:600;color:var(--navy);font-size:.75rem}
+.rev-date{color:var(--gray-400);font-size:.7rem}
+.rev-type{font-size:.65rem;padding:1px 6px;border-radius:3px;background:var(--gray-100);color:var(--gray-400);margin-left:auto;flex-shrink:0}
+
+/* Undo button */
+.topbar__btn--undo{background:var(--gray-50);color:var(--gray-500);border:1px solid var(--gray-200);font-size:.78rem}
+.topbar__btn--undo:hover{background:#FEF3C7;color:#D97706;border-color:#FCD34D}
+
 /* Auto-save */
 .autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
 
@@ -210,6 +230,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
     <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
     <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()" title="Undo recent changes">↩ Undo</button>
         <button class="topbar__btn topbar__btn--preview" onclick="togglePreview()">👁 Preview</button>
         <button class="topbar__btn topbar__btn--save" onclick="savePost('draft')">Save Draft</button>
         <button class="topbar__btn topbar__btn--publish" id="publishBtn" onclick="savePost('published')">Publish</button>
@@ -265,8 +286,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="permalink-area">
             <span>Permalink:</span>
             <span style="color:var(--gray-500)">ginger.healthcare/blog/</span>
-            <input type="text" id="slug" placeholder="post-slug" oninput="slugEdited=true">
+            <input type="text" id="slug" placeholder="post-slug" oninput="slugEdited=true;checkSlugUnique()">
             <button class="permalink-edit" id="slugEditBtn" onclick="document.getElementById('slug').focus()">Edit</button>
+            <span class="permalink-status" id="slugStatus"></span>
         </div>
     </div>
     <!-- Editor Toolbar -->
@@ -409,6 +431,17 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             Write content to see analysis...
         </div>
     </div>
+
+    <!-- Revisions -->
+    <div class="sb-box" id="revisionsBox" style="display:none">
+        <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
+            <div class="sb-box__title">🕐 Revisions</div>
+            <span class="sb-box__toggle">▾</span>
+        </div>
+        <div class="sb-box__body" id="revisionsBody">
+            <div style="font-size:.78rem;color:var(--gray-400)">Loading...</div>
+        </div>
+    </div>
 </div>
 
 </div>
@@ -542,15 +575,83 @@ function updateCharCount(inputId, countId, max) {
     el.style.color = len > max ? '#EF4444' : len > max * 0.8 ? '#F59E0B' : '';
 }
 
-const STOP_WORDS = ['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','as','is','was','are','were','been','be','have','has','had','do','does','did','will','would','shall','should','may','might','must','can','could','about','above','after','again','against','all','am','any','because','before','being','below','between','both','during','each','few','further','get','got','here','how','if','into','it','its','just','me','more','most','no','nor','not','now','off','once','only','other','our','out','over','own','re','same','so','some','such','than','that','their','them','then','there','these','they','this','those','through','too','under','until','up','very','what','when','where','which','while','who','whom','why','you','your'];
-function autoSlug() {
+const STOP_WORDS = ['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','as','is','was','are','were','been','be','have','has','had','do','does','did','will','would','shall','should','may','might','must','can','could','about','above','after','again','against','all','am','any','because','before','being','below','between','both','during','each','few','further','get','got','here','how','if','into','it','its','just','me','more','most','much','no','nor','not','now','off','once','only','other','our','out','over','own','re','same','so','some','such','than','that','their','them','then','there','these','they','this','those','through','too','under','until','up','very','what','when','where','which','while','who','whom','why','you','your'];
+const FILLER_WORDS = ['complete','comprehensive','ultimate','definitive','everything','wanted','know','need','introduction','understanding','explained','overview','tips','best','top','guide','things','ways','reasons','heres','look'];
+function autoSlug(title) {
+    if (!title) title = document.getElementById('title').value;
     if (slugEdited) return;
-    const title = document.getElementById('title').value;
     if (!title) { document.getElementById('slug').value = ''; return; }
-    const words = title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w && !STOP_WORDS.includes(w));
-    let slug = words.slice(0, 8).join('-');
-    if (slug.length > 60) slug = slug.substring(0, slug.lastIndexOf('-', 60)) || slug.substring(0, 60);
+    // Step 1: Remove stop words
+    let words = title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w && !STOP_WORDS.includes(w));
+    // Step 2: Remove filler words, but keep some if too few words remain
+    let coreWords = words.filter(w => !FILLER_WORDS.includes(w));
+    if (coreWords.length >= 3) words = coreWords;
+    else if (coreWords.length === 2) {
+        // Keep one filler in original position for better SEO
+        const keepSet = new Set(coreWords);
+        let fillerKept = false;
+        words = words.filter(w => {
+            if (keepSet.has(w)) { keepSet.delete(w); return true; }
+            if (!fillerKept && FILLER_WORDS.includes(w)) { fillerKept = true; return true; }
+            return false;
+        });
+    }
+    // else keep words with fillers
+    // Step 4: Max 4 words
+    words = words.slice(0, 4);
+    // Fallback: if too few, use basic filtering
+    if (words.length < 2) {
+        words = title.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w && w.length > 1 && !['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','as','is'].includes(w)).slice(0, 4);
+    }
+    let slug = words.join('-');
+    if (slug.length > 50) slug = slug.substring(0, slug.lastIndexOf('-', 50)) || slug.substring(0, 50);
     document.getElementById('slug').value = slug;
+    checkSlugUnique();
+}
+
+// Slug uniqueness check with debounce
+let slugCheckTimer = null;
+function checkSlugUnique() {
+    const slug = document.getElementById('slug').value.trim();
+    const status = document.getElementById('slugStatus');
+    if (!slug) { status.textContent = ''; return; }
+    status.textContent = '⏳';
+    status.className = 'permalink-status permalink-status--checking';
+    clearTimeout(slugCheckTimer);
+    slugCheckTimer = setTimeout(async () => {
+        try {
+            const exclude = editId || 0;
+            const r = await fetch('/api/blog-slug-check/' + encodeURIComponent(slug) + '?exclude=' + exclude);
+            const data = await r.json();
+            if (data.available) {
+                status.textContent = '✓ Available';
+                status.className = 'permalink-status permalink-status--ok';
+            } else {
+                status.textContent = '✗ Taken';
+                status.className = 'permalink-status permalink-status--taken';
+                // Auto-fix: append -2, -3 etc
+                autoFixSlug(slug);
+            }
+        } catch(e) { status.textContent = ''; }
+    }, 500);
+}
+
+async function autoFixSlug(baseSlug) {
+    for (let i = 2; i <= 10; i++) {
+        const candidate = baseSlug + '-' + i;
+        try {
+            const exclude = editId || 0;
+            const r = await fetch('/api/blog-slug-check/' + encodeURIComponent(candidate) + '?exclude=' + exclude);
+            const data = await r.json();
+            if (data.available) {
+                document.getElementById('slug').value = candidate;
+                const status = document.getElementById('slugStatus');
+                status.textContent = '✓ ' + candidate;
+                status.className = 'permalink-status permalink-status--ok';
+                return;
+            }
+        } catch(e) { return; }
+    }
 }
 
 function updateTopTitle() {
@@ -726,7 +827,21 @@ async function aiCmd(customMsg) {
         const content = quill.root.innerHTML;
         const title = document.getElementById('title').value;
         const keywords = document.getElementById('focusKeywords').value;
-        const prompt = `You are an AI writing assistant for a medical tourism blog. Tone: ${currentTone}.\n\nBlog title: "${title}"\nFocus keywords: ${keywords || '(none set)'}\nCurrent content (first 1000 chars): ${content.substring(0,1000)}\n\nRequest: ${msg}\n\nIf the request is about content (writing, editing, improving), respond with HTML using h2,h3,p,ul,li,strong,em tags. No markdown, no code fences.\nIf the request is about SEO/meta fields, respond in JSON: {"meta_title":"...","meta_description":"...","excerpt":"...","focus_keywords":"...","suggested_tags":["..."]}\nAdd relevant CTAs (links to /get-quote/, /destinations/, /specialties/) where appropriate in the content.`;
+        const prompt = `You are an AI writing assistant for a medical tourism blog. Tone: ${currentTone}.
+
+Blog title: "${title}"
+Current slug/URL: ${document.getElementById('slug').value || '(none)'}
+Focus keywords: ${keywords || '(none set)'}
+Current content (first 1000 chars): ${content.substring(0,1000)}
+
+Request: ${msg}
+
+IMPORTANT RULES:
+- If the request is about the URL, permalink, or slug, respond ONLY in JSON: {"slug":"suggested-slug","explanation":"why this slug is good"}
+- If the request is about SEO/meta fields (title, meta, description, excerpt), respond ONLY in JSON: {"meta_title":"...","meta_description":"...","excerpt":"...","focus_keywords":"...","suggested_tags":["..."]}
+- If the request is about content (writing, editing, improving), respond with HTML using h2,h3,p,ul,li,strong,em tags. No markdown, no code fences.
+- Add relevant CTAs (links to /get-quote/, /destinations/, /specialties/) where appropriate in the content.
+- NEVER respond with plain text suggestions about URLs or slugs - always use JSON format for those.`;
         const r = await fetch('/api/ai/generate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt, type: 'blog', context: title }) });
         const data = await r.json();
         if (r.ok) {
@@ -734,15 +849,23 @@ async function aiCmd(customMsg) {
             let seoData = null;
             try { const clean = result.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim(); if (clean.startsWith('{')) seoData = JSON.parse(clean); } catch(e) {}
             if (seoData) {
-                if (seoData.meta_title) document.getElementById('metaTitle').value = seoData.meta_title;
-                if (seoData.meta_description) document.getElementById('metaDesc').value = seoData.meta_description;
-                if (seoData.excerpt) document.getElementById('excerpt').value = seoData.excerpt;
-                if (seoData.focus_keywords) document.getElementById('focusKeywords').value = seoData.focus_keywords;
-                if (seoData.suggested_tags) { tags = [...new Set([...tags, ...seoData.suggested_tags])]; renderTags(); }
-                updateCharCount('metaTitle','metaTitleCount',60);
-                updateCharCount('metaDesc','metaDescCount',160);
-                analyzeSEO();
-                loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...';
+                if (seoData.slug) {
+                    // Slug/URL suggestion
+                    document.getElementById('slug').value = seoData.slug;
+                    slugEdited = true;
+                    loadDiv.innerHTML = '✅ URL updated!<br><strong>New slug:</strong> /' + seoData.slug + '/<br>' + (seoData.explanation || '');
+                } else if (seoData.meta_title || seoData.meta_description) {
+                    // SEO fields
+                    if (seoData.meta_title) document.getElementById('metaTitle').value = seoData.meta_title;
+                    if (seoData.meta_description) document.getElementById('metaDesc').value = seoData.meta_description;
+                    if (seoData.excerpt) document.getElementById('excerpt').value = seoData.excerpt;
+                    if (seoData.focus_keywords) document.getElementById('focusKeywords').value = seoData.focus_keywords;
+                    if (seoData.suggested_tags) { tags = [...new Set([...tags, ...seoData.suggested_tags])]; renderTags(); }
+                    updateCharCount('metaTitle','metaTitleCount',60);
+                    updateCharCount('metaDesc','metaDescCount',160);
+                    analyzeSEO();
+                    loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...';
+                }
             } else {
                 const preview = result.replace(/<[^>]*>/g,'').substring(0,180);
                 const encoded = encodeURIComponent(result);
@@ -755,8 +878,8 @@ async function aiCmd(customMsg) {
     document.getElementById('aiSendBtn').disabled = false;
     messages.scrollTop = messages.scrollHeight;
 }
-function insertAI(enc) { quill.root.innerHTML = decodeURIComponent(enc); updateStats(); analyzeSEO(); }
-function appendAI(enc) { quill.root.innerHTML += decodeURIComponent(enc); updateStats(); analyzeSEO(); }
+function insertAI(enc) { saveUndoSnapshot(); quill.root.innerHTML = decodeURIComponent(enc); updateStats(); analyzeSEO(); }
+function appendAI(enc) { saveUndoSnapshot(); quill.root.innerHTML += decodeURIComponent(enc); updateStats(); analyzeSEO(); }
 
 // Drag handles
 function setupDrag(handleId, panel, dir) {
@@ -785,9 +908,113 @@ function setupDrag(handleId, panel, dir) {
 setupDrag('dragLeft', document.getElementById('panelLeft'), 'left');
 setupDrag('dragRight', document.getElementById('panelRight'), 'right');
 
+// Undo - save snapshot before changes
+let undoStack = [];
+function saveUndoSnapshot() {
+    undoStack.push({
+        title: document.getElementById('title').value,
+        content: quill.root.innerHTML,
+        slug: document.getElementById('slug').value,
+        metaTitle: document.getElementById('metaTitle').value,
+        metaDesc: document.getElementById('metaDesc').value,
+        excerpt: document.getElementById('excerpt').value,
+        focusKeywords: document.getElementById('focusKeywords').value,
+        category: document.getElementById('category').value,
+        coverImage: document.getElementById('coverImage').value,
+        tags: [...tags]
+    });
+    if (undoStack.length > 20) undoStack.shift();
+}
+function undoChanges() {
+    if (!undoStack.length) { alert('Nothing to undo'); return; }
+    const snap = undoStack.pop();
+    document.getElementById('title').value = snap.title;
+    quill.root.innerHTML = snap.content;
+    document.getElementById('slug').value = snap.slug;
+    document.getElementById('metaTitle').value = snap.metaTitle;
+    document.getElementById('metaDesc').value = snap.metaDesc;
+    document.getElementById('excerpt').value = snap.excerpt;
+    document.getElementById('focusKeywords').value = snap.focusKeywords;
+    document.getElementById('category').value = snap.category;
+    document.getElementById('coverImage').value = snap.coverImage;
+    tags = snap.tags; renderTags();
+    updateTopTitle(); updateStats(); analyzeSEO();
+    const toast = document.getElementById('autosaveToast');
+    toast.textContent = '↩ Undo applied'; toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2000);
+}
+// Save snapshot before AI commands
+const origAiCmd = aiCmd;
+
+// Revisions
+async function loadRevisions() {
+    if (!editId) return;
+    try {
+        const r = await fetch('/api/revisions/blog_post/' + editId);
+        if (!r.ok) return;
+        const revs = await r.json();
+        if (!revs.length) { document.getElementById('revisionsBox').style.display = 'none'; return; }
+        document.getElementById('revisionsBox').style.display = '';
+        const body = document.getElementById('revisionsBody');
+        body.innerHTML = revs.slice(0, 10).map(function(rev) {
+            const date = new Date(rev.created_at);
+            const ago = timeAgo(date);
+            const icon = rev.revision_type === 'autosave' ? 'rev-icon--auto' : 'rev-icon--manual';
+            const typeLabel = rev.revision_type === 'autosave' ? 'Auto' : 'Save';
+            return '<div class="rev-item" onclick="restoreRevision(' + rev.id + ')">' +
+                '<div class="rev-icon ' + icon + '">' + (rev.revision_type === 'autosave' ? '⏱' : '💾') + '</div>' +
+                '<div class="rev-info"><div class="rev-user">' + (rev.user_name || 'Admin') + '</div>' +
+                '<div class="rev-date">' + ago + '</div></div>' +
+                '<span class="rev-type">' + typeLabel + '</span></div>';
+        }).join('');
+        if (revs.length > 10) {
+            body.innerHTML += '<div style="text-align:center;padding:8px;font-size:.72rem;color:var(--gray-400)">' + (revs.length - 10) + ' more revision(s)</div>';
+        }
+    } catch(e) {}
+}
+
+function timeAgo(date) {
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' hour(s) ago';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function restoreRevision(revId) {
+    if (!confirm('Restore this revision? Your current changes will be saved as a revision first.')) return;
+    // Save current state first
+    saveUndoSnapshot();
+    try {
+        const r = await fetch('/api/revisions/detail/' + revId);
+        if (!r.ok) return;
+        const rev = await r.json();
+        document.getElementById('title').value = rev.title || '';
+        quill.root.innerHTML = rev.content || '';
+        if (rev.meta) {
+            const meta = typeof rev.meta === 'string' ? JSON.parse(rev.meta) : rev.meta;
+            if (meta.excerpt) document.getElementById('excerpt').value = meta.excerpt;
+            if (meta.meta_title) document.getElementById('metaTitle').value = meta.meta_title;
+            if (meta.meta_description) document.getElementById('metaDesc').value = meta.meta_description;
+            if (meta.focus_keywords) document.getElementById('focusKeywords').value = meta.focus_keywords;
+            if (meta.category) document.getElementById('category').value = meta.category;
+        }
+        updateTopTitle(); updateStats(); analyzeSEO();
+        updateCharCount('metaTitle','metaTitleCount',60);
+        updateCharCount('metaDesc','metaDescCount',160);
+        const toast = document.getElementById('autosaveToast');
+        toast.textContent = '🕐 Revision restored'; toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    } catch(e) { alert('Failed to restore revision'); }
+}
+
 // Init
-loadPost();
+loadPost().then(() => loadRevisions());
 updateStats();
+
+// Save initial snapshot after load for undo
+setTimeout(() => saveUndoSnapshot(), 2000);
 </script>
 
 <script>

@@ -218,11 +218,32 @@ app.get('/api/blog/:id', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Slug uniqueness check
+app.get('/api/blog-slug-check/:slug', apiAuth, async (req, res) => {
+    try {
+        const excludeId = req.query.exclude || 0;
+        const result = await pool.query('SELECT id, title FROM blog_posts WHERE slug = $1 AND id != $2', [req.params.slug, excludeId]);
+        res.json({ available: result.rows.length === 0, existing: result.rows[0] || null });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
+        let { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
         const tagsArray = Array.isArray(tags) ? tags : [];
         const readTimeVal = read_time ? parseInt(read_time) || null : null;
+        // Ensure slug uniqueness
+        const existing = await pool.query('SELECT id FROM blog_posts WHERE slug = $1', [slug]);
+        if (existing.rows.length) {
+            let suffix = 2;
+            while (true) {
+                const candidate = slug + '-' + suffix;
+                const check = await pool.query('SELECT id FROM blog_posts WHERE slug = $1', [candidate]);
+                if (!check.rows.length) { slug = candidate; break; }
+                suffix++;
+                if (suffix > 50) break;
+            }
+        }
         const result = await pool.query(
             `INSERT INTO blog_posts (title, slug, excerpt, content, cover_image, category, tags, status, read_time, author_id, meta_title, meta_description, focus_keywords, published_at)
              VALUES ($1,$2,$3,$4,$5,$6,$7::text[],$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
@@ -235,10 +256,35 @@ app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req
 
 app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
+        let { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
         const tagsArray = Array.isArray(tags) ? tags : [];
         const readTimeVal = read_time ? parseInt(read_time) || null : null;
         const pubStatus = status || 'draft';
+        // Ensure slug uniqueness (exclude current post)
+        const slugCheck = await pool.query('SELECT id FROM blog_posts WHERE slug = $1 AND id != $2', [slug, req.params.id]);
+        if (slugCheck.rows.length) {
+            let suffix = 2;
+            while (true) {
+                const candidate = slug + '-' + suffix;
+                const check = await pool.query('SELECT id FROM blog_posts WHERE slug = $1 AND id != $2', [candidate, req.params.id]);
+                if (!check.rows.length) { slug = candidate; break; }
+                suffix++;
+                if (suffix > 50) break;
+            }
+        }
+        // Save revision before updating
+        const revType = req.body._autoSave ? 'autosave' : 'manual';
+        try {
+            const existing = await pool.query('SELECT title, content, excerpt, meta_title, meta_description, focus_keywords, category, cover_image FROM blog_posts WHERE id=$1', [req.params.id]);
+            if (existing.rows.length) {
+                const old = existing.rows[0];
+                await pool.query(
+                    'INSERT INTO revisions (entity_type, entity_id, title, content, meta, user_id, revision_type) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+                    ['blog_post', req.params.id, old.title, old.content, JSON.stringify({ excerpt: old.excerpt, meta_title: old.meta_title, meta_description: old.meta_description, focus_keywords: old.focus_keywords, category: old.category, cover_image: old.cover_image }), req.user.id, revType]
+                );
+                await pool.query('DELETE FROM revisions WHERE entity_type=$1 AND entity_id=$2 AND id NOT IN (SELECT id FROM revisions WHERE entity_type=$1 AND entity_id=$2 ORDER BY created_at DESC LIMIT 30)', ['blog_post', req.params.id]);
+            }
+        } catch(revErr) { console.error('Revision save error:', revErr.message); }
         const result = await pool.query(
             `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7::text[], status=$8, read_time=$9, meta_title=$10, meta_description=$11, focus_keywords=$12, published_at = CASE WHEN $13='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
              WHERE id=$14 RETURNING *`,
@@ -247,6 +293,25 @@ app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (
         await logActivity(req.user.id, 'update', 'blog_post', req.params.id, `Updated: ${title}`);
         res.json(result.rows[0]);
     } catch (err) { console.error('Blog PUT error:', err.message); res.status(500).json({ error: err.message }); }
+});
+
+// Revisions API
+app.get('/api/revisions/:type/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT r.*, u.name as user_name FROM revisions r LEFT JOIN users u ON r.user_id = u.id WHERE r.entity_type=$1 AND r.entity_id=$2 ORDER BY r.created_at DESC LIMIT 30',
+            [req.params.type, req.params.id]
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/revisions/detail/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM revisions WHERE id=$1', [req.params.id]);
+        if (!result.rows.length) return res.status(404).json({ error: 'Revision not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/blog/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
