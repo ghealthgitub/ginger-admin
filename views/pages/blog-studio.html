@@ -53,7 +53,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-qbtn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 .ai-input{padding:10px 12px;border-top:1px solid var(--gray-200);background:var(--white);flex-shrink:0}
 .ai-input__row{display:flex;gap:6px;align-items:flex-end}
-.ai-input textarea{flex:1;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;color:var(--navy);font-size:.82rem;font-family:inherit;resize:none;min-height:60px;max-height:100px;line-height:1.5}
+.ai-input textarea{flex:1;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;color:var(--navy);font-size:.82rem;font-family:inherit;resize:none;min-height:130px;max-height:200px;line-height:1.5}
 .ai-input textarea::placeholder{color:var(--gray-400)}
 .ai-input textarea:focus{outline:none;border-color:var(--teal)}
 .ai-send{width:32px;height:32px;background:var(--teal);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
@@ -500,8 +500,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 </div>
 </div>
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';document.head.appendChild(s)"></script>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js';s.id='quillFallback';document.head.appendChild(s)"></script>
 <script>
+function waitForQuill(cb, attempts) {
+    if (typeof Quill !== 'undefined') return cb();
+    if (attempts > 40) return console.error('Quill failed to load');
+    setTimeout(() => waitForQuill(cb, (attempts||0)+1), 150);
+}
+waitForQuill(function() {
+
 const pathParts = window.location.pathname.split('/');
 const editId = (pathParts[2] === 'edit' || pathParts[2] === 'claude') ? pathParts[3] : null;
 let postData = {};
@@ -1017,6 +1024,8 @@ updateStats();
 
 // Save initial snapshot after load for undo
 setTimeout(() => saveUndoSnapshot(), 2000);
+
+}); // end waitForQuill
 </script>
 
 <script>
