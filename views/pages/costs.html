@@ -1,22 +1,252 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Cost Manager | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"><script src="/js/sidebar.js" defer></script>
-</head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">💰 Treatment Cost Manager</h1><div class="topbar__actions"><button class="btn btn--primary" onclick="openModal()">+ Add Cost Entry</button></div></header><div class="content"><div class="card"><div class="card__body"><table class="data-table"><thead><tr><th>Treatment</th><th>Destination</th><th>Cost (USD)</th><th>Hospital Stay</th><th>Actions</th></tr></thead><tbody id="list"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div></div></div>
-<div class="modal-overlay" id="modal"><div class="modal"><div class="modal__header"><h3 id="modalTitle">Add Cost Entry</h3><button class="modal__close" onclick="closeModal()">✕</button></div><div class="modal__body">
-<div class="form-row"><div class="form-group"><label class="form-label">Treatment</label><select class="form-select" id="f_treatment"></select></div><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="f_destination"></select></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Min Cost (USD)</label><input type="number" class="form-input" id="f_min"></div><div class="form-group"><label class="form-label">Max Cost (USD)</label><input type="number" class="form-input" id="f_max"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Hospital Stay</label><input type="text" class="form-input" id="f_stay" placeholder="3-5 days"></div><div class="form-group"><label class="form-label">Includes</label><input type="text" class="form-input" id="f_includes" placeholder="Surgery, meds, stay"></div></div>
-</div><div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">Save</button></div></div></div></main></div>
-<script>let items=[],editId=null;
-async function load(){const[r1,r2,r3]=await Promise.all([fetch('/api/costs'),fetch('/api/treatments'),fetch('/api/destinations')]);items=await r1.json();const trts=await r2.json();const dests=await r3.json();
-document.getElementById('f_treatment').innerHTML=trts.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
-document.getElementById('f_destination').innerHTML=dests.map(d=>'<option value="'+d.id+'">'+d.flag+' '+d.name+'</option>').join('');render()}
-function render(){const tb=document.getElementById('list');if(!items.length){tb.innerHTML='<tr><td colspan="5" class="empty-state">No cost entries yet. Add treatment costs per destination.</td></tr>';return}
-tb.innerHTML=items.map(c=>`<tr><td><strong>${c.treatment_name||'-'}</strong></td><td>${c.destination_flag||''} ${c.destination_name||'-'}</td><td>$${c.cost_min_usd||0} - $${c.cost_max_usd||0}</td><td>${c.hospital_stay||'-'}</td><td><button class="btn btn--outline btn--sm" onclick="editItem(${c.id})">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem(${c.id})">🗑</button></td></tr>`).join('')}
-function openModal(){editId=null;document.getElementById('modal').classList.add('open');['f_min','f_max','f_stay','f_includes'].forEach(f=>document.getElementById(f).value='')}
-function closeModal(){document.getElementById('modal').classList.remove('open')}
-function editItem(id){const c=items.find(i=>i.id===id);if(!c)return;editId=id;document.getElementById('modal').classList.add('open');document.getElementById('f_treatment').value=c.treatment_id;document.getElementById('f_destination').value=c.destination_id;document.getElementById('f_min').value=c.cost_min_usd||'';document.getElementById('f_max').value=c.cost_max_usd||'';document.getElementById('f_stay').value=c.hospital_stay||'';document.getElementById('f_includes').value=c.includes||''}
-async function saveItem(){const data={treatment_id:parseInt(document.getElementById('f_treatment').value),destination_id:parseInt(document.getElementById('f_destination').value),cost_min_usd:parseInt(document.getElementById('f_min').value)||0,cost_max_usd:parseInt(document.getElementById('f_max').value)||0,hospital_stay:document.getElementById('f_stay').value,includes:document.getElementById('f_includes').value};
-const url=editId?'/api/costs/'+editId:'/api/costs';const method=editId?'PUT':'POST';const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load()}else{alert('Error')}}
-async function deleteItem(id){if(!confirm('Delete?'))return;await fetch('/api/costs/'+id,{method:'DELETE'});load()}
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Treatment Costs | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>
+:root{--navy:#0B2545;--teal:#0EA5A0;--ginger:#F26522;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.bulk-bar{display:flex;gap:8px;align-items:center}
+.bulk-bar select,.filter-group select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
+.bulk-bar .btn-apply{padding:5px 14px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;cursor:pointer;background:var(--gray-50);font-family:inherit;font-weight:600;color:var(--gray-600);transition:all .2s}
+.bulk-bar .btn-apply:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.search-wrap{flex:1;max-width:260px;position:relative}
+.search-wrap input{width:100%;padding:6px 10px 6px 30px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--teal)}
+.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.75rem}
+.pagination-info{margin-left:auto;font-size:.82rem;color:var(--gray-500);display:flex;align-items:center;gap:8px}
+.pagination-info select{padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:.78rem;font-family:inherit}
+.pag-btn{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;background:#fff;font-size:.78rem;font-family:inherit;color:var(--gray-500)}
+.pag-btn:hover:not(:disabled){background:var(--teal);color:#fff;border-color:var(--teal)}
+.pag-btn:disabled{opacity:.4;cursor:not-allowed}
+.selected-bar{background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:8px 14px;margin-bottom:10px;display:none;align-items:center;gap:12px;font-size:.82rem;color:var(--teal);font-weight:600}
+.selected-bar .btn-clear{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.78rem;font-family:inherit;text-decoration:underline}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-500);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--gray-200);text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+.data-table th:hover{color:var(--navy)}
+.data-table th .sort-icon{font-size:.6rem;margin-left:3px;opacity:.4}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--gray-100);font-size:.85rem;vertical-align:middle}
+.data-table tr:hover td{background:var(--gray-50)}
+.data-table tr.selected td{background:rgba(14,165,160,.04)}
+.cb-cell{width:36px;text-align:center}
+.cb-cell input{width:15px;height:15px;cursor:pointer;accent-color:var(--teal)}
+.row-actions{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity .15s}
+tr:hover .row-actions{opacity:1}
+.row-actions button{font-size:.72rem;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:inherit;border:none;background:none;color:var(--gray-500)}
+.row-actions button:hover{color:var(--teal)}
+.row-actions .act-del{color:#EF4444}.row-actions .act-del:hover{color:#DC2626;text-decoration:underline}
+.row-actions .sep{color:var(--gray-300)}
+.date-cell{font-size:.78rem;color:var(--gray-500);white-space:nowrap}
+.empty-state{text-align:center;padding:40px;color:var(--gray-400);font-size:.92rem}
+.btn-new{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn-new:hover{background:#0c918c}
+.cost-cell{font-weight:600;color:var(--navy)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal__header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--gray-200)}
+.modal__header h3{font-family:'Playfair Display',serif;color:var(--navy);font-size:1.1rem;margin:0}
+.modal__close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.modal__close:hover{background:var(--gray-100);color:var(--navy)}
+.modal__body{padding:20px 24px}
+.modal__footer{display:flex;gap:8px;justify-content:flex-end;padding:16px 24px;border-top:1px solid var(--gray-200)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.85rem;box-sizing:border-box}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal);outline:none}
+.form-textarea{resize:vertical;min-height:60px}
+</style>
+<script src="/js/sidebar.js" defer></script>
+</head>
+<body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Treatment Costs</h1><div class="topbar__actions"><button class="btn-new" onclick="openModal()">+ Add Cost Entry</button></div></header>
+<div class="content">
+    <div class="selected-bar" id="selectedBar"><span id="selectedCount">0 selected</span><button class="btn-clear" onclick="clearSel()">Clear</button></div>
+    <div class="toolbar">
+        <div class="bulk-bar">
+            <select id="bulkAction"><option value="">Bulk Actions</option><option value="delete">Delete Selected</option></select>
+            <button class="btn-apply" onclick="applyBulk()">Apply</button>
+        </div>
+        <div class="filter-group"><select id="destFilter" onchange="doFilter()"><option value="">All Destinations</option></select></div>
+        <div class="search-wrap"><input type="text" placeholder="Search treatments..." id="searchInput" oninput="doFilter()"></div>
+        <div class="pagination-info">
+            <span id="pageInfo"></span>
+            <button class="pag-btn" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
+            <button class="pag-btn" id="nextBtn" onclick="changePage(1)" disabled>›</button>
+            <select id="perPage" onchange="perPage=+this.value;curPage=1;doFilter()"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+        </div>
+    </div>
+    <div class="card"><div class="card__body" style="padding:0;overflow-x:auto">
+        <table class="data-table"><thead><tr>
+            <th class="cb-cell"><input type="checkbox" id="selAll" onchange="toggleAll(this.checked)"></th>
+            <th onclick="sortBy('treatment')">Treatment <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('destination')">Destination <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('min')">Min (USD) <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('max')">Max (USD) <span class="sort-icon">↕</span></th>
+            <th>Hospital Stay</th>
+            <th>Includes</th>
+            <th onclick="sortBy('date')">Date <span class="sort-icon">↕</span></th>
+        </tr></thead><tbody id="list"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody></table>
+    </div></div>
+</div></main></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal"><div class="modal">
+    <div class="modal__header"><h3 id="modalTitle">Add Cost Entry</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+    <div class="modal__body">
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Treatment *</label><select class="form-select" id="f_treatment_id"><option value="">Select treatment...</option></select></div>
+            <div class="form-group"><label class="form-label">Destination *</label><select class="form-select" id="f_destination_id"><option value="">Select destination...</option></select></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Min Cost (USD)</label><input type="number" class="form-input" id="f_min" placeholder="5000"></div>
+            <div class="form-group"><label class="form-label">Max Cost (USD)</label><input type="number" class="form-input" id="f_max" placeholder="15000"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Hospital Stay</label><input class="form-input" id="f_stay" placeholder="3-5 days"></div>
+            <div class="form-group"><label class="form-label">Local Currency Cost</label><input class="form-input" id="f_local" placeholder="₹4,00,000 - ₹12,00,000"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Includes</label><textarea class="form-textarea" id="f_includes" placeholder="Surgery, medication, hospital stay, meals..."></textarea></div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="f_notes" placeholder="Additional information about pricing..."></textarea></div>
+    </div>
+    <div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">Save Cost Entry</button></div>
+</div></div>
+
+<script>
+let items=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',editId=null;
+const API='/api/costs';
+
+async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
+
+async function loadRelations(){
+    try{
+        let r=await safeFetch('/api/treatments');
+        if(r&&r.ok){const data=await r.json();const s=document.getElementById('f_treatment_id');data.forEach(t=>{s.innerHTML+='<option value="'+t.id+'">'+t.name+'</option>';});}
+        r=await safeFetch('/api/destinations');
+        if(r&&r.ok){const data=await r.json();const s=document.getElementById('f_destination_id'),sf=document.getElementById('destFilter');
+        data.forEach(d=>{s.innerHTML+='<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>';sf.innerHTML+='<option value="'+d.id+'">'+d.name+'</option>';});}
+    }catch(e){}
+}
+
+async function load(){
+    try{const r=await safeFetch(API);if(!r||!r.ok)return;items=await r.json();
+    document.getElementById('pageTitle').textContent='Treatment Costs ('+items.length+')';
+    doFilter();}catch(e){document.getElementById('list').innerHTML='<tr><td colspan="8" class="empty-state">Error loading. Refresh page.</td></tr>';}
+}
+
+function doFilter(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const df=document.getElementById('destFilter').value;
+    let f=items.filter(i=>(!q||(i.treatment_name||'').toLowerCase().includes(q)||(i.destination_name||'').toLowerCase().includes(q)||(i.includes||'').toLowerCase().includes(q))&&(!df||String(i.destination_id)===df));
+    f.sort((a,b)=>{let va,vb;
+        if(sortField==='treatment'){va=(a.treatment_name||'');vb=(b.treatment_name||'');}
+        else if(sortField==='destination'){va=(a.destination_name||'');vb=(b.destination_name||'');}
+        else if(sortField==='min'){va=+(a.cost_min_usd||0);vb=+(b.cost_min_usd||0);}
+        else if(sortField==='max'){va=+(a.cost_max_usd||0);vb=+(b.cost_max_usd||0);}
+        else{va=a.created_at||'';vb=b.created_at||'';}
+        return sortDir==='asc'?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+    });
+    const total=f.length,tp=Math.max(1,Math.ceil(total/perPage));
+    if(curPage>tp)curPage=tp;
+    const start=(curPage-1)*perPage,page=f.slice(start,start+perPage);
+    document.getElementById('pageInfo').textContent=total+' items · page '+curPage+' of '+tp;
+    document.getElementById('prevBtn').disabled=curPage<=1;
+    document.getElementById('nextBtn').disabled=curPage>=tp;
+    render(page);
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function fmt(n){return n?'$'+Number(n).toLocaleString():'—';}
+
+function render(list){
+    const tb=document.getElementById('list');
+    if(!list.length){tb.innerHTML='<tr><td colspan="8" class="empty-state">No cost entries found</td></tr>';return;}
+    tb.innerHTML=list.map(s=>{
+        const ck=sel.has(s.id)?'checked':'',sc=sel.has(s.id)?' selected':'';
+        const dt=new Date(s.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const incl=(s.includes||'').substring(0,40);
+        return `<tr id="row-${s.id}" class="${sc}">
+            <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${s.id},this.checked)"></td>
+            <td><strong style="color:var(--navy)">${esc(s.treatment_name||'—')}</strong>
+                <div class="row-actions">
+                    <button onclick="editItem(${s.id})">Edit</button><span class="sep">|</span>
+                    <button class="act-del" onclick="deleteItem(${s.id})">Trash</button>
+                </div>
+            </td>
+            <td>${(s.destination_flag||'')} ${esc(s.destination_name||'—')}</td>
+            <td class="cost-cell">${fmt(s.cost_min_usd)}</td>
+            <td class="cost-cell">${fmt(s.cost_max_usd)}</td>
+            <td>${esc(s.hospital_stay||'—')}</td>
+            <td style="font-size:.78rem;color:var(--gray-400);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(s.includes||'')}">${esc(incl||'—')}${(s.includes||'').length>40?'...':''}</td>
+            <td class="date-cell">${dt}</td>
+        </tr>`;
+    }).join('');
+    document.getElementById('selAll').checked=false;
+}
+
+// Selection
+function toggleSel(id,c){if(c)sel.add(id);else sel.delete(id);updateSelUI();const r=document.getElementById('row-'+id);if(r)r.classList.toggle('selected',c);}
+function toggleAll(c){document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=c;const tr=cb.closest('tr');const id=+tr.id.replace('row-','');if(id){if(c)sel.add(id);else sel.delete(id);tr.classList.toggle('selected',c);}});updateSelUI();}
+function updateSelUI(){const b=document.getElementById('selectedBar');if(sel.size){b.style.display='flex';document.getElementById('selectedCount').textContent=sel.size+' selected';}else b.style.display='none';}
+function clearSel(){sel.clear();document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=false;cb.closest('tr').classList.remove('selected');});document.getElementById('selAll').checked=false;updateSelUI();}
+
+// Bulk
+async function applyBulk(){
+    const action=document.getElementById('bulkAction').value;
+    if(!action)return alert('Select a bulk action');if(!sel.size)return alert('Select items first');
+    if(!confirm('Delete '+sel.size+' cost entry(s)?'))return;
+    try{const r=await fetch(API+'/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:[...sel],action})});
+    const d=await r.json();if(r.ok){alert('✅ '+d.count+' item(s) deleted');sel.clear();document.getElementById('bulkAction').value='';load();}else alert(d.error||'Failed');}catch(e){alert(e.message);}
+}
+
+function sortBy(f){if(sortField===f)sortDir=sortDir==='asc'?'desc':'asc';else{sortField=f;sortDir=f==='date'?'desc':'asc';}doFilter();}
+function changePage(d){curPage+=d;doFilter();window.scrollTo({top:0,behavior:'smooth'});}
+
+async function deleteItem(id){if(!confirm('Delete this cost entry?'))return;try{await fetch(API+'/'+id,{method:'DELETE'});sel.delete(id);load();}catch(e){alert('Failed');}}
+
+// Modal
+function openModal(){
+    editId=null;document.getElementById('modalTitle').textContent='Add Cost Entry';
+    document.getElementById('modal').classList.add('open');
+    ['f_min','f_max','f_stay','f_local','f_includes','f_notes'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f_treatment_id').value='';document.getElementById('f_destination_id').value='';
+}
+
+function editItem(id){
+    const s=items.find(i=>i.id===id);if(!s)return;editId=id;
+    document.getElementById('modalTitle').textContent='Edit Cost Entry';
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f_treatment_id').value=s.treatment_id||'';
+    document.getElementById('f_destination_id').value=s.destination_id||'';
+    document.getElementById('f_min').value=s.cost_min_usd||'';
+    document.getElementById('f_max').value=s.cost_max_usd||'';
+    document.getElementById('f_stay').value=s.hospital_stay||'';
+    document.getElementById('f_local').value=s.cost_local||'';
+    document.getElementById('f_includes').value=s.includes||'';
+    document.getElementById('f_notes').value=s.notes||'';
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+async function saveItem(){
+    const data={
+        treatment_id:+document.getElementById('f_treatment_id').value||null,
+        destination_id:+document.getElementById('f_destination_id').value||null,
+        cost_min_usd:+document.getElementById('f_min').value||null,
+        cost_max_usd:+document.getElementById('f_max').value||null,
+        hospital_stay:document.getElementById('f_stay').value,
+        cost_local:document.getElementById('f_local').value,
+        includes:document.getElementById('f_includes').value,
+        notes:document.getElementById('f_notes').value
+    };
+    if(!data.treatment_id||!data.destination_id)return alert('Treatment and destination are required');
+    try{
+        const url=editId?API+'/'+editId:API;
+        const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(r.ok){closeModal();load();}else{const e=await r.json();alert(e.error||'Save failed');}
+    }catch(e){alert('Save failed');}
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearSel();closeModal();}});
+loadRelations().then(()=>load());
 </script>
 </body></html>

@@ -1151,6 +1151,19 @@ app.put('/api/costs/:id', apiAuth, roleRequired('super_admin', 'editor'), async 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Costs bulk actions
+app.post('/api/costs/bulk', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        if (action === 'delete') {
+            const result = await pool.query('DELETE FROM treatment_costs WHERE id = ANY($1) RETURNING id', [ids]);
+            await logActivity(req.user.id, 'bulk_delete', 'cost', null, `Bulk deleted ${result.rowCount} cost entries`);
+            res.json({ success: true, count: result.rowCount });
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/costs/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM treatment_costs WHERE id = $1', [req.params.id]);
