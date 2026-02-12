@@ -282,7 +282,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="panel-middle" id="panelMiddle">
     <!-- Title + Permalink -->
     <div class="title-area">
-        <input type="text" class="title-input" id="title" placeholder="Add title" oninput="autoSlug();updateTopTitle()">
+        <input type="text" class="title-input" id="title" placeholder="Add title" oninput="autoSlug();updateTopTitle();resetAutoSave()">
         <div class="permalink-area">
             <span>Permalink:</span>
             <span style="color:var(--gray-500)">ginger.healthcare/blog/</span>
@@ -327,7 +327,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="publish-row"><span>👁</span> <strong>Visibility:</strong> Public</div>
             <div class="publish-row" id="pubDateRow" style="display:none"><span>📅</span> <strong>Published:</strong> <span id="pubDate"></span></div>
             <div class="publish-row" id="seoRow"><span>📊</span> <strong>SEO:</strong> <span class="seo-badge seo-badge--gray" id="seoBadge">0 / 100</span></div>
-            <select class="sb-select" id="status" onchange="updatePublishUI()" style="margin-bottom:0">
+            <select class="sb-select" id="status" onchange="updatePublishUI();resetAutoSave()" style="margin-bottom:0">
                 <option value="draft">📝 Draft</option>
                 <option value="published">✅ Published</option>
             </select>
@@ -346,7 +346,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <select class="sb-select" id="category" style="margin-bottom:0">
+            <select class="sb-select" id="category" onchange="resetAutoSave()" style="margin-bottom:0">
                 <option value="">Select category</option>
                 <option>Medical Tourism</option>
                 <option>Fertility & IVF</option>
@@ -410,14 +410,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
         <div class="sb-box__body">
             <div class="sb-label">Focus Keywords</div>
-            <input class="sb-input" id="focusKeywords" placeholder="e.g. IVF treatment, fertility" oninput="analyzeSEO()">
+            <input class="sb-input" id="focusKeywords" placeholder="e.g. IVF treatment, fertility" oninput="analyzeSEO();resetAutoSave()">
             <div class="sb-hint">Comma-separated keywords</div>
             <div class="sb-label">Meta Title <span class="char-count" id="metaTitleCount">0/60</span></div>
-            <input class="sb-input" id="metaTitle" placeholder="SEO title (auto-generated)" oninput="updateCharCount('metaTitle','metaTitleCount',60)">
+            <input class="sb-input" id="metaTitle" placeholder="SEO title (auto-generated)" oninput="updateCharCount('metaTitle','metaTitleCount',60);resetAutoSave()">
             <div class="sb-label">Meta Description <span class="char-count" id="metaDescCount">0/160</span></div>
-            <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description (auto-generated)" oninput="updateCharCount('metaDesc','metaDescCount',160)"></textarea>
+            <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description (auto-generated)" oninput="updateCharCount('metaDesc','metaDescCount',160);resetAutoSave()"></textarea>
             <div class="sb-label">Excerpt</div>
-            <textarea class="sb-textarea" id="excerpt" placeholder="Brief summary (auto-generated)"></textarea>
+            <textarea class="sb-textarea" id="excerpt" placeholder="Brief summary (auto-generated)" oninput="resetAutoSave()"></textarea>
         </div>
     </div>
 
@@ -529,9 +529,13 @@ const quill = new Quill('#editor', {
 
 quill.on('text-change', () => {
     updateStats(); analyzeSEO();
-    clearTimeout(autoSaveTimer);
-    if (editId) autoSaveTimer = setTimeout(() => savePost('auto'), 30000);
+    resetAutoSave();
 });
+
+function resetAutoSave() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => savePost('auto'), 15000);
+}
 
 function updateStats() {
     const text = quill.getText().trim();
@@ -769,7 +773,8 @@ async function savePost(statusOverride) {
         read_time: parseInt(document.getElementById('readTime').textContent) || 1,
         meta_title: document.getElementById('metaTitle').value,
         meta_description: document.getElementById('metaDesc').value,
-        focus_keywords: document.getElementById('focusKeywords').value
+        focus_keywords: document.getElementById('focusKeywords').value,
+        _autoSave: isAuto
     };
     if (!data.title) { if (!isAuto) alert('Title is required'); return; }
     if (!data.slug) data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -1043,6 +1048,7 @@ window.appendAI = appendAI;
 window.undoChanges = undoChanges;
 window.restoreRevision = restoreRevision;
 window.updatePublishUI = updatePublishUI;
+window.resetAutoSave = resetAutoSave;
 
 }); // end waitForQuill
 </script>
