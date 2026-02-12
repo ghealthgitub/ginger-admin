@@ -1081,6 +1081,96 @@ app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (r
     res.sendFile(path.join(__dirname, 'views', 'pages', 'ai-assistant.html'));
 });
 
+// ============== DOCX IMPORT ==============
+const mammoth = require('mammoth');
+
+// POST /api/import/docx — Import .docx with images converted to uploaded files
+app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const filePath = req.file.path;
+        let imageCount = 0;
+
+        const result = await mammoth.convertToHtml(
+            { path: filePath },
+            {
+                convertImage: mammoth.images.imgElement(async function(image) {
+                    try {
+                        const imageBuffer = await image.read();
+                        const ext = image.contentType === 'image/png' ? '.png' : image.contentType === 'image/gif' ? '.gif' : '.jpg';
+                        const filename = 'docx-import-' + Date.now() + '-' + (++imageCount) + ext;
+
+                        // Save to uploads folder using same year/month structure
+                        const now = new Date();
+                        const year = now.getFullYear().toString();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const subdir = path.join('uploads', year, month);
+                        const fs = require('fs');
+                        if (!fs.existsSync(subdir)) fs.mkdirSync(subdir, { recursive: true });
+
+                        const savePath = path.join(subdir, filename);
+                        fs.writeFileSync(savePath, imageBuffer);
+
+                        // Process with sharp if it's an image
+                        let width = null, height = null, sizes = {};
+                        try {
+                            const sharp = require('sharp');
+                            const meta = await sharp(imageBuffer).metadata();
+                            width = meta.width;
+                            height = meta.height;
+
+                            // Generate thumbnail
+                            const thumbName = filename.replace(/\.[^.]+$/, '-150x150' + ext);
+                            await sharp(imageBuffer).resize(150, 150, { fit: 'cover' }).toFile(path.join(subdir, thumbName));
+                            sizes.thumbnail = { url: '/' + subdir.replace(/\\/g,'/') + '/' + thumbName, width: 150, height: 150 };
+
+                            // Generate medium
+                            if (width > 300) {
+                                const medName = filename.replace(/\.[^.]+$/, '-300x0' + ext);
+                                await sharp(imageBuffer).resize(300, null).toFile(path.join(subdir, medName));
+                                sizes.medium = { url: '/' + subdir.replace(/\\/g,'/') + '/' + medName, width: 300 };
+                            }
+                        } catch(sharpErr) {}
+
+                        const url = '/' + savePath.replace(/\\/g, '/');
+
+                        // Save to DB
+                        await pool.query(
+                            'INSERT INTO media (filename, original_name, mime_type, size, url, width, height, sizes, folder, uploaded_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+                            [filename, filename, image.contentType, imageBuffer.length, url, width, height, JSON.stringify(sizes), year + '/' + month, req.user.id]
+                        );
+
+                        return { src: url };
+                    } catch(imgErr) {
+                        console.error('Docx image error:', imgErr.message);
+                        return { src: '' };
+                    }
+                })
+            }
+        );
+
+        // Clean up uploaded docx file
+        try { require('fs').unlinkSync(filePath); } catch(e) {}
+
+        res.json({ html: result.value, imageCount, messages: result.messages });
+    } catch (err) {
+        console.error('Docx import error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/import/docx-text — Extract plain text from .docx (for AI context)
+app.post('/api/import/docx-text', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const result = await mammoth.extractRawText({ path: req.file.path });
+        try { require('fs').unlinkSync(req.file.path); } catch(e) {}
+        res.json({ text: result.value });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { prompt, type, context } = req.body;
