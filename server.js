@@ -943,6 +943,30 @@ app.put('/api/treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), a
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Treatments bulk actions
+app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM treatments WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'treatment', null, `Bulk deleted ${count} treatments`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE treatments SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'treatment', null, `Bulk published ${count} treatments`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE treatments SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'treatment', null, `Bulk set ${count} treatments to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM treatments WHERE id = $1', [req.params.id]);
