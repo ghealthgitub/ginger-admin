@@ -67,6 +67,41 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-input__tools{display:flex;gap:6px;padding-top:8px}
 .ai-tool-btn{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:all .2s}
 .ai-tool-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+/* Image Editor Overlay (WordPress-style) */
+.img-edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9998;display:none;align-items:center;justify-content:center}
+.img-edit-overlay.active{display:flex}
+.img-edit-modal{background:#fff;border-radius:12px;width:90%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.img-edit-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
+.img-edit-header h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);margin:0}
+.img-edit-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.img-edit-close:hover{background:var(--gray-100);color:var(--navy)}
+.img-edit-body{display:flex;flex:1;overflow:hidden;min-height:0}
+.img-edit-preview{flex:1;display:flex;align-items:center;justify-content:center;background:var(--gray-50);padding:20px;overflow:auto;min-width:0}
+.img-edit-preview img{max-width:100%;max-height:60vh;object-fit:contain;border-radius:4px}
+.img-edit-sidebar{width:280px;border-left:1px solid var(--gray-200);padding:16px;overflow-y:auto;flex-shrink:0}
+.img-edit-sidebar label{font-size:.75rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:3px}
+.img-edit-sidebar input,.img-edit-sidebar textarea{width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.8rem;font-family:inherit;margin-bottom:10px}
+.img-edit-sidebar textarea{resize:vertical;min-height:50px}
+.img-edit-sidebar select{width:100%;padding:6px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.8rem;font-family:inherit;margin-bottom:10px;background:#fff}
+.img-edit-hint{font-size:.68rem;color:var(--gray-400);margin:-6px 0 10px;line-height:1.4}
+.img-edit-dims{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.img-edit-dims input{width:70px;text-align:center}
+.img-edit-dims span{color:var(--gray-400);font-size:.8rem}
+.img-edit-align{display:flex;gap:4px;margin-bottom:12px}
+.img-edit-align button{flex:1;padding:6px;border:1px solid var(--gray-200);border-radius:5px;font-size:.75rem;cursor:pointer;background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .2s}
+.img-edit-align button.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.img-edit-align button:hover:not(.active){background:var(--gray-50)}
+.img-edit-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50)}
+.img-edit-footer .btn-del{color:#EF4444;font-size:.8rem;border:none;background:none;cursor:pointer;font-family:inherit;font-weight:600}
+.img-edit-footer .btn-del:hover{text-decoration:underline}
+.img-edit-footer .btn-save{padding:8px 20px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}
+.img-edit-footer .btn-save:hover{background:#0c918c}
+
+/* Make images clickable in editor */
+.editor-wrap .ql-editor img{cursor:pointer;border:2px solid transparent;border-radius:4px;transition:border .2s;max-width:100%}
+.editor-wrap .ql-editor img:hover{border-color:var(--teal)}
+.editor-wrap .ql-editor img.img-selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2)}
 .ai-typing{display:flex;gap:4px;padding:6px 10px}.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gray-400);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 
@@ -281,7 +316,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <textarea id="aiInput" placeholder="Ask AI to write, edit, improve..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiCmd()}"></textarea>
             <div style="display:flex;flex-direction:column;gap:4px">
                 <button class="ai-send" onclick="aiCmd()" id="aiSendBtn" title="Send">▶</button>
-                <label class="ai-attach" title="Attach file to prompt"><input type="file" id="aiFileInput" style="display:none" accept=".docx,.doc,.txt,.pdf" onchange="handleAiFileAttach(this)">📎</label>
+                <label class="ai-attach" title="Attach image or document"><input type="file" id="aiFileInput" style="display:none" accept="image/*,.docx,.doc,.txt,.md,.pdf" onchange="handleFileAttach(this)">📎</label>
             </div>
         </div>
         <div class="ai-input__attachments" id="aiAttachments" style="display:none">
@@ -291,8 +326,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             </div>
         </div>
         <div class="ai-input__tools">
-            <label class="ai-tool-btn" title="Import Word document"><input type="file" style="display:none" accept=".docx" onchange="importDocx(this)">📄 Import .docx</label>
-            <label class="ai-tool-btn" title="Insert image from computer"><input type="file" style="display:none" accept="image/*" multiple onchange="uploadAndInsertImages(this)">🖼 Insert Image</label>
+            <label class="ai-tool-btn" title="Import Word document into editor"><input type="file" style="display:none" accept=".docx" onchange="importDocx(this)">📄 Import .docx</label>
         </div>
     </div>
 </div>
@@ -469,6 +503,64 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 </div>
 
 <div class="autosave-toast" id="autosaveToast">💾 Auto-saved</div>
+
+<!-- Image Editor Overlay -->
+<div class="img-edit-overlay" id="imgEditOverlay" onclick="if(event.target===this)closeImgEdit()">
+<div class="img-edit-modal">
+    <div class="img-edit-header">
+        <h3>Image Details</h3>
+        <button class="img-edit-close" onclick="closeImgEdit()">&times;</button>
+    </div>
+    <div class="img-edit-body">
+        <div class="img-edit-preview">
+            <img id="imgEditPreview" src="">
+        </div>
+        <div class="img-edit-sidebar">
+            <label>Alt Text</label>
+            <textarea id="imgEditAlt" rows="2" placeholder="Describe the image for accessibility"></textarea>
+            <div class="img-edit-hint">Describe the purpose of the image. Leave empty if decorative.</div>
+
+            <label>Caption</label>
+            <textarea id="imgEditCaption" rows="2" placeholder="Image caption (shown below image)"></textarea>
+
+            <label>Link To</label>
+            <input type="text" id="imgEditLink" placeholder="https://...">
+            <div class="img-edit-hint">URL to link this image to (optional)</div>
+
+            <label>Size</label>
+            <select id="imgEditSize" onchange="applyImgSize()">
+                <option value="full">Full Size</option>
+                <option value="large">Large (800px)</option>
+                <option value="medium">Medium (400px)</option>
+                <option value="small">Small (200px)</option>
+                <option value="custom">Custom</option>
+            </select>
+
+            <div class="img-edit-dims" id="imgEditDims" style="display:none">
+                <input type="number" id="imgEditW" placeholder="Width" oninput="imgKeepRatio('w')">
+                <span>×</span>
+                <input type="number" id="imgEditH" placeholder="Height" oninput="imgKeepRatio('h')">
+                <span>px</span>
+            </div>
+
+            <label>Alignment</label>
+            <div class="img-edit-align">
+                <button onclick="setImgAlign('none',this)" class="active">None</button>
+                <button onclick="setImgAlign('left',this)">Left</button>
+                <button onclick="setImgAlign('center',this)">Center</button>
+                <button onclick="setImgAlign('right',this)">Right</button>
+            </div>
+
+            <label>CSS Class</label>
+            <input type="text" id="imgEditClass" placeholder="Optional CSS class">
+        </div>
+    </div>
+    <div class="img-edit-footer">
+        <button class="btn-del" onclick="deleteEditImg()">Remove Image</button>
+        <button class="btn-save" onclick="saveImgEdit()">Update</button>
+    </div>
+</div>
+</div>
 
 <!-- Media Picker Modal -->
 <div class="mp-overlay" id="mediaPicker">
@@ -1189,43 +1281,225 @@ async function uploadAndInsertImages(input) {
     resetAutoSave();
 }
 
-// ===== AI FILE ATTACHMENT =====
+// ===== UNIFIED FILE ATTACH (images + documents) =====
 let aiAttachedContent = null;
-function handleAiFileAttach(input) {
+function handleFileAttach(input) {
     const file = input.files[0];
     if (!file) return;
     input.value = '';
-    const reader = new FileReader();
+
+    // Image files → upload and insert into editor
+    if (file.type.startsWith('image/')) {
+        uploadImageToServer(file).then(url => {
+            if (url) {
+                const range = quill.getSelection(true);
+                const idx = range ? range.index : quill.getLength();
+                quill.insertEmbed(idx, 'image', url);
+                quill.insertText(idx + 1, '\n');
+                quill.setSelection(idx + 2);
+                resetAutoSave();
+                const toast = document.getElementById('autosaveToast');
+                toast.textContent = '✅ Image inserted';
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 2000);
+            }
+        });
+        return;
+    }
+
+    // Text files → attach as AI context
     if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
         reader.onload = function(e) {
             aiAttachedContent = e.target.result;
             showAiAttachment(file.name);
         };
         reader.readAsText(file);
-    } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-        // For docx, upload and convert server-side
+        return;
+    }
+
+    // Docx files → extract text for AI context
+    if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
         const fd = new FormData();
         fd.append('file', file);
         fetch('/api/import/docx-text', { method: 'POST', body: fd })
             .then(r => r.json())
-            .then(data => {
-                aiAttachedContent = data.text || '';
-                showAiAttachment(file.name);
-            })
-            .catch(() => { alert('Could not read file'); });
-    } else {
-        alert('Supported: .txt, .md, .docx');
+            .then(data => { aiAttachedContent = data.text || ''; showAiAttachment(file.name); })
+            .catch(() => alert('Could not read file'));
+        return;
     }
+
+    alert('Supported: images, .docx, .txt, .md');
 }
 
 function showAiAttachment(name) {
     document.getElementById('aiFileName').textContent = '📎 ' + name;
     document.getElementById('aiAttachments').style.display = 'flex';
 }
-
 function removeAiAttachment() {
     aiAttachedContent = null;
     document.getElementById('aiAttachments').style.display = 'none';
+}
+
+// ===== IMAGE EDITOR (WordPress-style) =====
+let editingImg = null;
+let imgOrigW = 0, imgOrigH = 0;
+
+// Click handler for images in editor
+quill.root.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        openImgEdit(e.target);
+    }
+});
+
+function openImgEdit(img) {
+    editingImg = img;
+    document.getElementById('imgEditPreview').src = img.src;
+    document.getElementById('imgEditAlt').value = img.alt || '';
+    document.getElementById('imgEditCaption').value = img.getAttribute('data-caption') || '';
+    document.getElementById('imgEditLink').value = '';
+    document.getElementById('imgEditClass').value = img.className || '';
+
+    // Check if wrapped in a link
+    if (img.parentElement && img.parentElement.tagName === 'A') {
+        document.getElementById('imgEditLink').value = img.parentElement.href || '';
+    }
+
+    // Size
+    imgOrigW = img.naturalWidth || 800;
+    imgOrigH = img.naturalHeight || 600;
+    document.getElementById('imgEditW').value = img.width || imgOrigW;
+    document.getElementById('imgEditH').value = img.height || imgOrigH;
+
+    const w = img.width || img.naturalWidth;
+    if (w >= imgOrigW * 0.9) document.getElementById('imgEditSize').value = 'full';
+    else if (w >= 700) document.getElementById('imgEditSize').value = 'large';
+    else if (w >= 300) document.getElementById('imgEditSize').value = 'medium';
+    else if (w > 0) document.getElementById('imgEditSize').value = 'small';
+    else document.getElementById('imgEditSize').value = 'full';
+
+    // Alignment
+    const align = img.style.float || (img.style.display === 'block' && img.style.margin === 'auto' ? 'center' : 'none');
+    document.querySelectorAll('.img-edit-align button').forEach(b => b.classList.remove('active'));
+    const alignBtn = document.querySelector('.img-edit-align button[onclick*="' + (align || 'none') + '"]');
+    if (alignBtn) alignBtn.classList.add('active');
+
+    applyImgSize();
+    document.getElementById('imgEditOverlay').classList.add('active');
+}
+
+function closeImgEdit() {
+    document.getElementById('imgEditOverlay').classList.remove('active');
+    editingImg = null;
+}
+
+function applyImgSize() {
+    const size = document.getElementById('imgEditSize').value;
+    const dimsEl = document.getElementById('imgEditDims');
+    if (size === 'custom') {
+        dimsEl.style.display = 'flex';
+    } else {
+        dimsEl.style.display = 'none';
+        let w;
+        if (size === 'full') w = imgOrigW;
+        else if (size === 'large') w = Math.min(800, imgOrigW);
+        else if (size === 'medium') w = Math.min(400, imgOrigW);
+        else w = Math.min(200, imgOrigW);
+        const ratio = imgOrigH / imgOrigW;
+        document.getElementById('imgEditW').value = w;
+        document.getElementById('imgEditH').value = Math.round(w * ratio);
+    }
+}
+
+function imgKeepRatio(changed) {
+    if (!imgOrigW || !imgOrigH) return;
+    const ratio = imgOrigH / imgOrigW;
+    if (changed === 'w') {
+        document.getElementById('imgEditH').value = Math.round(document.getElementById('imgEditW').value * ratio);
+    } else {
+        document.getElementById('imgEditW').value = Math.round(document.getElementById('imgEditH').value / ratio);
+    }
+}
+
+let currentImgAlign = 'none';
+function setImgAlign(align, btn) {
+    currentImgAlign = align;
+    document.querySelectorAll('.img-edit-align button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function saveImgEdit() {
+    if (!editingImg) return;
+
+    // Alt text
+    editingImg.alt = document.getElementById('imgEditAlt').value;
+
+    // Caption
+    const caption = document.getElementById('imgEditCaption').value;
+    if (caption) editingImg.setAttribute('data-caption', caption);
+
+    // Size
+    const w = parseInt(document.getElementById('imgEditW').value);
+    const h = parseInt(document.getElementById('imgEditH').value);
+    if (w) editingImg.width = w;
+    if (h) editingImg.height = h;
+
+    // Alignment
+    editingImg.style.float = '';
+    editingImg.style.display = '';
+    editingImg.style.marginLeft = '';
+    editingImg.style.marginRight = '';
+    if (currentImgAlign === 'left') {
+        editingImg.style.float = 'left';
+        editingImg.style.marginRight = '16px';
+        editingImg.style.marginBottom = '8px';
+    } else if (currentImgAlign === 'right') {
+        editingImg.style.float = 'right';
+        editingImg.style.marginLeft = '16px';
+        editingImg.style.marginBottom = '8px';
+    } else if (currentImgAlign === 'center') {
+        editingImg.style.display = 'block';
+        editingImg.style.marginLeft = 'auto';
+        editingImg.style.marginRight = 'auto';
+    }
+
+    // CSS class
+    editingImg.className = document.getElementById('imgEditClass').value || '';
+
+    // Link
+    const linkUrl = document.getElementById('imgEditLink').value.trim();
+    if (linkUrl) {
+        if (editingImg.parentElement.tagName !== 'A') {
+            const a = document.createElement('a');
+            a.href = linkUrl;
+            a.target = '_blank';
+            editingImg.parentElement.insertBefore(a, editingImg);
+            a.appendChild(editingImg);
+        } else {
+            editingImg.parentElement.href = linkUrl;
+        }
+    } else if (editingImg.parentElement.tagName === 'A') {
+        const a = editingImg.parentElement;
+        a.parentElement.insertBefore(editingImg, a);
+        a.remove();
+    }
+
+    resetAutoSave();
+    closeImgEdit();
+}
+
+function deleteEditImg() {
+    if (!editingImg) return;
+    if (!confirm('Remove this image from the content?')) return;
+    if (editingImg.parentElement.tagName === 'A') {
+        editingImg.parentElement.remove();
+    } else {
+        editingImg.remove();
+    }
+    updateStats();
+    resetAutoSave();
+    closeImgEdit();
 }
 
 // Save initial snapshot after load for undo
@@ -1252,8 +1526,15 @@ window.updatePublishUI = updatePublishUI;
 window.resetAutoSave = resetAutoSave;
 window.importDocx = importDocx;
 window.uploadAndInsertImages = uploadAndInsertImages;
-window.handleAiFileAttach = handleAiFileAttach;
+window.handleFileAttach = handleFileAttach;
 window.removeAiAttachment = removeAiAttachment;
+window.openImgEdit = openImgEdit;
+window.closeImgEdit = closeImgEdit;
+window.applyImgSize = applyImgSize;
+window.imgKeepRatio = imgKeepRatio;
+window.setImgAlign = setImgAlign;
+window.saveImgEdit = saveImgEdit;
+window.deleteEditImg = deleteEditImg;
 
 }); // end waitForQuill
 </script>
