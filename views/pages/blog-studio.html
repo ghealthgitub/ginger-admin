@@ -867,10 +867,12 @@ IMPORTANT RULES:
                     loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...';
                 }
             } else {
+                // Content response — store in variable for safe retrieval
+                const contentId = 'ai_' + Date.now();
+                window[contentId] = result;
                 const preview = result.replace(/<[^>]*>/g,'').substring(0,180);
-                const encoded = encodeURIComponent(result);
                 loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') +
-                    `<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI('${encoded}')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI('${encoded}')">➕ Append</button></div>`;
+                    `<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI('${contentId}')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI('${contentId}')">➕ Append</button></div>`;
             }
         } else { loadDiv.innerHTML = '❌ ' + (data.error || 'Failed'); }
     } catch(e) { loadDiv.innerHTML = '❌ Connection failed'; }
@@ -878,8 +880,8 @@ IMPORTANT RULES:
     document.getElementById('aiSendBtn').disabled = false;
     messages.scrollTop = messages.scrollHeight;
 }
-function insertAI(enc) { saveUndoSnapshot(); quill.root.innerHTML = decodeURIComponent(enc); updateStats(); analyzeSEO(); }
-function appendAI(enc) { saveUndoSnapshot(); quill.root.innerHTML += decodeURIComponent(enc); updateStats(); analyzeSEO(); }
+function insertAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML = html; updateStats(); analyzeSEO(); } }
+function appendAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML += html; updateStats(); analyzeSEO(); } }
 
 // Drag handles
 function setupDrag(handleId, panel, dir) {
