@@ -475,11 +475,22 @@ function updateCharCount(inputId, countId, max) {
     analyzeSEO();
 }
 
-// ===== SLUG =====
+// ===== SMART SLUG GENERATOR =====
+const STOP_WORDS = new Set(['a','an','the','and','or','but','in','on','at','to','for','of','with','by','from','as','is','was','are','were','been','be','have','has','had','do','does','did','will','would','shall','should','may','might','must','can','could','that','which','who','whom','this','these','those','am','it','its','your','our','their','my','into','about','than','then','so','no','not','only','very','just','also','how','all','each','every','both','few','more','most','other','some','such','what','when','where','why','over','out','up','after','before','between','under','above','below','through','during','here','there','if','because','until','while','too','nor','yet','since','per','via','like','get','got','make','made','take','know','see','say','said','goes','going','come','want','look','use','used','find','give','tell','work','call','try','need','keep','let','put','seem','help','show','turn','begin','being','way','even','think','back','well','new','now','old','first','last','long','great','little','own','same','big','high','small','large','next','early','young','right','left','best','many','much','still','always','never','us','he','she','they','them','we','you','his','her','him','one','two','three','four','five']);
+function smartSlug(title) {
+    if (!title) return '';
+    let words = title.toLowerCase().replace(/['']/g, '').replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+    let keywords = words.filter(w => !STOP_WORDS.has(w));
+    if (keywords.length < 2) keywords = words;
+    if (keywords.length > 6) keywords = keywords.slice(0, 6);
+    let slug = keywords.join('-');
+    if (slug.length > 60) { slug = slug.substring(0, 60); let ld = slug.lastIndexOf('-'); if (ld > 20) slug = slug.substring(0, ld); }
+    return slug.replace(/^-|-$/g, '').replace(/-{2,}/g, '-');
+}
 function autoSlug() {
     if (slugEdited) return;
     const title = document.getElementById('title').value;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
+    const slug = smartSlug(title);
     document.getElementById('slug').value = slug;
     document.getElementById('slugPreview').textContent = slug || '...';
 }
