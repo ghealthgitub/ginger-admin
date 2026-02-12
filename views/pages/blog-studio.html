@@ -1025,6 +1025,28 @@ updateStats();
 // Save initial snapshot after load for undo
 setTimeout(() => saveUndoSnapshot(), 2000);
 
+// Expose functions needed by HTML oninput/onclick attributes
+window.autoSlug = autoSlug;
+window.updateTopTitle = updateTopTitle;
+window.checkSlugUnique = checkSlugUnique;
+window.analyzeSEO = analyzeSEO;
+window.updateCharCount = updateCharCount;
+window.handleTagKey = handleTagKey;
+window.renderTags = renderTags;
+window.setTone = setTone;
+window.showTab = showTab;
+window.togglePreview = togglePreview;
+window.savePost = savePost;
+window.aiCmd = aiCmd;
+window.insertAI = insertAI;
+window.appendAI = appendAI;
+window.undoChanges = undoChanges;
+window.restoreRevision = restoreRevision;
+window.updatePublishUI = updatePublishUI;
+window.openMediaPicker = openMediaPicker;
+window.closeMediaPicker = closeMediaPicker;
+window.removeFeatImage = removeFeatImage;
+
 }); // end waitForQuill
 </script>
 
