@@ -869,6 +869,30 @@ app.put('/api/specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Specialties bulk actions
+app.post('/api/specialties/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM specialties WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'specialty', null, `Bulk deleted ${count} specialties`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE specialties SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'specialty', null, `Bulk published ${count} specialties`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE specialties SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'specialty', null, `Bulk set ${count} specialties to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/specialties/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM specialties WHERE id = $1', [req.params.id]);
