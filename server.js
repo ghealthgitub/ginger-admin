@@ -670,6 +670,12 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFil
     cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
 }});
 
+// Separate multer for document imports (accepts docx, doc, txt)
+const docUpload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+    const allowed = /docx|doc|txt|md/;
+    cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
+}});
+
 // GET /api/media — List all media
 app.get('/api/media', apiAuth, async (req, res) => {
     try {
@@ -1085,7 +1091,7 @@ app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (r
 const mammoth = require('mammoth');
 
 // POST /api/import/docx — Import .docx with images converted to uploaded files
-app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
+app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const filePath = req.file.path;
@@ -1160,7 +1166,7 @@ app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), upl
 });
 
 // POST /api/import/docx-text — Extract plain text from .docx (for AI context)
-app.post('/api/import/docx-text', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
+app.post('/api/import/docx-text', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const result = await mammoth.extractRawText({ path: req.file.path });
