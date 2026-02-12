@@ -936,7 +936,7 @@ function mpRenderGrid() {
     }
     grid.innerHTML = filtered.map(function(m) {
         var sel = mpSelected && mpSelected.id === m.id ? ' selected' : '';
-        return '<div class="mp-item' + sel + '" onclick="mpSelectItem(' + m.id + ')" data-id="' + m.id + '"><img src="' + m.url + '" alt="' + (m.original_name||'') + '"></div>';
+        return '<div class="mp-item' + sel + '" onclick="mpSelectItem(' + m.id + ')" data-id="' + m.id + '"><img src="' + (m.sizes && m.sizes.thumbnail ? m.sizes.thumbnail.url : m.url) + '" alt="' + (m.original_name||'') + '" onerror="this.style.display=\'none\';this.parentElement.innerHTML+=\'<div style=padding:20px;text-align:center;font-size:.7rem;color:var(--gray-400);word-break:break-all>\'+this.alt+\'</div>\'"></div>';
     }).join('');
 }
 

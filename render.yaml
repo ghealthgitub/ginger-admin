@@ -4,3 +4,7 @@ services:
     runtime: node
     buildCommand: npm install
     startCommand: node server.js
+    disk:
+      name: ginger-uploads
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1
