@@ -149,12 +149,6 @@ async function initDB() {
                 size INTEGER,
                 url VARCHAR(1000) NOT NULL,
                 alt_text VARCHAR(500),
-                title VARCHAR(500),
-                caption TEXT,
-                description TEXT,
-                width INTEGER,
-                height INTEGER,
-                sizes JSONB DEFAULT '{}',
                 folder VARCHAR(200) DEFAULT 'general',
                 uploaded_by INTEGER REFERENCES users(id),
                 created_at TIMESTAMP DEFAULT NOW()
@@ -287,54 +281,57 @@ async function initDB() {
                 treatment_id INTEGER REFERENCES treatments(id) ON DELETE CASCADE,
                 PRIMARY KEY (doctor_id, treatment_id)
             );
+
+            -- DESTINATION SPECIALTIES (Page A: specialty + country combo)
+            CREATE TABLE IF NOT EXISTS destination_specialties (
+                id SERIAL PRIMARY KEY,
+                destination_id INTEGER REFERENCES destinations(id),
+                specialty_id INTEGER REFERENCES specialties(id),
+                name VARCHAR(300),
+                slug VARCHAR(300),
+                description TEXT,
+                long_description TEXT,
+                image VARCHAR(500),
+                hero_bg VARCHAR(500),
+                why_choose TEXT,
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(destination_id, specialty_id)
+            );
+
+            -- DESTINATION TREATMENTS (Page A: treatment + country combo)
+            CREATE TABLE IF NOT EXISTS destination_treatments (
+                id SERIAL PRIMARY KEY,
+                destination_id INTEGER REFERENCES destinations(id),
+                treatment_id INTEGER REFERENCES treatments(id),
+                specialty_id INTEGER REFERENCES specialties(id),
+                name VARCHAR(300),
+                slug VARCHAR(300),
+                description TEXT,
+                long_description TEXT,
+                image VARCHAR(500),
+                hero_bg VARCHAR(500),
+                cost_min_usd INTEGER,
+                cost_max_usd INTEGER,
+                cost_includes TEXT,
+                hospital_stay VARCHAR(100),
+                meta_title VARCHAR(500),
+                meta_description TEXT,
+                status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+                display_order INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(destination_id, treatment_id)
+            );
         `);
         // Add focus_keywords column if not exists
         await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keywords TEXT`);
 
-        // Theme Templates table
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS theme_templates (
-                id SERIAL PRIMARY KEY,
-                template_key VARCHAR(100) UNIQUE NOT NULL,
-                label VARCHAR(200) NOT NULL,
-                category VARCHAR(50) NOT NULL DEFAULT 'detail',
-                description TEXT,
-                html_template TEXT NOT NULL,
-                css TEXT,
-                is_active BOOLEAN DEFAULT true,
-                updated_by INTEGER REFERENCES users(id),
-                created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW()
-            );
-        `);
-
         console.log('✅ Database tables initialized');
-
-        // Migrations for existing databases
-        const migrations = [
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS title VARCHAR(500)",
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS caption TEXT",
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS description TEXT",
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS width INTEGER",
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS height INTEGER",
-            "ALTER TABLE media ADD COLUMN IF NOT EXISTS sizes JSONB DEFAULT '{}'",
-            `CREATE TABLE IF NOT EXISTS revisions (
-                id SERIAL PRIMARY KEY,
-                entity_type VARCHAR(50) NOT NULL,
-                entity_id INTEGER NOT NULL,
-                title VARCHAR(500),
-                content TEXT,
-                meta JSONB DEFAULT '{}',
-                user_id INTEGER REFERENCES users(id),
-                revision_type VARCHAR(20) DEFAULT 'manual',
-                created_at TIMESTAMP DEFAULT NOW()
-            )`,
-            "CREATE INDEX IF NOT EXISTS idx_revisions_entity ON revisions(entity_type, entity_id)",
-        ];
-        for (const sql of migrations) {
-            try { await client.query(sql); } catch(e) { /* column may already exist */ }
-        }
-        console.log('✅ Migrations applied');
     } catch (err) {
         console.error('❌ Database init error:', err.message);
         throw err;
