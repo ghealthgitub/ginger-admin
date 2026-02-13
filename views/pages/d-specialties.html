@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Destination Specialties | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"><link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>.ql-editor{min-height:150px;font-size:.92rem;line-height:1.7;font-family:"DM Sans",sans-serif}.ql-toolbar{border-color:var(--gray-200)!important;background:var(--gray-50);border-radius:8px 8px 0 0}.ql-container{border-color:var(--gray-200)!important;border-radius:0 0 8px 8px}.combo-label{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:600;background:rgba(14,165,160,.1);color:var(--teal)}</style>
+</head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">🌍 Destination Specialties <span class="combo-label">Page A</span></h1><div class="topbar__actions"><button class="btn btn--primary" onclick="openModal()">+ Add D. Specialty</button></div></header><div class="content"><div class="toolbar"><input type="text" class="search-input" placeholder="Search..." id="searchInput" oninput="filter()"><select class="form-select" style="width:auto" id="destFilter" onchange="filter()"><option value="">All Destinations</option></select><select class="form-select" style="width:auto" id="specFilter" onchange="filter()"><option value="">All Specialties</option></select></div><div class="card"><div class="card__body"><table class="data-table"><thead><tr><th>Name</th><th>Destination</th><th>Specialty</th><th>Status</th><th>Actions</th></tr></thead><tbody id="list"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div></div></div>
+<div class="modal-overlay" id="modal"><div class="modal" style="max-width:720px"><div class="modal__header"><h3 id="modalTitle">Add Destination Specialty</h3><button class="modal__close" onclick="closeModal()">✕</button></div><div class="modal__body">
+<div class="form-row"><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="f_destination" onchange="autoName()"></select></div><div class="form-group"><label class="form-label">Specialty</label><select class="form-select" id="f_specialty" onchange="autoName()"></select></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Page Title (auto-generated)</label><input type="text" class="form-input" id="f_name" placeholder="e.g. Cardiac Surgery in India"></div><div class="form-group"><label class="form-label">Slug</label><input type="text" class="form-input" id="f_slug" placeholder="e.g. cardiac-surgery"></div></div>
+<div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc" rows="2" placeholder="Brief description for listings and meta"></textarea></div>
+<div class="form-group"><label class="form-label">Long Description (Rich Text)</label><div id="f_longdesc_editor"></div></div>
+<div class="form-group"><label class="form-label">Why Choose (Rich Text — for 'Why Choose' section)</label><div id="f_whychoose_editor"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Image URL</label><input type="text" class="form-input" id="f_image" placeholder="https://..."></div><div class="form-group"><label class="form-label">Hero Background URL</label><input type="text" class="form-input" id="f_hero_bg" placeholder="Optional hero image"></div></div>
+<div class="form-row"><div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-input" id="f_meta_title" placeholder="SEO title"></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_status"><option value="draft">Draft</option><option value="published">Published</option></select></div></div>
+<div class="form-group"><label class="form-label">Meta Description</label><textarea class="form-textarea" id="f_meta_desc" rows="2" placeholder="SEO description"></textarea></div>
+</div><div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">Save</button></div></div></div></main></div>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+let items=[],dests=[],specs=[],editId=null,quillLong=null,quillWhy=null;
+
+function autoName(){
+    const d=dests.find(x=>x.id==document.getElementById('f_destination').value);
+    const s=specs.find(x=>x.id==document.getElementById('f_specialty').value);
+    if(d&&s){
+        document.getElementById('f_name').value=s.name+' in '+d.name;
+        document.getElementById('f_slug').value=s.slug;
+    }
+}
+
+async function load(){
+    const[r1,r2,r3]=await Promise.all([fetch('/api/d-specialties'),fetch('/api/destinations'),fetch('/api/specialties')]);
+    items=await r1.json();dests=await r2.json();specs=await r3.json();
+    const df=document.getElementById('destFilter'),sf=document.getElementById('specFilter');
+    const fd=document.getElementById('f_destination'),fs=document.getElementById('f_specialty');
+    df.innerHTML='<option value="">All Destinations</option>'+dests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
+    sf.innerHTML='<option value="">All Specialties</option>'+specs.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+    fd.innerHTML='<option value="">Select destination</option>'+dests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
+    fs.innerHTML='<option value="">Select specialty</option>'+specs.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+    filter();
+}
+
+function filter(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const did=document.getElementById('destFilter').value;
+    const sid=document.getElementById('specFilter').value;
+    const f=items.filter(i=>{
+        const matchQ=!q||(i.name||'').toLowerCase().includes(q)||(i.destination_name||'').toLowerCase().includes(q)||(i.specialty_name||'').toLowerCase().includes(q);
+        const matchD=!did||i.destination_id==did;
+        const matchS=!sid||i.specialty_id==sid;
+        return matchQ&&matchD&&matchS;
+    });
+    const tb=document.getElementById('list');
+    if(!f.length){tb.innerHTML='<tr><td colspan="5" class="empty-state">No destination specialties found. Click "+ Add D. Specialty" to create one.</td></tr>';return}
+    tb.innerHTML=f.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.specialty_name||'-')+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>').join('');
+}
+
+function initQuills(){
+    if(!quillLong){quillLong=new Quill('#f_longdesc_editor',{theme:'snow',placeholder:'Detailed content about this specialty in this country...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link','image'],['clean']]}})}
+    if(!quillWhy){quillWhy=new Quill('#f_whychoose_editor',{theme:'snow',placeholder:'Why choose this country for this specialty...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link'],['clean']]}})}
+}
+
+function openModal(){
+    editId=null;document.getElementById('modalTitle').textContent='Add Destination Specialty';
+    document.getElementById('modal').classList.add('open');
+    ['f_name','f_slug','f_desc','f_image','f_hero_bg','f_meta_title','f_meta_desc'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('f_destination').value='';document.getElementById('f_specialty').value='';document.getElementById('f_status').value='draft';
+    setTimeout(()=>{initQuills();quillLong.root.innerHTML='';quillWhy.root.innerHTML=''},100);
+}
+
+function editItem(id){
+    const i=items.find(x=>x.id===id);if(!i)return;editId=id;
+    document.getElementById('modalTitle').textContent='Edit: '+i.name;
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('f_destination').value=i.destination_id||'';
+    document.getElementById('f_specialty').value=i.specialty_id||'';
+    document.getElementById('f_name').value=i.name||'';
+    document.getElementById('f_slug').value=i.slug||'';
+    document.getElementById('f_desc').value=i.description||'';
+    document.getElementById('f_image').value=i.image||'';
+    document.getElementById('f_hero_bg').value=i.hero_bg||'';
+    document.getElementById('f_meta_title').value=i.meta_title||'';
+    document.getElementById('f_meta_desc').value=i.meta_description||'';
+    document.getElementById('f_status').value=i.status||'draft';
+    setTimeout(()=>{initQuills();quillLong.root.innerHTML=i.long_description||'';quillWhy.root.innerHTML=i.why_choose||''},150);
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+async function saveItem(){
+    const data={
+        destination_id:parseInt(document.getElementById('f_destination').value)||null,
+        specialty_id:parseInt(document.getElementById('f_specialty').value)||null,
+        name:document.getElementById('f_name').value,
+        slug:document.getElementById('f_slug').value,
+        description:document.getElementById('f_desc').value,
+        long_description:quillLong?quillLong.root.innerHTML:'',
+        why_choose:quillWhy?quillWhy.root.innerHTML:'',
+        image:document.getElementById('f_image').value,
+        hero_bg:document.getElementById('f_hero_bg').value,
+        meta_title:document.getElementById('f_meta_title').value,
+        meta_description:document.getElementById('f_meta_desc').value,
+        status:document.getElementById('f_status').value
+    };
+    if(!data.destination_id||!data.specialty_id){alert('Please select both destination and specialty');return}
+    if(!data.name){alert('Name is required');return}
+    const url=editId?'/api/d-specialties/'+editId:'/api/d-specialties';
+    const method=editId?'PUT':'POST';
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(r.ok){closeModal();load()}else{const e=await r.json();alert(e.error||'Error saving')}
+}
+
+async function deleteItem(id){if(!confirm('Delete this destination specialty?'))return;await fetch('/api/d-specialties/'+id,{method:'DELETE'});load()}
+load();
+</script>
+<script src="/js/sidebar.js"></script>
+</body></html>
