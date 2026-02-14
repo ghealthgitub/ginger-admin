@@ -58,7 +58,8 @@
     <div class="modal__header"><h3 id="modalTitle">Add Doctor</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
         <div class="form-row"><div class="form-group"><label class="form-label">Doctor Name *</label><input class="form-input" id="f_name" oninput="if(!editId)document.getElementById('f_slug').value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')"></div><div class="form-group"><label class="form-label">Slug *</label><input class="form-input" id="f_slug"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Title / Degrees</label><input class="form-input" id="f_title" placeholder="MBBS, MD, FRCS"></div><div class="form-group"><label class="form-label">Specialty</label><input class="form-input" id="f_specialty"></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Title / Degrees</label><input class="form-input" id="f_title" placeholder="MBBS, MD, FRCS"></div><div class="form-group"><label class="form-label">Specialties</label><div class="tx-wrap"><div class="tx-chips" id="spChips" onclick="document.getElementById('spInput').focus()"><input class="tx-input" id="spInput" placeholder="Type to search specialties..." autocomplete="off" oninput="filterSpecialties()" onfocus="showSpDropdown()" /></div><div class="tx-dropdown" id="spDropdown"></div></div><div class="tx-hint">First selected = primary specialty shown on cards.</div></div></div>
+        <input type="hidden" id="f_specialty">
         <div class="form-row"><div class="form-group"><label class="form-label">Hospital</label><select class="form-select" id="f_hospital_id"><option value="">Select hospital...</option></select></div><div class="form-group"><label class="form-label">Country</label><input class="form-input" id="f_country"></div></div>
         <div class="form-row"><div class="form-group"><label class="form-label">Experience (years)</label><input type="number" class="form-input" id="f_exp"></div><div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f_image"></div></div>
         <div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc"></textarea></div>
@@ -72,20 +73,61 @@
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-let items=[],hospitals=[],allTreatments=[],selectedTreatments=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
+let items=[],hospitals=[],allTreatments=[],allSpecialties=[],selectedTreatments=[],selectedSpecs=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
 const API='/api/doctors';
 async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
 async function loadHospitals(){try{const r=await safeFetch('/api/hospitals');if(r&&r.ok){hospitals=await r.json();const s=document.getElementById('f_hospital_id');hospitals.forEach(h=>{s.innerHTML+='<option value="'+h.id+'">'+h.name+'</option>';});}}catch(e){}}
 async function loadTreatments(){try{const r=await safeFetch('/api/treatments');if(r&&r.ok){allTreatments=await r.json();}}catch(e){}}
+async function loadSpecialties(){try{const r=await safeFetch('/api/specialties');if(r&&r.ok){allSpecialties=await r.json();}}catch(e){}}
+
+// ===== SPECIALTY CHIP PICKER =====
+function getFilteredSpecs(){
+    const query=document.getElementById('spInput').value.toLowerCase();
+    return allSpecialties.filter(s=>{
+        if(selectedSpecs.includes(s.name))return false;
+        return !query||s.name.toLowerCase().includes(query);
+    });
+}
+function filterSpecialties(){renderSpDropdown();document.getElementById('spDropdown').classList.add('open');}
+function showSpDropdown(){renderSpDropdown();document.getElementById('spDropdown').classList.add('open');}
+function renderSpDropdown(){
+    const filtered=getFilteredSpecs();
+    const dd=document.getElementById('spDropdown');
+    if(!filtered.length){dd.innerHTML='<div class="tx-option" style="color:var(--gray-400);cursor:default">No specialties found</div>';return;}
+    dd.innerHTML=filtered.slice(0,20).map(s=>`<div class="tx-option" onmousedown="addSpec('${s.name.replace(/'/g,"\\'")}')"><span>✚ ${esc(s.name)}</span><span class="tx-spec">${esc(s.category||'')}</span></div>`).join('');
+}
+function addSpec(name){
+    if(!selectedSpecs.includes(name)){selectedSpecs.push(name);renderSpChips();syncPrimarySpec();}
+    document.getElementById('spInput').value='';renderSpDropdown();
+}
+function removeSpec(name){
+    selectedSpecs=selectedSpecs.filter(s=>s!==name);renderSpChips();syncPrimarySpec();renderSpDropdown();
+}
+function renderSpChips(){
+    const container=document.getElementById('spChips');
+    const input=document.getElementById('spInput');
+    container.querySelectorAll('.tx-chip').forEach(c=>c.remove());
+    selectedSpecs.forEach((name,i)=>{
+        const chip=document.createElement('span');chip.className='tx-chip';
+        if(i===0)chip.style.background='rgba(242,101,34,.15)';if(i===0)chip.style.color='#F26522';
+        chip.innerHTML=(i===0?'★ ':'')+esc(name)+'<button type="button" onclick="removeSpec(\''+name.replace(/'/g,"\\'")+'\')">✕</button>';
+        container.insertBefore(chip,input);
+    });
+}
+function syncPrimarySpec(){
+    document.getElementById('f_specialty').value=selectedSpecs.length?selectedSpecs[0]:'';
+    // Re-filter treatments dropdown when specialty changes
+    if(document.getElementById('txDropdown').classList.contains('open'))filterTreatments();
+}
 
 // ===== TREATMENT CHIP PICKER =====
 function getFilteredTreatments(){
     const query=document.getElementById('txInput').value.toLowerCase();
-    const spec=document.getElementById('f_specialty').value.toLowerCase();
+    const specs=selectedSpecs.map(s=>s.toLowerCase());
     return allTreatments.filter(t=>{
         if(selectedTreatments.includes(t.name))return false;
         const matchQuery=!query||t.name.toLowerCase().includes(query);
-        const matchSpec=!spec||(t.specialty_name||'').toLowerCase().includes(spec);
+        const matchSpec=!specs.length||(t.specialty_name&&specs.includes(t.specialty_name.toLowerCase()));
         return matchQuery&&matchSpec;
     });
 }
@@ -116,7 +158,7 @@ function renderTxChips(){
         container.insertBefore(chip,input);
     });
 }
-document.addEventListener('click',e=>{if(!e.target.closest('.tx-wrap')){document.getElementById('txDropdown').classList.remove('open');}});
+document.addEventListener('click',e=>{if(!e.target.closest('.tx-wrap')){document.getElementById('txDropdown').classList.remove('open');document.getElementById('spDropdown').classList.remove('open');}});
 async function load(){try{const r=await safeFetch(API);if(!r||!r.ok)return;items=await r.json();
 const countries=[...new Set(items.map(i=>i.country).filter(Boolean))].sort();
 document.getElementById('countryFilter').innerHTML='<option value="">All Countries</option>'+countries.map(c=>'<option>'+c+'</option>').join('');
@@ -171,15 +213,15 @@ function toggleQE(id){const r=document.getElementById('qe-'+id);if(r)r.style.dis
 async function quickSave(id){const data={name:document.getElementById('qn-'+id).value,slug:document.getElementById('qs-'+id).value,specialty:document.getElementById('qp-'+id).value,experience_years:+document.getElementById('qx-'+id).value||null,status:document.getElementById('qt-'+id).value,is_featured:document.getElementById('qf-'+id).value==='true'};try{const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok)load();else alert('Save failed');}catch(e){alert('Save failed');}}
 async function deleteItem(id){if(!confirm('Delete permanently?'))return;try{await fetch(API+'/'+id,{method:'DELETE'});sel.delete(id);load();}catch(e){alert('Failed');}}
 function initQuill(){if(quill)return;quill=new Quill('#quillEditor',{theme:'snow',placeholder:'Detailed description...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link','image'],['clean']]}});}
-function openModal(){editId=null;document.getElementById('modalTitle').textContent='Add Doctor';document.getElementById('modal').classList.add('open');['f_name','f_slug','f_title','f_specialty','f_country','f_image','f_desc','f_qualifications','f_languages'].forEach(f=>document.getElementById(f).value='');document.getElementById('f_exp').value='';document.getElementById('f_hospital_id').value='';document.getElementById('f_status').value='draft';document.getElementById('f_featured').value='false';selectedTreatments=[];renderTxChips();document.getElementById('txInput').value='';initQuill();quill.root.innerHTML='';}
-function editItem(id){const s=items.find(i=>i.id===id);if(!s)return;editId=id;document.getElementById('modalTitle').textContent='Edit Doctor';document.getElementById('modal').classList.add('open');document.getElementById('f_name').value=s.name||'';document.getElementById('f_slug').value=s.slug||'';document.getElementById('f_title').value=s.title||'';document.getElementById('f_specialty').value=s.specialty||'';document.getElementById('f_hospital_id').value=s.hospital_id||'';document.getElementById('f_country').value=s.country||'';document.getElementById('f_exp').value=s.experience_years||'';document.getElementById('f_image').value=s.image||'';document.getElementById('f_desc').value=s.description||'';document.getElementById('f_qualifications').value=(s.qualifications||[]).join(', ');document.getElementById('f_languages').value=(s.languages||[]).join(', ');selectedTreatments=[...(s.treatments||[])];renderTxChips();document.getElementById('txInput').value='';document.getElementById('f_featured').value=s.is_featured?'true':'false';document.getElementById('f_status').value=s.status||'draft';initQuill();quill.root.innerHTML=s.long_description||'';}
+function openModal(){editId=null;document.getElementById('modalTitle').textContent='Add Doctor';document.getElementById('modal').classList.add('open');['f_name','f_slug','f_title','f_specialty','f_country','f_image','f_desc','f_qualifications','f_languages'].forEach(f=>document.getElementById(f).value='');document.getElementById('f_exp').value='';document.getElementById('f_hospital_id').value='';document.getElementById('f_status').value='draft';document.getElementById('f_featured').value='false';selectedSpecs=[];renderSpChips();document.getElementById('spInput').value='';selectedTreatments=[];renderTxChips();document.getElementById('txInput').value='';initQuill();quill.root.innerHTML='';}
+function editItem(id){const s=items.find(i=>i.id===id);if(!s)return;editId=id;document.getElementById('modalTitle').textContent='Edit Doctor';document.getElementById('modal').classList.add('open');document.getElementById('f_name').value=s.name||'';document.getElementById('f_slug').value=s.slug||'';document.getElementById('f_title').value=s.title||'';document.getElementById('f_specialty').value=s.specialty||'';document.getElementById('f_hospital_id').value=s.hospital_id||'';document.getElementById('f_country').value=s.country||'';document.getElementById('f_exp').value=s.experience_years||'';document.getElementById('f_image').value=s.image||'';document.getElementById('f_desc').value=s.description||'';document.getElementById('f_qualifications').value=(s.qualifications||[]).join(', ');document.getElementById('f_languages').value=(s.languages||[]).join(', ');selectedSpecs=s.specialties&&s.specialties.length?[...s.specialties]:(s.specialty?[s.specialty]:[]);renderSpChips();document.getElementById('spInput').value='';selectedTreatments=[...(s.treatments||[])];renderTxChips();document.getElementById('txInput').value='';document.getElementById('f_featured').value=s.is_featured?'true':'false';document.getElementById('f_status').value=s.status||'draft';initQuill();quill.root.innerHTML=s.long_description||'';}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 async function saveItem(){
-    const data={name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,title:document.getElementById('f_title').value,specialty:document.getElementById('f_specialty').value,hospital_id:+document.getElementById('f_hospital_id').value||null,country:document.getElementById('f_country').value,experience_years:+document.getElementById('f_exp').value||null,description:document.getElementById('f_desc').value,long_description:quill?quill.root.innerHTML:'',image:document.getElementById('f_image').value,qualifications:document.getElementById('f_qualifications').value?document.getElementById('f_qualifications').value.split(',').map(s=>s.trim()).filter(s=>s):[],languages:document.getElementById('f_languages').value?document.getElementById('f_languages').value.split(',').map(s=>s.trim()).filter(s=>s):[],treatments:selectedTreatments,is_featured:document.getElementById('f_featured').value==='true',status:document.getElementById('f_status').value};
+    const data={name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,title:document.getElementById('f_title').value,specialty:selectedSpecs.length?selectedSpecs[0]:'',specialties:selectedSpecs,hospital_id:+document.getElementById('f_hospital_id').value||null,country:document.getElementById('f_country').value,experience_years:+document.getElementById('f_exp').value||null,description:document.getElementById('f_desc').value,long_description:quill?quill.root.innerHTML:'',image:document.getElementById('f_image').value,qualifications:document.getElementById('f_qualifications').value?document.getElementById('f_qualifications').value.split(',').map(s=>s.trim()).filter(s=>s):[],languages:document.getElementById('f_languages').value?document.getElementById('f_languages').value.split(',').map(s=>s.trim()).filter(s=>s):[],treatments:selectedTreatments,is_featured:document.getElementById('f_featured').value==='true',status:document.getElementById('f_status').value};
     if(!data.name)return alert('Name is required');if(!data.slug)data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?API+'/'+editId:API;const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load();}else{const e=await r.json();alert(e.error||'Save failed');}}catch(e){alert('Save failed');}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearSel();closeModal();}});
-loadHospitals().then(()=>loadTreatments()).then(()=>load());
+loadHospitals().then(()=>loadSpecialties()).then(()=>loadTreatments()).then(()=>load());
 </script>
 </body></html>
