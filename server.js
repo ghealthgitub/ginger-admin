@@ -8,6 +8,7 @@ const { authRequired, roleRequired, apiAuth, logActivity } = require('./middlewa
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -217,11 +218,32 @@ app.get('/api/blog/:id', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Slug uniqueness check
+app.get('/api/blog-slug-check/:slug', apiAuth, async (req, res) => {
+    try {
+        const excludeId = req.query.exclude || 0;
+        const result = await pool.query('SELECT id, title FROM blog_posts WHERE slug = $1 AND id != $2', [req.params.slug, excludeId]);
+        res.json({ available: result.rows.length === 0, existing: result.rows[0] || null });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
+        let { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
         const tagsArray = Array.isArray(tags) ? tags : [];
         const readTimeVal = read_time ? parseInt(read_time) || null : null;
+        // Ensure slug uniqueness
+        const existing = await pool.query('SELECT id FROM blog_posts WHERE slug = $1', [slug]);
+        if (existing.rows.length) {
+            let suffix = 2;
+            while (true) {
+                const candidate = slug + '-' + suffix;
+                const check = await pool.query('SELECT id FROM blog_posts WHERE slug = $1', [candidate]);
+                if (!check.rows.length) { slug = candidate; break; }
+                suffix++;
+                if (suffix > 50) break;
+            }
+        }
         const result = await pool.query(
             `INSERT INTO blog_posts (title, slug, excerpt, content, cover_image, category, tags, status, read_time, author_id, meta_title, meta_description, focus_keywords, published_at)
              VALUES ($1,$2,$3,$4,$5,$6,$7::text[],$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
@@ -234,10 +256,35 @@ app.post('/api/blog', apiAuth, roleRequired('super_admin', 'editor'), async (req
 
 app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
+        let { title, slug, excerpt, content, cover_image, category, tags, status, read_time, meta_title, meta_description, focus_keywords } = req.body;
         const tagsArray = Array.isArray(tags) ? tags : [];
         const readTimeVal = read_time ? parseInt(read_time) || null : null;
         const pubStatus = status || 'draft';
+        // Ensure slug uniqueness (exclude current post)
+        const slugCheck = await pool.query('SELECT id FROM blog_posts WHERE slug = $1 AND id != $2', [slug, req.params.id]);
+        if (slugCheck.rows.length) {
+            let suffix = 2;
+            while (true) {
+                const candidate = slug + '-' + suffix;
+                const check = await pool.query('SELECT id FROM blog_posts WHERE slug = $1 AND id != $2', [candidate, req.params.id]);
+                if (!check.rows.length) { slug = candidate; break; }
+                suffix++;
+                if (suffix > 50) break;
+            }
+        }
+        // Save revision before updating
+        const revType = req.body._autoSave ? 'autosave' : 'manual';
+        try {
+            const existing = await pool.query('SELECT title, content, excerpt, meta_title, meta_description, focus_keywords, category, cover_image FROM blog_posts WHERE id=$1', [req.params.id]);
+            if (existing.rows.length) {
+                const old = existing.rows[0];
+                await pool.query(
+                    'INSERT INTO revisions (entity_type, entity_id, title, content, meta, user_id, revision_type) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+                    ['blog_post', req.params.id, old.title, old.content, JSON.stringify({ excerpt: old.excerpt, meta_title: old.meta_title, meta_description: old.meta_description, focus_keywords: old.focus_keywords, category: old.category, cover_image: old.cover_image }), req.user.id, revType]
+                );
+                await pool.query('DELETE FROM revisions WHERE entity_type=$1 AND entity_id=$2 AND id NOT IN (SELECT id FROM revisions WHERE entity_type=$1 AND entity_id=$2 ORDER BY created_at DESC LIMIT 30)', ['blog_post', req.params.id]);
+            }
+        } catch(revErr) { console.error('Revision save error:', revErr.message); }
         const result = await pool.query(
             `UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4, cover_image=$5, category=$6, tags=$7::text[], status=$8, read_time=$9, meta_title=$10, meta_description=$11, focus_keywords=$12, published_at = CASE WHEN $13='published' AND published_at IS NULL THEN NOW() ELSE published_at END, updated_at=NOW()
              WHERE id=$14 RETURNING *`,
@@ -248,12 +295,57 @@ app.put('/api/blog/:id', apiAuth, roleRequired('super_admin', 'editor'), async (
     } catch (err) { console.error('Blog PUT error:', err.message); res.status(500).json({ error: err.message }); }
 });
 
+// Revisions API
+app.get('/api/revisions/:type/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT r.*, u.name as user_name FROM revisions r LEFT JOIN users u ON r.user_id = u.id WHERE r.entity_type=$1 AND r.entity_id=$2 ORDER BY r.created_at DESC LIMIT 30',
+            [req.params.type, req.params.id]
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/revisions/detail/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM revisions WHERE id=$1', [req.params.id]);
+        if (!result.rows.length) return res.status(404).json({ error: 'Revision not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/blog/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM blog_posts WHERE id = $1', [req.params.id]);
         await logActivity(req.user.id, 'delete', 'blog_post', parseInt(req.params.id), 'Deleted blog post');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// Bulk actions for blog posts
+app.post('/api/blog/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No posts selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM blog_posts WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'blog_post', null, `Bulk deleted ${count} posts`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE blog_posts SET status='published', published_at=COALESCE(published_at, NOW()), updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'blog_post', null, `Bulk published ${count} posts`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE blog_posts SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'blog_post', null, `Bulk set ${count} posts to draft`);
+        } else {
+            return res.status(400).json({ error: 'Invalid action' });
+        }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============== TESTIMONIALS CRUD ==============
@@ -291,6 +383,27 @@ app.put('/api/testimonials/:id', apiAuth, roleRequired('super_admin', 'editor'),
         );
         await logActivity(req.user.id, 'update', 'testimonial', req.params.id, `Updated: ${patient_name}`);
         res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Testimonials bulk actions
+app.post('/api/testimonials/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM testimonials WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_delete', 'testimonial', null, `Bulk deleted ${count} testimonials`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE testimonials SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_publish', 'testimonial', null, `Bulk published ${count} testimonials`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE testimonials SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_draft', 'testimonial', null, `Bulk set ${count} testimonials to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -340,6 +453,27 @@ app.put('/api/hospitals/:id', apiAuth, roleRequired('super_admin', 'editor'), as
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Hospitals bulk actions
+app.post('/api/hospitals/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM hospitals WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_delete', 'hospital', null, `Bulk deleted ${count} hospitals`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE hospitals SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_publish', 'hospital', null, `Bulk published ${count} hospitals`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE hospitals SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_draft', 'hospital', null, `Bulk set ${count} hospitals to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM hospitals WHERE id = $1', [req.params.id]);
@@ -366,11 +500,11 @@ app.get('/api/doctors', apiAuth, async (req, res) => {
 
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft']
+            `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
         );
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -379,14 +513,35 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, updated_at=NOW()
-             WHERE id=$15 RETURNING *`,
-            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, req.params.id]
+            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, treatments=$15, updated_at=NOW()
+             WHERE id=$16 RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
         );
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Doctors bulk actions
+app.post('/api/doctors/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM doctors WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_delete', 'doctor', null, `Bulk deleted ${count} doctors`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE doctors SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_publish', 'doctor', null, `Bulk published ${count} doctors`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE doctors SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount; await logActivity(req.user.id, 'bulk_draft', 'doctor', null, `Bulk set ${count} doctors to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -513,12 +668,90 @@ app.get('/media', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'media.html'));
 });
 
+// ============== WORDPRESS-STYLE MEDIA SYSTEM ==============
+const sharp = require('sharp');
+
+// Image sizes (like WordPress registered sizes)
+const IMAGE_SIZES = {
+    thumbnail: { width: 150, height: 150, crop: true },
+    medium:    { width: 300, height: 300, crop: false },
+    large:     { width: 1024, height: 1024, crop: false }
+};
+
+// Get year/month upload directory (like WordPress /uploads/2026/02/)
+function getUploadDir() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const subdir = path.join('uploads', year, month);
+    const fullPath = path.join(__dirname, subdir);
+    if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
+    return { subdir, fullPath };
+}
+
+// Sanitize filename (WordPress-style)
+function sanitizeFilename(originalName) {
+    const ext = path.extname(originalName).toLowerCase();
+    let base = path.basename(originalName, path.extname(originalName))
+        .toLowerCase()
+        .replace(/['']/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 80);
+    if (!base) base = 'file';
+    return { base, ext };
+}
+
+// Generate unique filename in directory (WordPress-style incrementing)
+function uniqueFilename(dir, base, ext) {
+    let finalName = base + ext;
+    let counter = 1;
+    while (fs.existsSync(path.join(dir, finalName))) {
+        finalName = base + '-' + counter + ext;
+        counter++;
+    }
+    return finalName;
+}
+
+// Generate image subsizes (like wp_create_image_subsizes)
+async function createImageSubsizes(filePath, dir, base, ext) {
+    const sizes = {};
+    try {
+        const image = sharp(filePath);
+        const metadata = await image.metadata();
+
+        for (const [sizeName, sizeConfig] of Object.entries(IMAGE_SIZES)) {
+            if (metadata.width <= sizeConfig.width && metadata.height <= sizeConfig.height) continue;
+            const sizeFilename = `${base}-${sizeConfig.width}x${sizeConfig.height}${ext}`;
+            const sizePath = path.join(dir, sizeFilename);
+            try {
+                let resizer = sharp(filePath);
+                if (sizeConfig.crop) {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'cover', position: 'centre' });
+                } else {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'inside', withoutEnlargement: true });
+                }
+                const info = await resizer.toFile(sizePath);
+                sizes[sizeName] = { file: sizeFilename, width: info.width, height: info.height, size: info.size };
+            } catch(e) { console.error(`Failed to create ${sizeName}:`, e.message); }
+        }
+        return { width: metadata.width, height: metadata.height, sizes };
+    } catch(e) {
+        console.error('Image processing error:', e.message);
+        return { width: null, height: null, sizes: {} };
+    }
+}
+
+// Multer storage with year/month directories
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
+    destination: (req, file, cb) => {
+        const { fullPath } = getUploadDir();
+        cb(null, fullPath);
+    },
     filename: (req, file, cb) => {
-        const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, unique + ext);
+        const { base, ext } = sanitizeFilename(file.originalname);
+        const { fullPath } = getUploadDir();
+        cb(null, uniqueFilename(fullPath, base, ext));
     }
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
@@ -526,6 +759,13 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFil
     cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
 }});
 
+// Separate multer for document imports (accepts docx, doc, txt)
+const docUpload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+    const allowed = /docx|doc|txt|md/;
+    cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
+}});
+
+// GET /api/media — List all media
 app.get('/api/media', apiAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM media ORDER BY created_at DESC');
@@ -533,31 +773,75 @@ app.get('/api/media', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// POST /api/media/upload — Upload with auto-processing (like WordPress)
 app.post('/api/media/upload', apiAuth, roleRequired('super_admin', 'editor'), upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-        const url = `/uploads/${req.file.filename}`;
+        const { subdir } = getUploadDir();
+        const url = `/${subdir}/${req.file.filename}`;
+        const filePath = req.file.path;
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(req.file.filename);
+        // Auto-title from filename (like WordPress)
+        const autoTitle = path.basename(req.file.originalname, path.extname(req.file.originalname))
+            .replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        let width = null, height = null, sizes = {};
+        if (isImage) {
+            const imgData = await createImageSubsizes(filePath, path.join(__dirname, subdir),
+                path.basename(req.file.filename, path.extname(req.file.filename)), path.extname(req.file.filename));
+            width = imgData.width;
+            height = imgData.height;
+            for (const [key, val] of Object.entries(imgData.sizes)) {
+                sizes[key] = { ...val, url: `/${subdir}/${val.file}` };
+            }
+        }
         const result = await pool.query(
-            'INSERT INTO media (filename, original_name, mime_type, size, url, folder, uploaded_by) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-            [req.file.filename, req.file.originalname, req.file.mimetype, req.file.size, url, req.body.folder || 'general', req.user.id]
+            `INSERT INTO media (filename, original_name, mime_type, size, url, alt_text, title, width, height, sizes, folder, uploaded_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+            [req.file.filename, req.file.originalname, req.file.mimetype, req.file.size, url,
+             '', autoTitle, width, height, JSON.stringify(sizes), req.body.folder || 'general', req.user.id]
         );
         await logActivity(req.user.id, 'upload', 'media', result.rows[0].id, `Uploaded: ${req.file.originalname}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// PUT /api/media/:id — Update metadata (alt, title, caption, description)
+app.put('/api/media/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { alt_text, title, caption, description } = req.body;
+        const result = await pool.query(
+            `UPDATE media SET alt_text = COALESCE($1, alt_text), title = COALESCE($2, title),
+             caption = COALESCE($3, caption), description = COALESCE($4, description)
+             WHERE id = $5 RETURNING *`,
+            [alt_text, title, caption, description, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/media/:id — Delete file + all subsizes
 app.delete('/api/media/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         const file = await pool.query('SELECT * FROM media WHERE id = $1', [req.params.id]);
         if (file.rows.length > 0) {
-            const fs = require('fs');
-            const filepath = path.join(__dirname, file.rows[0].url);
-            if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+            const filePath = path.join(__dirname, file.rows[0].url);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            const sizes = file.rows[0].sizes || {};
+            for (const sizeData of Object.values(sizes)) {
+                if (sizeData.url) {
+                    const sizePath = path.join(__dirname, sizeData.url);
+                    if (fs.existsSync(sizePath)) fs.unlinkSync(sizePath);
+                }
+            }
             await pool.query('DELETE FROM media WHERE id = $1', [req.params.id]);
+            await logActivity(req.user.id, 'delete', 'media', parseInt(req.params.id), `Deleted: ${file.rows[0].original_name}`);
         }
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
+
 
 // ============== USERS MANAGEMENT ==============
 app.get('/users', authRequired, roleRequired('super_admin'), (req, res) => {
@@ -648,6 +932,30 @@ app.put('/api/specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Specialties bulk actions
+app.post('/api/specialties/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM specialties WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'specialty', null, `Bulk deleted ${count} specialties`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE specialties SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'specialty', null, `Bulk published ${count} specialties`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE specialties SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'specialty', null, `Bulk set ${count} specialties to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/specialties/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM specialties WHERE id = $1', [req.params.id]);
@@ -698,6 +1006,30 @@ app.put('/api/treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), a
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Treatments bulk actions
+app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM treatments WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'treatment', null, `Bulk deleted ${count} treatments`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE treatments SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'treatment', null, `Bulk published ${count} treatments`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE treatments SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'treatment', null, `Bulk set ${count} treatments to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM treatments WHERE id = $1', [req.params.id]);
@@ -741,6 +1073,30 @@ app.put('/api/destinations/:id', apiAuth, roleRequired('super_admin', 'editor'),
         );
         await logActivity(req.user.id, 'update', 'destination', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Destinations bulk actions
+app.post('/api/destinations/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM destinations WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'destination', null, `Bulk deleted ${count} destinations`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE destinations SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'destination', null, `Bulk published ${count} destinations`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE destinations SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'destination', null, `Bulk set ${count} destinations to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -795,114 +1151,22 @@ app.put('/api/costs/:id', apiAuth, roleRequired('super_admin', 'editor'), async 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Costs bulk actions
+app.post('/api/costs/bulk', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        if (action === 'delete') {
+            const result = await pool.query('DELETE FROM treatment_costs WHERE id = ANY($1) RETURNING id', [ids]);
+            await logActivity(req.user.id, 'bulk_delete', 'cost', null, `Bulk deleted ${result.rowCount} cost entries`);
+            res.json({ success: true, count: result.rowCount });
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/costs/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM treatment_costs WHERE id = $1', [req.params.id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== DESTINATION SPECIALTIES CRUD (Page A) ==============
-app.get('/d-specialties', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'd-specialties.html'));
-});
-
-app.get('/api/d-specialties', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT ds.*, d.name as destination_name, d.flag as destination_flag, s.name as specialty_name
-             FROM destination_specialties ds
-             LEFT JOIN destinations d ON ds.destination_id = d.id
-             LEFT JOIN specialties s ON ds.specialty_id = s.id
-             ORDER BY d.display_order, s.name`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, specialty_id, name, slug, description, long_description, image, hero_bg, why_choose, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `INSERT INTO destination_specialties (destination_id, specialty_id, name, slug, description, long_description, image, hero_bg, why_choose, meta_title, meta_description, status, display_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, image, hero_bg, why_choose, meta_title, meta_description, status || 'draft', display_order || 0]
-        );
-        await logActivity(req.user.id, 'create', 'destination_specialty', result.rows[0].id, `Created: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.put('/api/d-specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, specialty_id, name, slug, description, long_description, image, hero_bg, why_choose, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `UPDATE destination_specialties SET destination_id=$1, specialty_id=$2, name=$3, slug=$4, description=$5, long_description=$6, image=$7, hero_bg=$8, why_choose=$9, meta_title=$10, meta_description=$11, status=$12, display_order=$13, updated_at=NOW()
-             WHERE id=$14 RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, image, hero_bg, why_choose, meta_title, meta_description, status, display_order, req.params.id]
-        );
-        await logActivity(req.user.id, 'update', 'destination_specialty', req.params.id, `Updated: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/d-specialties/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM destination_specialties WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'destination_specialty', parseInt(req.params.id), 'Deleted destination specialty');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== DESTINATION TREATMENTS CRUD (Page A) ==============
-app.get('/d-treatments', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'd-treatments.html'));
-});
-
-app.get('/api/d-treatments', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT dt.*, d.name as destination_name, d.flag as destination_flag, t.name as treatment_name, s.name as specialty_name
-             FROM destination_treatments dt
-             LEFT JOIN destinations d ON dt.destination_id = d.id
-             LEFT JOIN treatments t ON dt.treatment_id = t.id
-             LEFT JOIN specialties s ON dt.specialty_id = s.id
-             ORDER BY d.display_order, s.name, t.name`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/d-treatments', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `INSERT INTO destination_treatments (destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
-            [destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status || 'draft', display_order || 0]
-        );
-        await logActivity(req.user.id, 'create', 'destination_treatment', result.rows[0].id, `Created: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.put('/api/d-treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `UPDATE destination_treatments SET destination_id=$1, treatment_id=$2, specialty_id=$3, name=$4, slug=$5, description=$6, long_description=$7, image=$8, hero_bg=$9, cost_min_usd=$10, cost_max_usd=$11, cost_includes=$12, hospital_stay=$13, meta_title=$14, meta_description=$15, status=$16, display_order=$17, updated_at=NOW()
-             WHERE id=$18 RETURNING *`,
-            [destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order, req.params.id]
-        );
-        await logActivity(req.user.id, 'update', 'destination_treatment', req.params.id, `Updated: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/d-treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM destination_treatments WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'destination_treatment', parseInt(req.params.id), 'Deleted destination treatment');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
@@ -995,6 +1259,96 @@ app.get('/api/dashboard/stats-full', apiAuth, async (req, res) => {
 // ============== CLAUDE AI ASSISTANT ==============
 app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'ai-assistant.html'));
+});
+
+// ============== DOCX IMPORT ==============
+const mammoth = require('mammoth');
+
+// POST /api/import/docx — Import .docx with images converted to uploaded files
+app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const filePath = req.file.path;
+        let imageCount = 0;
+
+        const result = await mammoth.convertToHtml(
+            { path: filePath },
+            {
+                convertImage: mammoth.images.imgElement(async function(image) {
+                    try {
+                        const imageBuffer = await image.read();
+                        const ext = image.contentType === 'image/png' ? '.png' : image.contentType === 'image/gif' ? '.gif' : '.jpg';
+                        const filename = 'docx-import-' + Date.now() + '-' + (++imageCount) + ext;
+
+                        // Save to uploads folder using same year/month structure
+                        const now = new Date();
+                        const year = now.getFullYear().toString();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const subdir = path.join('uploads', year, month);
+                        const fs = require('fs');
+                        if (!fs.existsSync(subdir)) fs.mkdirSync(subdir, { recursive: true });
+
+                        const savePath = path.join(subdir, filename);
+                        fs.writeFileSync(savePath, imageBuffer);
+
+                        // Process with sharp if it's an image
+                        let width = null, height = null, sizes = {};
+                        try {
+                            const sharp = require('sharp');
+                            const meta = await sharp(imageBuffer).metadata();
+                            width = meta.width;
+                            height = meta.height;
+
+                            // Generate thumbnail
+                            const thumbName = filename.replace(/\.[^.]+$/, '-150x150' + ext);
+                            await sharp(imageBuffer).resize(150, 150, { fit: 'cover' }).toFile(path.join(subdir, thumbName));
+                            sizes.thumbnail = { url: '/' + subdir.replace(/\\/g,'/') + '/' + thumbName, width: 150, height: 150 };
+
+                            // Generate medium
+                            if (width > 300) {
+                                const medName = filename.replace(/\.[^.]+$/, '-300x0' + ext);
+                                await sharp(imageBuffer).resize(300, null).toFile(path.join(subdir, medName));
+                                sizes.medium = { url: '/' + subdir.replace(/\\/g,'/') + '/' + medName, width: 300 };
+                            }
+                        } catch(sharpErr) {}
+
+                        const url = '/' + savePath.replace(/\\/g, '/');
+
+                        // Save to DB
+                        await pool.query(
+                            'INSERT INTO media (filename, original_name, mime_type, size, url, width, height, sizes, folder, uploaded_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+                            [filename, filename, image.contentType, imageBuffer.length, url, width, height, JSON.stringify(sizes), year + '/' + month, req.user.id]
+                        );
+
+                        return { src: url };
+                    } catch(imgErr) {
+                        console.error('Docx image error:', imgErr.message);
+                        return { src: '' };
+                    }
+                })
+            }
+        );
+
+        // Clean up uploaded docx file
+        try { require('fs').unlinkSync(filePath); } catch(e) {}
+
+        res.json({ html: result.value, imageCount, messages: result.messages });
+    } catch (err) {
+        console.error('Docx import error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/import/docx-text — Extract plain text from .docx (for AI context)
+app.post('/api/import/docx-text', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const result = await mammoth.extractRawText({ path: req.file.path });
+        try { require('fs').unlinkSync(req.file.path); } catch(e) {}
+        res.json({ text: result.value });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
@@ -1116,6 +1470,61 @@ app.put('/api/settings', apiAuth, async (req, res) => {
         await logActivity(req.user.id, 'update_settings', 'settings', null, 'Updated site settings');
         res.json({ success: true });
     } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ============== THEME TEMPLATES ==============
+app.get('/theme-templates', authRequired, roleRequired('super_admin'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'theme-templates.html'));
+});
+
+app.get('/api/theme-templates', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM theme_templates ORDER BY category, label');
+        res.json(result.rows);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/theme-templates/:key', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM theme_templates WHERE template_key=$1', [req.params.key]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Template not found' });
+        res.json(result.rows[0]);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Sample data for template preview
+app.put('/api/theme-templates/:key', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const { label, category, description, html_template, css, is_active } = req.body;
+        const result = await pool.query(
+            `INSERT INTO theme_templates (template_key, label, category, description, html_template, css, is_active, updated_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+             ON CONFLICT (template_key) DO UPDATE SET label=$2, category=$3, description=$4, html_template=$5, css=$6, is_active=$7, updated_by=$8, updated_at=NOW()
+             RETURNING *`,
+            [req.params.key, label, category || 'detail', description, html_template, css, is_active !== false, req.user.id]
+        );
+        await logActivity(req.user.id, 'update', 'theme_template', result.rows[0].id, `Updated template: ${label}`);
+        res.json(result.rows[0]);
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/theme-templates/:key', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        await pool.query('DELETE FROM theme_templates WHERE template_key=$1', [req.params.key]);
+        await logActivity(req.user.id, 'delete', 'theme_template', null, `Deleted template: ${req.params.key}`);
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Public API for website to fetch templates
+app.get('/api/public/templates', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    try {
+        const result = await pool.query('SELECT template_key, html_template, css FROM theme_templates WHERE is_active=true');
+        const map = {};
+        result.rows.forEach(r => { map[r.template_key] = { html: r.html_template, css: r.css }; });
+        res.json(map);
+    } catch(e) { res.json({}); }
 });
 
 // ============== STARTUP ==============
