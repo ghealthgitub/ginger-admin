@@ -330,6 +330,7 @@ async function initDB() {
         `);
         // Add focus_keywords column if not exists
         await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keywords TEXT`);
+        await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS treatments TEXT[]`);
 
         console.log('✅ Database tables initialized');
     } catch (err) {
