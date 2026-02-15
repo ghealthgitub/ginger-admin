@@ -350,7 +350,29 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <select class="sb-select" id="hospitalId" onchange="resetAutoSave();autoFillCountry()"><option value="">Select hospital</option></select>
             <div class="sb-row">
                 <div><div class="sb-label">Experience (years)</div><input class="sb-input" id="experienceYears" type="number" placeholder="e.g. 30" oninput="resetAutoSave()"></div>
-                <div><div class="sb-label">Country</div><input class="sb-input" id="country" placeholder="e.g. India" oninput="resetAutoSave()"></div>
+                <div><div class="sb-label">Country</div><select class="sb-select" id="country" onchange="resetAutoSave()" style="margin-bottom:10px">
+                    <option value="">Select country</option>
+                    <option value="India">India</option>
+                    <option value="Turkey">Turkey</option>
+                    <option value="Thailand">Thailand</option>
+                    <option value="UAE">UAE</option>
+                    <option value="Singapore">Singapore</option>
+                    <option value="South Korea">South Korea</option>
+                    <option value="Malaysia">Malaysia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Spain">Spain</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="United States">United States</option>
+                    <option value="Israel">Israel</option>
+                    <option value="Mexico">Mexico</option>
+                    <option value="Brazil">Brazil</option>
+                    <option value="Costa Rica">Costa Rica</option>
+                    <option value="Colombia">Colombia</option>
+                    <option value="Philippines">Philippines</option>
+                    <option value="Japan">Japan</option>
+                    <option value="Egypt">Egypt</option>
+                    <option value="Jordan">Jordan</option>
+                </select></div>
             </div>
             <div class="sb-label">Short Description</div>
             <textarea class="sb-textarea" id="description" placeholder="Brief one-line description..." oninput="resetAutoSave()"></textarea>
@@ -389,10 +411,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="sb-box__title">🗣 Languages</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <div class="tags-wrap" id="langWrap" onclick="document.getElementById('langInput').focus()">
-                <input class="tag-input" id="langInput" placeholder="Add language..." onkeydown="handleChipKey(event,'lang')">
-            </div>
-            <div class="sb-hint">Press Enter or comma to add</div>
+            <div class="tx-selected" id="langCount">0 selected</div>
+            <input class="tx-search" id="langSearch" placeholder="Search languages..." oninput="renderLanguageList()">
+            <div class="tx-list" id="langList" style="max-height:180px"></div>
+            <div class="sb-hint">Select languages the doctor speaks</div>
         </div>
     </div>
 
@@ -541,10 +563,21 @@ function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classL
 function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country)document.getElementById('country').value=h.country}
 
 // === CHIP INPUTS ===
-function handleChipKey(e,type){if(e.key==='Enter'||e.key===','){e.preventDefault();const val=e.target.value.trim().replace(/,/g,'');if(!val)return;const arr=type==='qual'?qualifications:languages;if(!arr.includes(val)){arr.push(val);renderChips(type)}e.target.value='';resetAutoSave()}}
-function renderChips(type){const arr=type==='qual'?qualifications:languages,wrap=document.getElementById(type+'Wrap'),inputId=type+'Input';
-    wrap.innerHTML=arr.map((v,i)=>'<span class="tag-chip">'+v+'<button onclick="removeChip(\''+type+'\','+i+')">&times;</button></span>').join('')+'<input class="tag-input" id="'+inputId+'" placeholder="Add '+(type==='qual'?'qualification':'language')+'..." onkeydown="handleChipKey(event,\''+type+'\')">'}
-function removeChip(type,i){(type==='qual'?qualifications:languages).splice(i,1);renderChips(type);resetAutoSave()}
+function handleChipKey(e,type){if(e.key==='Enter'){e.preventDefault();const val=e.target.value.trim();if(!val)return;if(!qualifications.includes(val)){qualifications.push(val);renderChips('qual')}e.target.value='';resetAutoSave()}}
+function renderChips(type){const arr=qualifications,wrap=document.getElementById('qualWrap');
+    wrap.innerHTML=arr.map((v,i)=>'<span class="tag-chip">'+v+'<button onclick="removeChip('+i+')">&times;</button></span>').join('')+'<input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleChipKey(event,\'qual\')">'}
+function removeChip(i){qualifications.splice(i,1);renderChips('qual');resetAutoSave()}
+
+// === LANGUAGES CHECKBOX LIST ===
+const GLOBAL_LANGUAGES=['English','Hindi','Arabic','Spanish','French','German','Mandarin','Russian','Portuguese','Turkish','Bengali','Urdu','Japanese','Korean','Thai','Malay','Tamil','Telugu','Kannada','Malayalam','Marathi','Gujarati','Punjabi','Italian','Dutch','Polish','Swedish','Greek','Hebrew','Persian','Indonesian','Vietnamese','Filipino','Swahili','Romanian','Czech','Hungarian','Ukrainian','Danish','Norwegian','Finnish','Sinhala','Nepali'];
+function renderLanguageList(){const search=(document.getElementById('langSearch').value||'').toLowerCase();
+    const filtered=GLOBAL_LANGUAGES.filter(l=>!search||l.toLowerCase().includes(search));
+    document.getElementById('langCount').textContent=languages.length+' selected';
+    if(!filtered.length){document.getElementById('langList').innerHTML='<div style="padding:12px;color:var(--gray-400);font-size:.8rem;text-align:center">No match</div>';return}
+    // Sort: selected first, then alphabetical
+    filtered.sort((a,b)=>{const aS=languages.includes(a)?0:1,bS=languages.includes(b)?0:1;return aS-bS||a.localeCompare(b)});
+    document.getElementById('langList').innerHTML=filtered.map(l=>{const ck=languages.includes(l);return '<div class="tx-item'+(ck?' checked':'')+'" onclick="toggleLang(\''+l+'\')"><input type="checkbox" '+(ck?'checked':'')+' onclick="event.stopPropagation();toggleLang(\''+l+'\')"><label>'+l+'</label></div>'}).join('')}
+function toggleLang(lang){const idx=languages.indexOf(lang);if(idx>-1)languages.splice(idx,1);else languages.push(lang);renderLanguageList();resetAutoSave()}
 
 // === TREATMENTS MULTI-SELECT ===
 function filterTreatments(){renderTreatments()}
@@ -613,7 +646,7 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
     if(docData.long_description) quill.root.innerHTML=docData.long_description;
     if(docData.qualifications&&docData.qualifications.length){qualifications=docData.qualifications;renderChips('qual')}
-    if(docData.languages&&docData.languages.length){languages=docData.languages;renderChips('lang')}
+    if(docData.languages&&docData.languages.length){languages=[...docData.languages];renderLanguageList()}
     if(docData.image){document.getElementById('image').value=docData.image;const src=docData.image.startsWith('http')?docData.image:'https://enter.ginger.healthcare'+docData.image;document.getElementById('featImgPreview').src=src;document.getElementById('featImgPreview').style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block';document.getElementById('featImgName').textContent=docData.image.split('/').pop()}
     updateTopTitle();const badge=document.getElementById('statusBadge');badge.textContent=docData.status;badge.className='topbar__status topbar__status--'+docData.status;
     updatePublishUI();updateCharCount('metaTitle','metaTitleCount',60);updateCharCount('metaDesc','metaDescCount',160);analyzeSEO();
@@ -633,7 +666,10 @@ async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
             docData=result;document.getElementById('statusBadge').textContent=result.status;document.getElementById('statusBadge').className='topbar__status topbar__status--'+result.status;updatePublishUI();
             if(result.status==='published'&&result.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href='https://ginger.healthcare/doctors/'+result.slug+'/';document.getElementById('viewBtn').style.display=''}
             if(isAuto){showToast('💾 Auto-saved')}else{const saved=document.getElementById('savedIndicator');saved.style.display='inline';
-                if(result.status==='published'&&result.slug){saved.innerHTML='✅ Published! <a href="https://ginger.healthcare/doctors/'+result.slug+'/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';setTimeout(()=>saved.style.display='none',8000)}
+                // Temporarily change button text for feedback
+                const pubBtn=document.getElementById('publishBtn');const sbBtn=document.getElementById('publishBtnSidebar');
+                const origPub=pubBtn.textContent;const origSb=sbBtn.textContent;
+                if(result.status==='published'&&result.slug){saved.innerHTML='✅ Updated! <a href="https://ginger.healthcare/doctors/'+result.slug+'/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';pubBtn.textContent='✅ Updated!';sbBtn.textContent='✅ Updated!';pubBtn.style.background='#059669';sbBtn.style.background='#059669';setTimeout(()=>{saved.style.display='none';pubBtn.textContent=origPub;sbBtn.textContent=origSb;pubBtn.style.background='';sbBtn.style.background=''},4000)}
                 else{saved.innerHTML='✅ Saved!';setTimeout(()=>saved.style.display='none',3000)}}
         }else{const e=await r.json();if(!isAuto)alert('Error: '+(e.error||'Save failed'))}
     }catch(e){if(!isAuto)alert('Save failed')}}
@@ -682,6 +718,7 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){
 // === INIT ===
 loadDropdowns().then(()=>loadDoctor());
 updateStats();
+renderLanguageList();
 
 }); // end waitForQuill
 </script>
