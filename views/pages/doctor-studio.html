@@ -350,29 +350,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <select class="sb-select" id="hospitalId" onchange="resetAutoSave();autoFillCountry()"><option value="">Select hospital</option></select>
             <div class="sb-row">
                 <div><div class="sb-label">Experience (years)</div><input class="sb-input" id="experienceYears" type="number" placeholder="e.g. 30" oninput="resetAutoSave()"></div>
-                <div><div class="sb-label">Country</div><select class="sb-select" id="country" onchange="resetAutoSave()" style="margin-bottom:10px">
-                    <option value="">Select country</option>
-                    <option value="India">India</option>
-                    <option value="Turkey">Turkey</option>
-                    <option value="Thailand">Thailand</option>
-                    <option value="UAE">UAE</option>
-                    <option value="Singapore">Singapore</option>
-                    <option value="South Korea">South Korea</option>
-                    <option value="Malaysia">Malaysia</option>
-                    <option value="Germany">Germany</option>
-                    <option value="Spain">Spain</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="United States">United States</option>
-                    <option value="Israel">Israel</option>
-                    <option value="Mexico">Mexico</option>
-                    <option value="Brazil">Brazil</option>
-                    <option value="Costa Rica">Costa Rica</option>
-                    <option value="Colombia">Colombia</option>
-                    <option value="Philippines">Philippines</option>
-                    <option value="Japan">Japan</option>
-                    <option value="Egypt">Egypt</option>
-                    <option value="Jordan">Jordan</option>
-                </select></div>
+                <div></div>
             </div>
             <div class="sb-label">Short Description</div>
             <textarea class="sb-textarea" id="description" placeholder="Brief one-line description..." oninput="resetAutoSave()"></textarea>
@@ -402,19 +380,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                 <input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleChipKey(event,'qual')">
             </div>
             <div class="sb-hint">Press Enter to add (e.g. MBBS, MS, MCh)</div>
-        </div>
-    </div>
-
-    <!-- Languages -->
-    <div class="sb-box">
-        <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">🗣 Languages</div><span class="sb-box__toggle">▾</span>
-        </div>
-        <div class="sb-box__body">
-            <div class="tx-selected" id="langCount">0 selected</div>
-            <input class="tx-search" id="langSearch" placeholder="Search languages..." oninput="renderLanguageList()">
-            <div class="tx-list" id="langList" style="max-height:180px"></div>
-            <div class="sb-hint">Select languages the doctor speaks</div>
         </div>
     </div>
 
@@ -714,6 +679,15 @@ function undoChanges(){if(!undoStack.length){alert('Nothing to undo');return}con
 
 // Keyboard shortcuts
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveDoctor()}});
+
+// === EXPOSE TO GLOBAL SCOPE (needed for inline onclick handlers) ===
+window.saveDoctor=saveDoctor;window.undoChanges=undoChanges;window.setTone=setTone;window.showTab=showTab;window.togglePreview=togglePreview;
+window.aiCmd=aiCmd;window.insertAI=insertAI;window.appendAI=appendAI;window.toggleTx=toggleTx;window.toggleLang=toggleLang;
+window.removeChip=removeChip;window.handleChipKey=handleChipKey;window.autoSlug=autoSlug;window.updateTopTitle=updateTopTitle;
+window.filterTreatments=filterTreatments;window.renderTreatments=renderTreatments;window.renderLanguageList=renderLanguageList;
+window.autoFillCountry=autoFillCountry;window.resetAutoSave=resetAutoSave;window.updatePublishUI=updatePublishUI;
+window.analyzeSEO=analyzeSEO;window.updateCharCount=updateCharCount;window.checkSlugUnique=checkSlugUnique;
+window.handleFileAttach=handleFileAttach;window.importFile=importFile;window.showToast=showToast;
 
 // === INIT ===
 loadDropdowns().then(()=>loadDoctor());
