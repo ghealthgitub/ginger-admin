@@ -289,7 +289,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <input type="text" class="title-input" id="doctorName" placeholder="Doctor name (e.g. Dr. Naresh Trehan)" oninput="autoSlug();updateTopTitle();resetAutoSave()">
         <div class="permalink-area">
             <span>Permalink:</span>
-            <span style="color:var(--gray-500)">ginger.healthcare/doctors/</span>
+            <span style="color:var(--gray-500)">ginger.healthcare/destinations/<span id="permalinkCountry">...</span>/doctors/</span>
             <input type="text" id="slug" placeholder="doctor-slug" oninput="slugEdited=true;checkSlugUnique()">
             <button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button>
             <span class="permalink-status" id="slugStatus"></span>
@@ -331,7 +331,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                 <button class="btn-save" onclick="saveDoctor('draft')">Save Draft</button>
                 <button class="btn-publish" id="publishBtnSidebar" onclick="saveDoctor('published')">Publish</button>
             </div>
-            <button class="publish-link publish-link--view" id="viewBtn" style="display:none" onclick="window.open('https://ginger.healthcare/doctors/'+document.getElementById('slug').value+'/','_blank')">● View Profile ↗</button>
+            <button class="publish-link publish-link--view" id="viewBtn" style="display:none" onclick="window.open(getDoctorUrl(),'_blank')">● View Profile ↗</button>
             <button class="publish-link" onclick="if(confirm('Move to trash?'))window.location='/doctors'">Move to Trash</button>
         </div>
     </div>
@@ -485,6 +485,24 @@ const editId = pathParts[2]==='edit' ? pathParts[3] : null;
 let docData={}, currentTone='professional', autoSaveTimer=null, slugEdited=false;
 let qualifications=[], languages=[], selectedTreatments=new Set();
 let allHospitals=[], allSpecialties=[], allTreatments=[];
+let allDestinations=[];
+
+// LOCKED: Doctor canonical URL is /destinations/{country-slug}/doctors/{slug}/
+function getDoctorUrl() {
+    const slug = document.getElementById('slug').value;
+    const country = (doctorCountry || '').trim().toLowerCase();
+    // Try to match country to a destination slug
+    const dest = allDestinations.find(d => d.name.toLowerCase() === country);
+    const destSlug = dest ? dest.slug : country.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'india';
+    return 'https://ginger.healthcare/destinations/' + destSlug + '/doctors/' + slug + '/';
+}
+
+function updatePermalinkCountry() {
+    const country = (doctorCountry || '').trim().toLowerCase();
+    const dest = allDestinations.find(d => d.name.toLowerCase() === country);
+    const destSlug = dest ? dest.slug : country.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '...';
+    document.getElementById('permalinkCountry').textContent = destSlug;
+}
 
 const quill = new Quill('#editor',{theme:'snow',placeholder:'Write the doctor\'s detailed bio, expertise, and background...',modules:{toolbar:[[{'header':[1,2,3,false]}],['bold','italic','underline','strike'],[{'color':[]},{'background':[]}],[{'list':'ordered'},{'list':'bullet'}],['blockquote','code-block'],['link','image'],[{'align':[]}],['clean']]}});
 quill.on('text-change',()=>{updateStats();analyzeSEO();resetAutoSave()});
@@ -526,7 +544,7 @@ function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classL
 
 // Auto-fill country from hospital selection (country field removed from UI, stored internally)
 let doctorCountry='';
-function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country)doctorCountry=h.country}
+function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country){doctorCountry=h.country;updatePermalinkCountry()}}
 
 // === CHIP INPUTS ===
 function handleChipKey(e,type){if(e.key==='Enter'){e.preventDefault();const val=e.target.value.trim();if(!val)return;if(!qualifications.includes(val)){qualifications.push(val);renderChips('qual')}e.target.value='';resetAutoSave()}}
@@ -590,8 +608,8 @@ function showTab(tab){const w=tab==='write';document.getElementById('tabWrite').
 function togglePreview(){showTab(document.getElementById('previewPane').classList.contains('active')?'write':'preview')}
 
 // === LOAD DATA ===
-async function loadDropdowns(){try{const[hr,sr,tr]=await Promise.all([fetch('/api/hospitals'),fetch('/api/specialties'),fetch('/api/treatments')]);
-    allHospitals=await hr.json();allSpecialties=await sr.json();allTreatments=await tr.json();
+async function loadDropdowns(){try{const[hr,sr,tr,dr]=await Promise.all([fetch('/api/hospitals'),fetch('/api/specialties'),fetch('/api/treatments'),fetch('/api/destinations')]);
+    allHospitals=await hr.json();allSpecialties=await sr.json();allTreatments=await tr.json();allDestinations=await dr.json();
     document.getElementById('hospitalId').innerHTML='<option value="">Select hospital</option>'+allHospitals.map(h=>'<option value="'+h.id+'">'+h.name+(h.city?' — '+h.city:'')+'</option>').join('');
     document.getElementById('specialty').innerHTML='<option value="">Select specialty</option>'+allSpecialties.map(s=>'<option value="'+s.name+'">'+s.name+'</option>').join('');
     renderTreatments()}catch(e){console.error('Dropdown load failed',e)}}
@@ -600,7 +618,7 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     document.getElementById('doctorName').value=docData.name||'';document.getElementById('slug').value=docData.slug||'';
     document.getElementById('doctorTitle').value=docData.title||'';document.getElementById('specialty').value=docData.specialty||'';
     document.getElementById('hospitalId').value=docData.hospital_id||'';document.getElementById('experienceYears').value=docData.experience_years||'';
-    doctorCountry=docData.country||'';
+    doctorCountry=docData.country||'';updatePermalinkCountry();
     document.getElementById('description').value=docData.description||'';
     document.getElementById('isFeatured').value=docData.is_featured?'true':'false';document.getElementById('status').value=docData.status||'draft';
     document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
@@ -610,7 +628,7 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     if(docData.image){document.getElementById('image').value=docData.image;const src=docData.image.startsWith('http')?docData.image:'https://enter.ginger.healthcare'+docData.image;document.getElementById('featImgPreview').src=src;document.getElementById('featImgPreview').style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block';document.getElementById('featImgName').textContent=docData.image.split('/').pop()}
     updateTopTitle();const badge=document.getElementById('statusBadge');badge.textContent=docData.status;badge.className='topbar__status topbar__status--'+docData.status;
     updatePublishUI();updateCharCount('metaTitle','metaTitleCount',60);updateCharCount('metaDesc','metaDescCount',160);analyzeSEO();
-    if(docData.status==='published'&&docData.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href='https://ginger.healthcare/doctors/'+docData.slug+'/';document.getElementById('viewBtn').style.display=''}
+    if(docData.status==='published'&&docData.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href=getDoctorUrl();document.getElementById('viewBtn').style.display=''}
     slugEdited=true;
     // Load doctor_treatments
     try{const tr=await fetch('/api/doctor-treatments/'+editId);if(tr.ok){const tids=await tr.json();tids.forEach(t=>selectedTreatments.add(t.treatment_id));renderTreatments()}}catch(e){}
@@ -624,12 +642,12 @@ async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
         const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
         if(r.ok){const result=await r.json();if(!editId&&result.id){window.location.href='/doctors/edit/'+result.id;return}
             docData=result;document.getElementById('statusBadge').textContent=result.status;document.getElementById('statusBadge').className='topbar__status topbar__status--'+result.status;updatePublishUI();
-            if(result.status==='published'&&result.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href='https://ginger.healthcare/doctors/'+result.slug+'/';document.getElementById('viewBtn').style.display=''}
+            if(result.status==='published'&&result.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href=getDoctorUrl();document.getElementById('viewBtn').style.display=''}
             if(isAuto){showToast('💾 Auto-saved')}else{const saved=document.getElementById('savedIndicator');saved.style.display='inline';
                 // Temporarily change button text for feedback
                 const pubBtn=document.getElementById('publishBtn');const sbBtn=document.getElementById('publishBtnSidebar');
                 const origPub=pubBtn.textContent;const origSb=sbBtn.textContent;
-                if(result.status==='published'&&result.slug){saved.innerHTML='✅ Updated! <a href="https://ginger.healthcare/doctors/'+result.slug+'/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';pubBtn.textContent='✅ Updated!';sbBtn.textContent='✅ Updated!';pubBtn.style.background='#059669';sbBtn.style.background='#059669';setTimeout(()=>{saved.style.display='none';pubBtn.textContent=origPub;sbBtn.textContent=origSb;pubBtn.style.background='';sbBtn.style.background=''},4000)}
+                if(result.status==='published'&&result.slug){saved.innerHTML='✅ Updated! <a href="'+getDoctorUrl()+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';pubBtn.textContent='✅ Updated!';sbBtn.textContent='✅ Updated!';pubBtn.style.background='#059669';sbBtn.style.background='#059669';setTimeout(()=>{saved.style.display='none';pubBtn.textContent=origPub;sbBtn.textContent=origSb;pubBtn.style.background='';sbBtn.style.background=''},4000)}
                 else{saved.innerHTML='✅ Saved!';setTimeout(()=>saved.style.display='none',3000)}}
         }else{const e=await r.json();if(!isAuto)alert('Error: '+(e.error||'Save failed'))}
     }catch(e){if(!isAuto)alert('Save failed')}}

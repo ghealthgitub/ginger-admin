@@ -70,10 +70,13 @@
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-let items=[],hospitals=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
+let items=[],hospitals=[],destinations=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
 const API='/api/doctors';
 async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
+// LOCKED: Doctor URL = /destinations/{dest-slug}/doctors/{slug}/
+function getDestSlug(doc){const c=(doc.country||'').toLowerCase();const d=destinations.find(x=>x.name.toLowerCase()===c);return d?d.slug:c.replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'india';}
 async function loadHospitals(){try{const r=await safeFetch('/api/hospitals');if(r&&r.ok){hospitals=await r.json();const s=document.getElementById('f_hospital_id');hospitals.forEach(h=>{s.innerHTML+='<option value="'+h.id+'">'+h.name+'</option>';});}}catch(e){}}
+async function loadDestinations(){try{const r=await safeFetch('/api/destinations');if(r&&r.ok)destinations=await r.json();}catch(e){}}
 async function load(){try{const r=await safeFetch(API);if(!r||!r.ok)return;items=await r.json();
 const countries=[...new Set(items.map(i=>i.country).filter(Boolean))].sort();
 document.getElementById('countryFilter').innerHTML='<option value="">All Countries</option>'+countries.map(c=>'<option>'+c+'</option>').join('');
@@ -97,8 +100,8 @@ function render(list){
         <td class="item-title-cell">
             <strong><a href="/doctors/edit/${s.id}">${esc(s.name)}</a></strong>
             <span class="item-sub">${esc(s.title||'')}</span>
-            <span class="item-slug">/doctors/${esc(s.slug)}/</span>
-            <div class="row-actions"><a href="/doctors/edit/${s.id}" style="color:var(--teal);font-weight:600">Edit in Studio</a><span class="sep">|</span><button onclick="toggleQE(${s.id})">Quick Edit</button><span class="sep">|</span><a href="https://ginger.healthcare/doctors/${esc(s.slug)}/" target="_blank">View</a><span class="sep">|</span><button class="act-del" onclick="deleteItem(${s.id})">Trash</button></div>
+            <span class="item-slug">/destinations/${getDestSlug(s)}/doctors/${esc(s.slug)}/</span>
+            <div class="row-actions"><a href="/doctors/edit/${s.id}" style="color:var(--teal);font-weight:600">Edit in Studio</a><span class="sep">|</span><button onclick="toggleQE(${s.id})">Quick Edit</button><span class="sep">|</span><a href="https://ginger.healthcare/destinations/${getDestSlug(s)}/doctors/${esc(s.slug)}/" target="_blank">View</a><span class="sep">|</span><button class="act-del" onclick="deleteItem(${s.id})">Trash</button></div>
         </td>
         <td>${s.specialty?'<span class="spec-badge">'+esc(s.specialty)+'</span>':'—'}</td>
         <td>${esc(s.country||'—')}</td>
@@ -137,6 +140,6 @@ async function saveItem(){
     try{const url=editId?API+'/'+editId:API;const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load();}else{const e=await r.json();alert(e.error||'Save failed');}}catch(e){alert('Save failed');}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearSel();closeModal();}});
-loadHospitals().then(()=>load());
+Promise.all([loadHospitals(),loadDestinations()]).then(()=>load());
 </script>
 </body></html>
