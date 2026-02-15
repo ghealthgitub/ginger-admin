@@ -524,8 +524,9 @@ function updateTopTitle(){document.getElementById('topTitle').textContent=docume
 function updatePublishUI(){const s=document.getElementById('status').value;document.getElementById('pubStatus').textContent=s==='published'?'Published':'Draft';const p=s==='published'||(docData&&docData.status==='published');document.getElementById('publishBtn').textContent=p?'Update':'Publish';document.getElementById('publishBtnSidebar').textContent=p?'🔄 Update':'Publish'}
 function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTone=btn.dataset.tone}
 
-// Auto-fill country from hospital selection
-function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country)document.getElementById('country').value=h.country}
+// Auto-fill country from hospital selection (country field removed from UI, stored internally)
+let doctorCountry='';
+function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country)doctorCountry=h.country}
 
 // === CHIP INPUTS ===
 function handleChipKey(e,type){if(e.key==='Enter'){e.preventDefault();const val=e.target.value.trim();if(!val)return;if(!qualifications.includes(val)){qualifications.push(val);renderChips('qual')}e.target.value='';resetAutoSave()}}
@@ -533,16 +534,9 @@ function renderChips(type){const arr=qualifications,wrap=document.getElementById
     wrap.innerHTML=arr.map((v,i)=>'<span class="tag-chip">'+v+'<button onclick="removeChip('+i+')">&times;</button></span>').join('')+'<input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleChipKey(event,\'qual\')">'}
 function removeChip(i){qualifications.splice(i,1);renderChips('qual');resetAutoSave()}
 
-// === LANGUAGES CHECKBOX LIST ===
-const GLOBAL_LANGUAGES=['English','Hindi','Arabic','Spanish','French','German','Mandarin','Russian','Portuguese','Turkish','Bengali','Urdu','Japanese','Korean','Thai','Malay','Tamil','Telugu','Kannada','Malayalam','Marathi','Gujarati','Punjabi','Italian','Dutch','Polish','Swedish','Greek','Hebrew','Persian','Indonesian','Vietnamese','Filipino','Swahili','Romanian','Czech','Hungarian','Ukrainian','Danish','Norwegian','Finnish','Sinhala','Nepali'];
-function renderLanguageList(){const search=(document.getElementById('langSearch').value||'').toLowerCase();
-    const filtered=GLOBAL_LANGUAGES.filter(l=>!search||l.toLowerCase().includes(search));
-    document.getElementById('langCount').textContent=languages.length+' selected';
-    if(!filtered.length){document.getElementById('langList').innerHTML='<div style="padding:12px;color:var(--gray-400);font-size:.8rem;text-align:center">No match</div>';return}
-    // Sort: selected first, then alphabetical
-    filtered.sort((a,b)=>{const aS=languages.includes(a)?0:1,bS=languages.includes(b)?0:1;return aS-bS||a.localeCompare(b)});
-    document.getElementById('langList').innerHTML=filtered.map(l=>{const ck=languages.includes(l);return '<div class="tx-item'+(ck?' checked':'')+'" onclick="toggleLang(\''+l+'\')"><input type="checkbox" '+(ck?'checked':'')+' onclick="event.stopPropagation();toggleLang(\''+l+'\')"><label>'+l+'</label></div>'}).join('')}
-function toggleLang(lang){const idx=languages.indexOf(lang);if(idx>-1)languages.splice(idx,1);else languages.push(lang);renderLanguageList();resetAutoSave()}
+// === LANGUAGES (UI removed - kept as data only) ===
+function renderLanguageList(){}
+function toggleLang(){}
 
 // === TREATMENTS MULTI-SELECT ===
 function filterTreatments(){renderTreatments()}
@@ -606,7 +600,8 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     document.getElementById('doctorName').value=docData.name||'';document.getElementById('slug').value=docData.slug||'';
     document.getElementById('doctorTitle').value=docData.title||'';document.getElementById('specialty').value=docData.specialty||'';
     document.getElementById('hospitalId').value=docData.hospital_id||'';document.getElementById('experienceYears').value=docData.experience_years||'';
-    document.getElementById('country').value=docData.country||'';document.getElementById('description').value=docData.description||'';
+    doctorCountry=docData.country||'';
+    document.getElementById('description').value=docData.description||'';
     document.getElementById('isFeatured').value=docData.is_featured?'true':'false';document.getElementById('status').value=docData.status||'draft';
     document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
     if(docData.long_description) quill.root.innerHTML=docData.long_description;
@@ -622,7 +617,7 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
 }catch(e){console.error('Load failed',e)}}
 
 async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
-    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:document.getElementById('specialty').value,hospital_id:document.getElementById('hospitalId').value||null,country:document.getElementById('country').value,experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
+    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:document.getElementById('specialty').value,hospital_id:document.getElementById('hospitalId').value||null,country:doctorCountry,experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
     if(!data.name){if(!isAuto)alert('Doctor name is required');return}
     if(!data.slug) data.slug=data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?'/api/doctors/'+editId:'/api/doctors';const method=editId?'PUT':'POST';
