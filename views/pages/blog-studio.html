@@ -19,10 +19,25 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
 .topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
 .topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
-.topbar__btn--publish{background:var(--teal);color:#fff}
-.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--publish{background:var(--ginger);color:#fff;box-shadow:0 2px 8px rgba(242,101,34,.25)}
+.topbar__btn--publish:hover{background:var(--ginger-dark);box-shadow:0 4px 14px rgba(242,101,34,.35);transform:translateY(-1px)}
+.topbar__btn--view{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(14,165,160,.25);text-decoration:none}
+.topbar__btn--view:hover{background:#0c918c;box-shadow:0 4px 14px rgba(14,165,160,.35);transform:translateY(-1px)}
+.topbar__btn--update{background:var(--ginger);color:#fff}
+.topbar__btn--update:hover{background:var(--ginger-dark)}
 .topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200)}
 .topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
+/* Sidebar publish buttons — state-aware */
+.pub-btn{width:100%;padding:9px;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;border:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.pub-btn:active{transform:scale(.98)}
+.pub-btn--publish{background:var(--ginger);color:#fff;box-shadow:0 2px 10px rgba(242,101,34,.25)}
+.pub-btn--publish:hover{background:var(--ginger-dark);box-shadow:0 4px 16px rgba(242,101,34,.35)}
+.pub-btn--draft{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-200)}
+.pub-btn--draft:hover{background:var(--gray-100)}
+.pub-btn--view{background:var(--teal);color:#fff;box-shadow:0 2px 10px rgba(14,165,160,.25)}
+.pub-btn--view:hover{background:#0c918c;box-shadow:0 4px 16px rgba(14,165,160,.35)}
+.pub-btn--update{background:var(--ginger);color:#fff}
+.pub-btn--update:hover{background:var(--ginger-dark)}
 
 /* LAYOUT */
 .studio{display:flex;height:calc(100vh - 48px)}
@@ -184,7 +199,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .publish-link{font-size:.78rem;color:#EF4444;cursor:pointer;border:none;background:none;font-family:inherit;padding:0;margin-top:8px}
 .publish-link:hover{text-decoration:underline}
 
-/* SEO Score badge */
+/* SEO Score — Donut Chart */
+.seo-donut{position:relative;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.seo-donut svg{transform:rotate(-90deg);width:48px;height:48px}
+.seo-donut__bg{fill:none;stroke:var(--gray-200);stroke-width:4}
+.seo-donut__fill{fill:none;stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .6s ease,stroke .4s}
+.seo-donut__text{position:absolute;font-size:.7rem;font-weight:700;line-height:1}
 .seo-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:4px;font-size:.78rem;font-weight:700}
 .seo-badge--green{background:#D1FAE5;color:#059669}
 .seo-badge--yellow{background:#FEF3C7;color:#D97706}
@@ -206,8 +226,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .tag-chip button{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.8rem;padding:0;line-height:1}.tag-chip button:hover{color:#EF4444}
 .tag-input{border:none;outline:none;font-family:inherit;font-size:.82rem;flex:1;min-width:60px;padding:2px}
 
-/* Content Analysis */
-.analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
+/* Content Analysis — color-coded */
+.analysis-item{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--gray-600);margin-bottom:6px;padding:4px 0}
+.analysis-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.analysis-dot--green{background:#059669}
+.analysis-dot--amber{background:#D97706}
+.analysis-dot--red{background:#DC2626}
+.analysis-dot--info{background:#3B82F6}
 
 /* Revisions */
 .rev-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:.78rem;cursor:pointer;transition:background .1s;margin:0 -14px;padding-left:14px;padding-right:14px}
@@ -276,8 +301,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="topbar__actions">
         <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()" title="Undo recent changes">↩ Undo</button>
         <button class="topbar__btn topbar__btn--preview" onclick="togglePreview()">👁 Preview</button>
-        <button class="topbar__btn topbar__btn--save" onclick="savePost('draft')">Save Draft</button>
-        <button class="topbar__btn topbar__btn--publish" id="publishBtn" onclick="savePost('published')">Publish</button>
+        <!-- Draft state buttons -->
+        <button class="topbar__btn topbar__btn--save" id="topDraftBtn" onclick="savePost('draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" id="topPublishBtn" onclick="savePost('published')">Publish</button>
+        <!-- Published state buttons (hidden by default) -->
+        <a class="topbar__btn topbar__btn--view" id="topViewBtn" style="display:none" target="_blank">View Article ↗</a>
+        <button class="topbar__btn topbar__btn--update" id="topUpdateBtn" style="display:none" onclick="savePost('published')">Update</button>
     </div>
 </div>
 
@@ -382,14 +411,25 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="publish-row"><span>📌</span> <strong>Status:</strong> <span id="pubStatus">Draft</span> <a onclick="document.getElementById('status').focus()">Edit</a></div>
             <div class="publish-row"><span>👁</span> <strong>Visibility:</strong> Public</div>
             <div class="publish-row" id="pubDateRow" style="display:none"><span>📅</span> <strong>Published:</strong> <span id="pubDate"></span></div>
-            <div class="publish-row" id="seoRow"><span>📊</span> <strong>SEO:</strong> <span class="seo-badge seo-badge--gray" id="seoBadge">0 / 100</span></div>
+            <div class="publish-row" id="seoRow">
+                <span>📊</span> <strong>SEO:</strong>
+                <div class="seo-donut" id="seoDonut">
+                    <svg viewBox="0 0 36 36"><circle class="seo-donut__bg" cx="18" cy="18" r="15.9"/><circle class="seo-donut__fill" id="seoArc" cx="18" cy="18" r="15.9" stroke-dasharray="100" stroke-dashoffset="100"/></svg>
+                    <span class="seo-donut__text" id="seoText">0</span>
+                </div>
+            </div>
             <select class="sb-select" id="status" onchange="updatePublishUI();resetAutoSave()" style="margin-bottom:0">
                 <option value="draft">📝 Draft</option>
                 <option value="published">✅ Published</option>
             </select>
-            <div class="publish-btns">
-                <button class="btn-save" onclick="savePost('draft')">Save Draft</button>
-                <button class="btn-publish" id="publishBtnSidebar" onclick="savePost('published')">Publish</button>
+            <div class="publish-btns" id="pubBtnsDraft">
+                <button class="pub-btn pub-btn--publish" id="publishBtnSidebar" onclick="savePost('published')">🚀 Publish</button>
+                <button class="pub-btn pub-btn--draft" onclick="savePost('draft')">Save Draft</button>
+            </div>
+            <div class="publish-btns" id="pubBtnsPublished" style="display:none">
+                <a class="pub-btn pub-btn--view" id="viewBtnSidebar" target="_blank" style="text-decoration:none;color:#fff">👁 View Article ↗</a>
+                <button class="pub-btn pub-btn--update" onclick="savePost('published')">💾 Update Article</button>
+                <button class="pub-btn pub-btn--draft" onclick="savePost('draft')">Revert to Draft</button>
             </div>
             <button class="publish-link" id="trashBtn" onclick="if(confirm('Move to trash?'))window.location='/blog'">Move to Trash</button>
         </div>
@@ -658,18 +698,18 @@ function updateStats() {
     document.getElementById('wordCount').textContent = words + ' words';
     document.getElementById('readTime').textContent = readMin + ' min read';
     const analysis = [];
-    if (words < 300) analysis.push('<div class="analysis-item">⚠️ Content is short (' + words + ' words, aim for 600+)</div>');
-    else if (words > 600) analysis.push('<div class="analysis-item">✅ Good length (' + words + ' words)</div>');
-    else analysis.push('<div class="analysis-item">📝 ' + words + ' words (aim for 600+)</div>');
+    if (words < 300) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--red"></span>Content is short (' + words + ' words, aim for 600+)</div>');
+    else if (words > 600) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--green"></span>Good length (' + words + ' words)</div>');
+    else analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--amber"></span>' + words + ' words (aim for 600+)</div>');
     const h2Count = (quill.root.innerHTML.match(/<h2/g) || []).length;
-    if (h2Count === 0) analysis.push('<div class="analysis-item">⚠️ No H2 headings</div>');
-    else analysis.push('<div class="analysis-item">✅ ' + h2Count + ' heading(s)</div>');
+    if (h2Count === 0) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--red"></span>No H2 headings</div>');
+    else analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--green"></span>' + h2Count + ' heading(s)</div>');
     const links = (quill.root.innerHTML.match(/<a /g) || []).length;
-    if (links === 0) analysis.push('<div class="analysis-item">⚠️ No links found</div>');
-    else analysis.push('<div class="analysis-item">✅ ' + links + ' link(s)</div>');
+    if (links === 0) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--amber"></span>No links found</div>');
+    else analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--green"></span>' + links + ' link(s)</div>');
     const imgs = (quill.root.innerHTML.match(/<img/g) || []).length;
-    if (imgs === 0) analysis.push('<div class="analysis-item">💡 Consider adding images</div>');
-    else analysis.push('<div class="analysis-item">✅ ' + imgs + ' image(s)</div>');
+    if (imgs === 0) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--info"></span>Consider adding images</div>');
+    else analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--green"></span>' + imgs + ' image(s)</div>');
     document.getElementById('contentAnalysis').innerHTML = analysis.join('');
 }
 
@@ -688,9 +728,15 @@ function analyzeSEO() {
     if (keywords && title.toLowerCase().indexOf(keywords.split(',')[0].trim().toLowerCase()) !== -1) score += 10;
     if (content.split(/\s+/).length >= 600) score += 15;
     if ((quill.root.innerHTML.match(/<h2/g) || []).length > 0) score += 10;
-    const badge = document.getElementById('seoBadge');
-    badge.textContent = score + ' / 100';
-    badge.className = 'seo-badge ' + (score >= 70 ? 'seo-badge--green' : score >= 40 ? 'seo-badge--yellow' : score > 0 ? 'seo-badge--red' : 'seo-badge--gray');
+    // Update donut chart
+    const circumference = 100;
+    const offset = circumference - (score / 100 * circumference);
+    const arc = document.getElementById('seoArc');
+    arc.style.strokeDashoffset = offset;
+    arc.style.stroke = score >= 70 ? '#059669' : score >= 40 ? '#D97706' : score > 0 ? '#DC2626' : 'var(--gray-300)';
+    const text = document.getElementById('seoText');
+    text.textContent = score;
+    text.style.color = score >= 70 ? '#059669' : score >= 40 ? '#D97706' : score > 0 ? '#DC2626' : 'var(--gray-400)';
 }
 
 function updateCharCount(inputId, countId, max) {
@@ -786,11 +832,31 @@ function updateTopTitle() {
 
 function updatePublishUI() {
     const status = document.getElementById('status').value;
-    document.getElementById('pubStatus').textContent = status === 'published' ? 'Published' : 'Draft';
-    // Update button text
     const isPublished = status === 'published' || (postData && postData.status === 'published');
-    document.getElementById('publishBtn').textContent = isPublished ? 'Update' : 'Publish';
-    document.getElementById('publishBtnSidebar').textContent = isPublished ? 'Update' : 'Publish';
+    document.getElementById('pubStatus').textContent = isPublished ? 'Published' : 'Draft';
+    const slug = postData.slug || document.getElementById('slug').value;
+    const viewUrl = 'https://ginger.healthcare/blog/' + slug + '/';
+    if (isPublished && slug) {
+        // Top bar: show View + Update, hide Draft + Publish
+        document.getElementById('topDraftBtn').style.display = 'none';
+        document.getElementById('topPublishBtn').style.display = 'none';
+        document.getElementById('topViewBtn').style.display = '';
+        document.getElementById('topViewBtn').href = viewUrl;
+        document.getElementById('topUpdateBtn').style.display = '';
+        // Sidebar: show published buttons
+        document.getElementById('pubBtnsDraft').style.display = 'none';
+        document.getElementById('pubBtnsPublished').style.display = '';
+        document.getElementById('viewBtnSidebar').href = viewUrl;
+    } else {
+        // Top bar: show Draft + Publish, hide View + Update
+        document.getElementById('topDraftBtn').style.display = '';
+        document.getElementById('topPublishBtn').style.display = '';
+        document.getElementById('topViewBtn').style.display = 'none';
+        document.getElementById('topUpdateBtn').style.display = 'none';
+        // Sidebar: show draft buttons
+        document.getElementById('pubBtnsDraft').style.display = '';
+        document.getElementById('pubBtnsPublished').style.display = 'none';
+    }
 }
 
 function setTone(btn) {
@@ -860,11 +926,7 @@ async function loadPost() {
         updateCharCount('metaDesc','metaDescCount',160);
         analyzeSEO();
         // Update publish UI
-        document.getElementById('pubStatus').textContent = postData.status === 'published' ? 'Published' : 'Draft';
-        if (postData.status === 'published') {
-            document.getElementById('publishBtn').textContent = 'Update';
-            document.getElementById('publishBtnSidebar').textContent = 'Update';
-        }
+        updatePublishUI();
         if (postData.published_at) {
             document.getElementById('pubDateRow').style.display = '';
             document.getElementById('pubDate').textContent = new Date(postData.published_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'});
@@ -920,13 +982,8 @@ async function savePost(statusOverride) {
             } else {
                 const saved = document.getElementById('savedIndicator');
                 saved.style.display = 'inline';
-                if (result.status === 'published' && result.slug) {
-                    saved.innerHTML = '✅ Published! <a href="https://ginger.healthcare/blog/' + result.slug + '/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Post →</a>';
-                    setTimeout(() => saved.style.display = 'none', 8000);
-                } else {
-                    saved.innerHTML = '✅ Saved!';
-                    setTimeout(() => saved.style.display = 'none', 3000);
-                }
+                saved.innerHTML = '✅ Saved!';
+                setTimeout(() => saved.style.display = 'none', 3000);
             }
         } else {
             const e = await r.json();
