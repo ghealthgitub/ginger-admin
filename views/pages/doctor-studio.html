@@ -21,7 +21,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
 .topbar__btn--publish{background:var(--teal);color:#fff}
 .topbar__btn--publish:hover{background:#0c918c}
-.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200)}
+.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200);text-decoration:none}
 .topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
 .topbar__btn--undo{background:var(--gray-50);color:var(--gray-500);border:1px solid var(--gray-200);font-size:.78rem}
 .topbar__btn--undo:hover{background:#FEF3C7;color:#D97706;border-color:#FCD34D}
@@ -60,6 +60,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-input textarea:focus{outline:none;border-color:var(--teal)}
 .ai-send{width:32px;height:32px;background:var(--teal);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
 .ai-send:hover{background:#0c918c}.ai-send:disabled{opacity:.4}
+.ai-attach{width:32px;height:28px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.ai-attach:hover{background:var(--gray-200)}
+.ai-input__tools{display:flex;gap:6px;padding-top:8px}
+.ai-tool-btn{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-tool-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 .ai-typing{display:flex;gap:4px;padding:6px 10px}.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gray-400);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 
@@ -101,7 +106,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .preview-pane.active{display:block}
 .preview-pane iframe{width:100%;height:100%;border:none}
 
-/* RIGHT: Sidebar (WordPress-style) */
+/* RIGHT: Sidebar */
 .panel-right{width:340px;min-width:260px;background:var(--white);border-left:1px solid var(--gray-200);overflow-y:auto;flex-shrink:0}
 .panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 .sb-box{border:1px solid var(--gray-200);border-radius:8px;margin:12px 12px 0;overflow:hidden}
@@ -123,13 +128,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .sb-hint{font-size:.72rem;color:var(--gray-400);margin:-6px 0 10px}
 .sb-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
-/* Publish Box (special) */
+/* Publish Box */
 .publish-box{border-color:var(--teal)}
 .publish-box .sb-box__head{background:rgba(14,165,160,.04);border-bottom-color:rgba(14,165,160,.15)}
 .publish-row{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--gray-600);margin-bottom:8px}
 .publish-row span:first-child{color:var(--gray-400);width:14px;text-align:center}
-.publish-row a{color:var(--teal);font-size:.72rem;font-weight:600;cursor:pointer;text-decoration:none;margin-left:auto}
-.publish-row a:hover{text-decoration:underline}
 .publish-btns{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)}
 .publish-btns .btn-publish{flex:1;padding:8px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
 .publish-btns .btn-publish:hover{background:#0c918c}
@@ -137,6 +140,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .publish-btns .btn-save:hover{background:var(--gray-100)}
 .publish-link{font-size:.78rem;color:#EF4444;cursor:pointer;border:none;background:none;font-family:inherit;padding:0;margin-top:8px}
 .publish-link:hover{text-decoration:underline}
+.publish-link--view{color:var(--teal)}
 
 /* Featured Image */
 .feat-img-preview{width:100%;border-radius:6px;object-fit:cover;border:1px solid var(--gray-200);margin-bottom:8px;display:none;max-height:160px;background:var(--gray-50)}
@@ -153,6 +157,20 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .tag-chip button{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.8rem;padding:0;line-height:1}.tag-chip button:hover{color:#EF4444}
 .tag-input{border:none;outline:none;font-family:inherit;font-size:.82rem;flex:1;min-width:60px;padding:2px}
 
+/* Treatments multi-select */
+.tx-list{max-height:200px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:10px}
+.tx-list::-webkit-scrollbar{width:3px}.tx-list::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.tx-item{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:.8rem;border-bottom:1px solid var(--gray-100);cursor:pointer;transition:background .1s}
+.tx-item:last-child{border:none}
+.tx-item:hover{background:var(--gray-50)}
+.tx-item input{accent-color:var(--teal);width:15px;height:15px;cursor:pointer}
+.tx-item label{cursor:pointer;flex:1;color:var(--gray-600)}
+.tx-item.checked{background:rgba(14,165,160,.04)}
+.tx-item.checked label{color:var(--teal);font-weight:600}
+.tx-search{width:100%;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.78rem;margin-bottom:6px}
+.tx-search:focus{outline:none;border-color:var(--teal)}
+.tx-selected{font-size:.72rem;color:var(--teal);font-weight:600;margin-bottom:6px}
+
 /* SEO Score badge */
 .seo-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:4px;font-size:.78rem;font-weight:700}
 .seo-badge--green{background:#D1FAE5;color:#059669}
@@ -163,11 +181,44 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
-/* Autosave toast */
+/* Toast */
 .autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
-</style>
-</head>
-<body>
+
+/* Media Picker Modal */
+.mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+.mp-overlay.active{display:flex}
+.mp-modal{background:#fff;border-radius:14px;width:100%;max-width:860px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;position:relative;min-width:500px;min-height:350px}
+.mp-drag-bar{cursor:move;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-200);user-select:none}
+.mp-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.mp-close:hover{background:var(--gray-100);color:var(--navy)}
+.mp-tabs{display:flex;gap:0;border-bottom:1px solid var(--gray-200)}
+.mp-tab{padding:10px 20px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray-400);border-bottom:2px solid transparent;font-family:inherit}
+.mp-tab:hover{color:var(--navy)}
+.mp-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.mp-body{flex:1;overflow-y:auto;padding:16px 20px;min-height:0}
+.mp-upload-zone{border:2px dashed var(--gray-300);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s}
+.mp-upload-zone:hover{border-color:var(--ginger);background:rgba(242,101,34,.03)}
+.mp-search{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;font-family:inherit;margin-bottom:12px}
+.mp-search:focus{border-color:var(--teal);outline:none}
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:1;background:var(--gray-100)}
+.mp-item:hover{border-color:var(--teal)}
+.mp-item.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.3)}
+.mp-item.selected::after{content:'✓';position:absolute;top:6px;right:6px;width:22px;height:22px;background:var(--teal);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700}
+.mp-item img{width:100%;height:100%;object-fit:cover}
+.mp-sidebar{width:260px;border-left:1px solid var(--gray-200);padding:16px;display:none;flex-shrink:0;overflow-y:auto;min-height:0}
+.mp-sidebar.active{display:block}
+.mp-sidebar__img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;margin-bottom:10px;background:var(--gray-100)}
+.mp-sidebar__name{font-size:.78rem;font-weight:600;color:var(--navy);margin-bottom:4px;word-break:break-all}
+.mp-sidebar__meta{font-size:.7rem;color:var(--gray-400);margin-bottom:10px}
+.mp-sidebar label{font-size:.72rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:3px}
+.mp-sidebar input,.mp-sidebar textarea{width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:.78rem;font-family:inherit;margin-bottom:8px;box-sizing:border-box}
+.mp-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50)}
+.mp-footer__info{font-size:.8rem;color:var(--gray-400)}
+.mp-set-btn{padding:8px 20px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit}
+.mp-set-btn:hover{background:#0c918c}
+.mp-set-btn:disabled{background:var(--gray-300);cursor:not-allowed}
+</style></head><body>
 
 <!-- TOP BAR -->
 <div class="topbar">
@@ -178,7 +229,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="topbar__actions">
         <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()">↩ Undo</button>
         <button class="topbar__btn topbar__btn--preview" onclick="togglePreview()">👁 Preview</button>
-        <a class="topbar__btn topbar__btn--preview" id="viewArticle" href="#" target="_blank" style="display:none;text-decoration:none">● View Profile ↗</a>
+        <a class="topbar__btn topbar__btn--preview" id="viewArticle" href="#" target="_blank" style="display:none">● View Profile ↗</a>
+        <button class="topbar__btn topbar__btn--save" onclick="saveDoctor('draft')">Save Draft</button>
         <button class="topbar__btn topbar__btn--publish" id="publishBtn" onclick="saveDoctor('published')">Publish</button>
     </div>
 </div>
@@ -209,7 +261,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <button class="ai-qbtn" onclick="aiCmd('Write a section about this doctor\'s qualifications and training')">🎓 Qualifications</button>
         <button class="ai-qbtn" onclick="aiCmd('Add relevant patient-facing CTAs with links to /get-quote/ and /book-consultation/')">🔗 Add CTAs</button>
         <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin:4px 0 2px">🔧 OPTIMIZE</div>
-        <button class="ai-qbtn" onclick="aiCmd('Generate SEO meta title, meta description, and focus keywords for this doctor profile')">🎯 Auto SEO</button>
+        <button class="ai-qbtn" onclick="aiCmd('Generate SEO meta title, meta description for this doctor profile')">🎯 Auto SEO</button>
         <button class="ai-qbtn" onclick="aiCmd('Improve the current content: make it more professional and patient-friendly')">💎 Improve</button>
         <button class="ai-qbtn" onclick="aiCmd('Fix grammar, spelling, and punctuation in the current content')">✏ Grammar</button>
         <button class="ai-qbtn" onclick="aiCmd('Make the current content more concise without losing key information')">✂ Shorten</button>
@@ -217,7 +269,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="ai-input">
         <div class="ai-input__row">
             <textarea id="aiInput" placeholder="Ask AI to write, edit, improve..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiCmd()}"></textarea>
-            <button class="ai-send" id="aiSendBtn" onclick="aiCmd()">▶</button>
+            <div style="display:flex;flex-direction:column;gap:4px">
+                <button class="ai-send" id="aiSendBtn" onclick="aiCmd()">▶</button>
+                <label class="ai-attach" title="Attach file"><input type="file" id="aiFileInput" style="display:none" accept="image/*,.txt,.md" onchange="handleFileAttach(this)">📎</label>
+            </div>
+        </div>
+        <div class="ai-input__tools">
+            <label class="ai-tool-btn" title="Import files into editor"><input type="file" style="display:none" accept=".txt,image/*" onchange="importFile(this)">📄 Import files & images</label>
         </div>
     </div>
 </div>
@@ -247,12 +305,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span id="readTime">0 min read</span>
         </div>
     </div>
-    <div class="editor-wrap" id="editorWrap">
-        <div id="editor"></div>
-    </div>
-    <div class="preview-pane" id="previewPane">
-        <iframe id="previewFrame" src="about:blank"></iframe>
-    </div>
+    <div class="editor-wrap" id="editorWrap"><div id="editor"></div></div>
+    <div class="preview-pane" id="previewPane"><iframe id="previewFrame" src="about:blank"></iframe></div>
 </div>
 
 <!-- DRAG HANDLE 2 -->
@@ -261,15 +315,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <!-- RIGHT: Doctor Settings Sidebar -->
 <div class="panel-right" id="panelRight">
 
-    <!-- Publish Box -->
+    <!-- Publish -->
     <div class="sb-box publish-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">📋 Publish</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
             <div class="publish-row"><span>📌</span> <strong>Status:</strong> <span id="pubStatus">Draft</span></div>
-            <div class="publish-row" id="seoRow"><span>📊</span> <strong>SEO:</strong> <span class="seo-badge seo-badge--gray" id="seoBadge">0</span></div>
+            <div class="publish-row"><span>📊</span> <strong>SEO:</strong> <span class="seo-badge seo-badge--gray" id="seoBadge">0</span></div>
             <select class="sb-select" id="status" onchange="updatePublishUI();resetAutoSave()" style="margin-bottom:0">
                 <option value="draft">📝 Draft</option>
                 <option value="published">✅ Published</option>
@@ -278,7 +331,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                 <button class="btn-save" onclick="saveDoctor('draft')">Save Draft</button>
                 <button class="btn-publish" id="publishBtnSidebar" onclick="saveDoctor('published')">Publish</button>
             </div>
-            <button class="publish-link" id="viewBtn" style="display:none" onclick="window.open('https://ginger.healthcare/doctors/'+document.getElementById('slug').value+'/','_blank')">● View Profile ↗</button>
+            <button class="publish-link publish-link--view" id="viewBtn" style="display:none" onclick="window.open('https://ginger.healthcare/doctors/'+document.getElementById('slug').value+'/','_blank')">● View Profile ↗</button>
             <button class="publish-link" onclick="if(confirm('Move to trash?'))window.location='/doctors'">Move to Trash</button>
         </div>
     </div>
@@ -286,44 +339,45 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <!-- Doctor Info -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">👨‍⚕️ Doctor Info</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">👨‍⚕️ Doctor Info</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
             <div class="sb-label">Title / Position</div>
             <input class="sb-input" id="doctorTitle" placeholder="e.g. Chairman — Cardiac Surgery" oninput="resetAutoSave()">
             <div class="sb-label">Specialty</div>
-            <select class="sb-select" id="specialty" onchange="resetAutoSave()">
-                <option value="">Select specialty</option>
-            </select>
+            <select class="sb-select" id="specialty" onchange="resetAutoSave();filterTreatments()"><option value="">Select specialty</option></select>
             <div class="sb-label">Hospital</div>
-            <select class="sb-select" id="hospitalId" onchange="resetAutoSave()">
-                <option value="">Select hospital</option>
-            </select>
+            <select class="sb-select" id="hospitalId" onchange="resetAutoSave();autoFillCountry()"><option value="">Select hospital</option></select>
             <div class="sb-row">
-                <div>
-                    <div class="sb-label">Experience (years)</div>
-                    <input class="sb-input" id="experienceYears" type="number" placeholder="e.g. 30" oninput="resetAutoSave()">
-                </div>
-                <div>
-                    <div class="sb-label">Country</div>
-                    <input class="sb-input" id="country" placeholder="e.g. India" oninput="resetAutoSave()">
-                </div>
+                <div><div class="sb-label">Experience (years)</div><input class="sb-input" id="experienceYears" type="number" placeholder="e.g. 30" oninput="resetAutoSave()"></div>
+                <div><div class="sb-label">Country</div><input class="sb-input" id="country" placeholder="e.g. India" oninput="resetAutoSave()"></div>
             </div>
             <div class="sb-label">Short Description</div>
             <textarea class="sb-textarea" id="description" placeholder="Brief one-line description..." oninput="resetAutoSave()"></textarea>
         </div>
     </div>
 
+    <!-- Treatments -->
+    <div class="sb-box">
+        <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
+            <div class="sb-box__title">💊 Treatments</div><span class="sb-box__toggle">▾</span>
+        </div>
+        <div class="sb-box__body">
+            <div class="tx-selected" id="txCount">0 selected</div>
+            <input class="tx-search" id="txSearch" placeholder="Search treatments..." oninput="renderTreatments()">
+            <div class="tx-list" id="txList"><div style="padding:12px;color:var(--gray-400);font-size:.8rem;text-align:center">Loading treatments...</div></div>
+            <div class="sb-hint">Select treatments this doctor performs</div>
+        </div>
+    </div>
+
     <!-- Qualifications -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">🎓 Qualifications</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">🎓 Qualifications</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
             <div class="tags-wrap" id="qualWrap" onclick="document.getElementById('qualInput').focus()">
-                <input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleQualKey(event)">
+                <input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleChipKey(event,'qual')">
             </div>
             <div class="sb-hint">Press Enter to add (e.g. MBBS, MS, MCh)</div>
         </div>
@@ -332,12 +386,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <!-- Languages -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">🗣 Languages</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">🗣 Languages</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
             <div class="tags-wrap" id="langWrap" onclick="document.getElementById('langInput').focus()">
-                <input class="tag-input" id="langInput" placeholder="Add language..." onkeydown="handleLangKey(event)">
+                <input class="tag-input" id="langInput" placeholder="Add language..." onkeydown="handleChipKey(event,'lang')">
             </div>
             <div class="sb-hint">Press Enter or comma to add</div>
         </div>
@@ -346,13 +399,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <!-- Profile Photo -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">🖼 Profile Photo</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">🖼 Profile Photo</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <input class="sb-input" id="image" placeholder="Image URL or upload path" oninput="updatePhotoPreview();resetAutoSave()">
-            <img class="feat-img-preview" id="photoPreview" style="display:none">
-            <div class="sb-label" style="margin-top:4px">Featured</div>
+            <div id="featImgBox" style="cursor:pointer" onclick="openMediaPicker()">
+                <img class="feat-img-preview" id="featImgPreview">
+                <div class="feat-img-empty" id="featImgEmpty"><div style="font-size:1.5rem;margin-bottom:4px">🖼</div>Click to set profile photo</div>
+            </div>
+            <div id="featImgActions" style="display:none;margin-top:6px">
+                <span id="featImgName" style="font-size:.72rem;color:var(--gray-500);display:block;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <div class="feat-img-btns">
+                    <button class="feat-img-btn" onclick="openMediaPicker()">Change</button>
+                    <button class="feat-img-btn" onclick="removeFeatImage()" style="color:#EF4444">Remove</button>
+                </div>
+            </div>
+            <input type="hidden" id="image">
+            <div class="sb-label" style="margin-top:10px">Featured</div>
             <select class="sb-select" id="isFeatured" onchange="resetAutoSave()">
                 <option value="false">No</option>
                 <option value="true">⭐ Yes — Featured Doctor</option>
@@ -363,8 +425,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <!-- SEO -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">🔍 SEO Settings</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">🔍 SEO Settings</div><span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
             <div class="sb-label">Meta Title <span class="char-count" id="metaTitleCount">0/60</span></div>
@@ -377,436 +438,251 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <!-- Content Analysis -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="sb-box__title">📊 Content Analysis</div>
-            <span class="sb-box__toggle">▾</span>
+            <div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span>
         </div>
-        <div class="sb-box__body" id="contentAnalysis" style="font-size:.78rem;color:var(--gray-500);line-height:1.8">
-            Write content to see analysis...
-        </div>
+        <div class="sb-box__body" id="contentAnalysis" style="font-size:.78rem;color:var(--gray-500);line-height:1.8">Write content to see analysis...</div>
     </div>
-
 </div>
 </div>
 
 <div class="autosave-toast" id="autosaveToast">💾 Auto-saved</div>
 
+<!-- Media Picker Modal -->
+<div class="mp-overlay" id="mediaPicker" onclick="if(event.target===this)closeMediaPicker()">
+<div class="mp-modal" id="mpModal">
+    <div class="mp-drag-bar"><h3 style="font-family:'Playfair Display',serif;font-size:1.05rem;margin:0;color:var(--navy)">Profile Photo</h3><button class="mp-close" onclick="closeMediaPicker()">&times;</button></div>
+    <div class="mp-tabs">
+        <button class="mp-tab active" onclick="mpSwitchTab('library',this)">Media Library</button>
+        <button class="mp-tab" onclick="mpSwitchTab('upload',this)">Upload Files</button>
+    </div>
+    <div style="display:flex;flex:1;overflow:hidden;min-height:0">
+        <div class="mp-body" id="mpBody">
+            <div id="mpLibraryView">
+                <input type="text" class="mp-search" id="mpSearch" placeholder="Search media..." oninput="mpFilter()">
+                <div class="mp-grid" id="mpGrid"><div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div></div>
+            </div>
+            <div id="mpUploadView" style="display:none">
+                <div class="mp-upload-zone" id="mpUploadZone">
+                    <input type="file" id="mpFileInput" style="display:none" accept="image/*" multiple onchange="mpUploadFiles(this)">
+                    <div style="font-size:2rem;margin-bottom:8px">📁</div>
+                    <p style="color:var(--gray-500)"><strong>Click to upload</strong> or drag and drop</p>
+                    <p style="font-size:.8rem;color:var(--gray-400)">JPG, PNG, WebP — Max 10MB</p>
+                    <div id="mpUploadProgress" style="display:none;margin-top:10px;font-size:.85rem;color:var(--teal);font-weight:600"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mp-sidebar" id="mpSidebar">
+            <img class="mp-sidebar__img" id="mpSidebarImg">
+            <div class="mp-sidebar__name" id="mpSidebarName"></div>
+            <div class="mp-sidebar__meta" id="mpSidebarMeta"></div>
+            <label>Alt Text</label>
+            <input type="text" id="mpAltText" placeholder="Describe the image">
+            <label>File URL</label>
+            <input type="text" id="mpFileUrl" readonly style="background:var(--gray-50);cursor:pointer" onclick="navigator.clipboard.writeText(this.value)">
+        </div>
+    </div>
+    <div class="mp-footer">
+        <div class="mp-footer__info" id="mpFooterInfo"></div>
+        <button class="mp-set-btn" id="mpSetBtn" disabled onclick="mpSetPhoto()">Set Profile Photo</button>
+    </div>
+</div>
+</div>
+
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-function waitForQuill(cb, attempts) {
-    if (typeof Quill !== 'undefined') return cb();
-    if (attempts > 40) return console.error('Quill failed to load');
-    setTimeout(() => waitForQuill(cb, (attempts||0)+1), 150);
-}
-waitForQuill(function() {
+function waitForQuill(cb,a){if(typeof Quill!=='undefined')return cb();if(a>40)return;setTimeout(()=>waitForQuill(cb,(a||0)+1),150)}
+waitForQuill(function(){
 
 const pathParts = window.location.pathname.split('/');
-const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
-let docData = {};
-let currentTone = 'professional';
-let autoSaveTimer = null;
-let qualifications = [];
-let languages = [];
-let slugEdited = false;
-let allHospitals = [];
-let allSpecialties = [];
+const editId = pathParts[2]==='edit' ? pathParts[3] : null;
+let docData={}, currentTone='professional', autoSaveTimer=null, slugEdited=false;
+let qualifications=[], languages=[], selectedTreatments=new Set();
+let allHospitals=[], allSpecialties=[], allTreatments=[];
 
-const quill = new Quill('#editor', {
-    theme: 'snow',
-    placeholder: 'Write the doctor\'s detailed bio, expertise, and background...',
-    modules: { toolbar: [
-        [{'header':[1,2,3,false]}],['bold','italic','underline','strike'],
-        [{'color':[]},{'background':[]}],[{'list':'ordered'},{'list':'bullet'}],
-        ['blockquote','code-block'],['link','image'],[{'align':[]}],['clean']
-    ]}
-});
+const quill = new Quill('#editor',{theme:'snow',placeholder:'Write the doctor\'s detailed bio, expertise, and background...',modules:{toolbar:[[{'header':[1,2,3,false]}],['bold','italic','underline','strike'],[{'color':[]},{'background':[]}],[{'list':'ordered'},{'list':'bullet'}],['blockquote','code-block'],['link','image'],[{'align':[]}],['clean']]}});
+quill.on('text-change',()=>{updateStats();analyzeSEO();resetAutoSave()});
 
-quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
+// === IMAGE PASTE/DROP ===
+quill.root.addEventListener('paste',function(e){const items=(e.clipboardData||e.originalEvent.clipboardData).items;for(let i=0;i<items.length;i++){if(items[i].type.indexOf('image')!==-1){e.preventDefault();uploadImageToServer(items[i].getAsFile()).then(url=>{if(url){const range=quill.getSelection(true);quill.insertEmbed(range.index,'image',url);quill.setSelection(range.index+1)}});return}}});
+quill.root.addEventListener('drop',function(e){const files=e.dataTransfer.files;if(files.length){for(let i=0;i<files.length;i++){if(files[i].type.startsWith('image/')){e.preventDefault();uploadImageToServer(files[i]).then(url=>{if(url){const range=quill.getSelection(true);quill.insertEmbed(range?range.index:quill.getLength(),'image',url)}});return}}}});
+async function uploadImageToServer(file){const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){const d=await r.json();return d.url}}catch(e){}return null}
 
-function resetAutoSave() {
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => saveDoctor('auto'), 15000);
-}
+function resetAutoSave(){clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>saveDoctor('auto'),15000)}
+function updateStats(){const text=quill.getText().trim();const words=text?text.split(/\s+/).length:0;document.getElementById('wordCount').textContent=words+' words';document.getElementById('readTime').textContent=Math.max(1,Math.ceil(words/200))+' min read';
+    const a=[];
+    if(words<100) a.push('<div class="analysis-item">⚠️ Bio is short ('+words+' words, aim for 300+)</div>');
+    else if(words>300) a.push('<div class="analysis-item">✅ Good length ('+words+' words)</div>');
+    else a.push('<div class="analysis-item">📝 '+words+' words (aim for 300+)</div>');
+    if(!(quill.root.innerHTML.match(/<h2/g)||[]).length) a.push('<div class="analysis-item">⚠️ No H2 headings</div>');
+    else a.push('<div class="analysis-item">✅ '+(quill.root.innerHTML.match(/<h2/g)||[]).length+' heading(s)</div>');
+    if(!document.getElementById('doctorName').value) a.push('<div class="analysis-item">⚠️ Doctor name is empty</div>');
+    if(!document.getElementById('specialty').value) a.push('<div class="analysis-item">⚠️ Specialty not selected</div>');
+    if(!document.getElementById('hospitalId').value) a.push('<div class="analysis-item">⚠️ Hospital not selected</div>');
+    if(!selectedTreatments.size) a.push('<div class="analysis-item">💡 No treatments selected</div>');
+    if(!document.getElementById('image').value) a.push('<div class="analysis-item">💡 No profile photo</div>');
+    document.getElementById('contentAnalysis').innerHTML=a.join('')}
+function analyzeSEO(){let s=0;const n=document.getElementById('doctorName').value,mt=document.getElementById('metaTitle').value,md=document.getElementById('metaDesc').value;
+    if(n) s+=15;if(document.getElementById('specialty').value) s+=10;
+    if(mt&&mt.length>=20&&mt.length<=60) s+=20;if(md&&md.length>=60&&md.length<=160) s+=20;
+    if(quill.getText().split(/\s+/).length>=300) s+=15;
+    if((quill.root.innerHTML.match(/<h2/g)||[]).length>0) s+=10;
+    if(document.getElementById('image').value) s+=10;
+    const b=document.getElementById('seoBadge');b.textContent=s+' / 100';b.className='seo-badge '+(s>=70?'seo-badge--green':s>=40?'seo-badge--yellow':s>0?'seo-badge--red':'seo-badge--gray')}
+function updateCharCount(iid,cid,max){const l=document.getElementById(iid).value.length,el=document.getElementById(cid);el.textContent=l+'/'+max;el.style.color=l>max?'#EF4444':l>max*0.8?'#F59E0B':''}
 
-function updateStats() {
-    const text = quill.getText().trim();
-    const words = text ? text.split(/\s+/).length : 0;
-    const readMin = Math.max(1, Math.ceil(words / 200));
-    document.getElementById('wordCount').textContent = words + ' words';
-    document.getElementById('readTime').textContent = readMin + ' min read';
-    const analysis = [];
-    if (words < 100) analysis.push('<div class="analysis-item">⚠️ Bio is short (' + words + ' words, aim for 300+)</div>');
-    else if (words > 300) analysis.push('<div class="analysis-item">✅ Good length (' + words + ' words)</div>');
-    else analysis.push('<div class="analysis-item">📝 ' + words + ' words (aim for 300+)</div>');
-    const h2Count = (quill.root.innerHTML.match(/<h2/g) || []).length;
-    if (h2Count === 0) analysis.push('<div class="analysis-item">⚠️ No H2 headings</div>');
-    else analysis.push('<div class="analysis-item">✅ ' + h2Count + ' heading(s)</div>');
-    const imgs = (quill.root.innerHTML.match(/<img/g) || []).length;
-    if (imgs === 0) analysis.push('<div class="analysis-item">💡 Consider adding images</div>');
-    else analysis.push('<div class="analysis-item">✅ ' + imgs + ' image(s)</div>');
-    if (!document.getElementById('doctorName').value) analysis.push('<div class="analysis-item">⚠️ Doctor name is empty</div>');
-    if (!document.getElementById('specialty').value) analysis.push('<div class="analysis-item">⚠️ Specialty not selected</div>');
-    if (!document.getElementById('hospitalId').value) analysis.push('<div class="analysis-item">⚠️ Hospital not selected</div>');
-    document.getElementById('contentAnalysis').innerHTML = analysis.join('');
-}
+function autoSlug(){if(slugEdited)return;const n=document.getElementById('doctorName').value;if(!n){document.getElementById('slug').value='';return}document.getElementById('slug').value=n.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');checkSlugUnique()}
+let slugCheckTimer=null;
+function checkSlugUnique(){const slug=document.getElementById('slug').value.trim(),st=document.getElementById('slugStatus');if(!slug){st.textContent='';return}st.textContent='⏳';st.className='permalink-status permalink-status--checking';clearTimeout(slugCheckTimer);slugCheckTimer=setTimeout(async()=>{try{const r=await fetch('/api/doctor-slug-check/'+encodeURIComponent(slug)+'?exclude='+(editId||0));const d=await r.json();st.textContent=d.available?'✓ Available':'✗ Taken';st.className='permalink-status permalink-status--'+(d.available?'ok':'taken')}catch(e){st.textContent=''}},500)}
+function updateTopTitle(){document.getElementById('topTitle').textContent=document.getElementById('doctorName').value||'New Doctor'}
+function updatePublishUI(){const s=document.getElementById('status').value;document.getElementById('pubStatus').textContent=s==='published'?'Published':'Draft';const p=s==='published'||(docData&&docData.status==='published');document.getElementById('publishBtn').textContent=p?'Update':'Publish';document.getElementById('publishBtnSidebar').textContent=p?'🔄 Update':'Publish'}
+function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTone=btn.dataset.tone}
 
-function analyzeSEO() {
-    let score = 0;
-    const name = document.getElementById('doctorName').value;
-    const metaTitle = document.getElementById('metaTitle').value;
-    const metaDesc = document.getElementById('metaDesc').value;
-    const content = quill.getText();
-    const spec = document.getElementById('specialty').value;
-    if (name) score += 15;
-    if (spec) score += 10;
-    if (metaTitle && metaTitle.length >= 20 && metaTitle.length <= 60) score += 20;
-    if (metaDesc && metaDesc.length >= 60 && metaDesc.length <= 160) score += 20;
-    if (content.split(/\s+/).length >= 300) score += 15;
-    if ((quill.root.innerHTML.match(/<h2/g) || []).length > 0) score += 10;
-    if (document.getElementById('image').value) score += 10;
-    const badge = document.getElementById('seoBadge');
-    badge.textContent = score + ' / 100';
-    badge.className = 'seo-badge ' + (score >= 70 ? 'seo-badge--green' : score >= 40 ? 'seo-badge--yellow' : score > 0 ? 'seo-badge--red' : 'seo-badge--gray');
-}
+// Auto-fill country from hospital selection
+function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country)document.getElementById('country').value=h.country}
 
-function updateCharCount(inputId, countId, max) {
-    const len = document.getElementById(inputId).value.length;
-    const el = document.getElementById(countId);
-    el.textContent = len + '/' + max;
-    el.style.color = len > max ? '#EF4444' : len > max * 0.8 ? '#F59E0B' : '';
-}
+// === CHIP INPUTS ===
+function handleChipKey(e,type){if(e.key==='Enter'||e.key===','){e.preventDefault();const val=e.target.value.trim().replace(/,/g,'');if(!val)return;const arr=type==='qual'?qualifications:languages;if(!arr.includes(val)){arr.push(val);renderChips(type)}e.target.value='';resetAutoSave()}}
+function renderChips(type){const arr=type==='qual'?qualifications:languages,wrap=document.getElementById(type+'Wrap'),inputId=type+'Input';
+    wrap.innerHTML=arr.map((v,i)=>'<span class="tag-chip">'+v+'<button onclick="removeChip(\''+type+'\','+i+')">&times;</button></span>').join('')+'<input class="tag-input" id="'+inputId+'" placeholder="Add '+(type==='qual'?'qualification':'language')+'..." onkeydown="handleChipKey(event,\''+type+'\')">'}
+function removeChip(type,i){(type==='qual'?qualifications:languages).splice(i,1);renderChips(type);resetAutoSave()}
 
-function autoSlug() {
-    if (slugEdited) return;
-    const name = document.getElementById('doctorName').value;
-    if (!name) { document.getElementById('slug').value = ''; return; }
-    const slug = name.toLowerCase().replace(/^dr\.?\s*/i, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    document.getElementById('slug').value = slug;
-    checkSlugUnique();
-}
+// === TREATMENTS MULTI-SELECT ===
+function filterTreatments(){renderTreatments()}
+function renderTreatments(){const spec=document.getElementById('specialty').value,search=(document.getElementById('txSearch').value||'').toLowerCase();
+    let filtered=allTreatments;if(spec) filtered=filtered.filter(t=>(t.specialty_name||'')==spec);
+    if(search) filtered=filtered.filter(t=>t.name.toLowerCase().includes(search));
+    document.getElementById('txCount').textContent=selectedTreatments.size+' selected';
+    if(!filtered.length){document.getElementById('txList').innerHTML='<div style="padding:12px;color:var(--gray-400);font-size:.8rem;text-align:center">No treatments found</div>';return}
+    document.getElementById('txList').innerHTML=filtered.map(t=>{const ck=selectedTreatments.has(t.id);return '<div class="tx-item'+(ck?' checked':'')+'" onclick="toggleTx('+t.id+',this)"><input type="checkbox" '+(ck?'checked':'')+' onclick="event.stopPropagation();toggleTx('+t.id+',this.parentElement)"><label>'+t.name+'</label></div>'}).join('')}
+function toggleTx(id,el){if(selectedTreatments.has(id))selectedTreatments.delete(id);else selectedTreatments.add(id);renderTreatments();resetAutoSave()}
 
-let slugCheckTimer = null;
-function checkSlugUnique() {
-    const slug = document.getElementById('slug').value.trim();
-    const status = document.getElementById('slugStatus');
-    if (!slug) { status.textContent = ''; return; }
-    status.textContent = '⏳';
-    status.className = 'permalink-status permalink-status--checking';
-    clearTimeout(slugCheckTimer);
-    slugCheckTimer = setTimeout(async () => {
-        try {
-            const exclude = editId || 0;
-            const r = await fetch('/api/doctor-slug-check/' + encodeURIComponent(slug) + '?exclude=' + exclude);
-            const data = await r.json();
-            if (data.available) {
-                status.textContent = '✓ Available';
-                status.className = 'permalink-status permalink-status--ok';
-            } else {
-                status.textContent = '✗ Taken';
-                status.className = 'permalink-status permalink-status--taken';
-            }
-        } catch(e) { status.textContent = ''; }
-    }, 500);
-}
+// === MEDIA PICKER ===
+let mpMedia=[],mpSelected=null;
+function openMediaPicker(){document.getElementById('mediaPicker').classList.add('active');mpLoadMedia()}
+function closeMediaPicker(){document.getElementById('mediaPicker').classList.remove('active')}
+function mpSwitchTab(tab,btn){document.querySelectorAll('.mp-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');document.getElementById('mpLibraryView').style.display=tab==='library'?'':'none';document.getElementById('mpUploadView').style.display=tab==='upload'?'':'none';if(tab==='library')mpLoadMedia()}
+async function mpLoadMedia(){try{const r=await fetch('/api/media');if(r.ok)mpMedia=await r.json()}catch(e){mpMedia=[]}mpRenderGrid()}
+function mpRenderGrid(){const grid=document.getElementById('mpGrid'),search=(document.getElementById('mpSearch').value||'').toLowerCase();
+    const filtered=mpMedia.filter(m=>m.mime_type&&m.mime_type.indexOf('image')===0&&(!search||(m.original_name||'').toLowerCase().indexOf(search)!==-1));
+    document.getElementById('mpFooterInfo').textContent=filtered.length+' images';
+    if(!filtered.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)"><div style="font-size:2rem;margin-bottom:8px">🖼</div>No images found</div>';return}
+    grid.innerHTML=filtered.map(m=>{const sel=mpSelected&&mpSelected.id===m.id?' selected':'';return '<div class="mp-item'+sel+'" onclick="mpSelectItem('+m.id+')" data-id="'+m.id+'"><img src="'+(m.sizes&&m.sizes.thumbnail?m.sizes.thumbnail.url:m.url)+'" alt="'+(m.original_name||'')+'"></div>'}).join('')}
+function mpFilter(){mpRenderGrid()}
+function mpSelectItem(id){const item=mpMedia.find(m=>m.id===id);if(!item)return;mpSelected=item;
+    document.querySelectorAll('.mp-item').forEach(el=>el.classList.toggle('selected',parseInt(el.dataset.id)===id));
+    document.getElementById('mpSidebar').classList.add('active');
+    document.getElementById('mpSidebarImg').src=item.url;
+    document.getElementById('mpSidebarName').textContent=item.original_name||item.filename||'';
+    const size=item.size?(item.size<1048576?(item.size/1024).toFixed(0)+' KB':(item.size/1048576).toFixed(1)+' MB'):'';
+    document.getElementById('mpSidebarMeta').textContent=(item.created_at?new Date(item.created_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):'')+(size?' · '+size:'');
+    document.getElementById('mpAltText').value=item.alt_text||'';
+    document.getElementById('mpFileUrl').value=window.location.origin+item.url;
+    document.getElementById('mpSetBtn').disabled=false}
+function mpSetPhoto(){if(!mpSelected)return;document.getElementById('image').value=mpSelected.url;document.getElementById('featImgPreview').src=mpSelected.url;document.getElementById('featImgPreview').style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block';document.getElementById('featImgName').textContent=mpSelected.original_name||'Image';closeMediaPicker();resetAutoSave();analyzeSEO()}
+function removeFeatImage(){document.getElementById('image').value='';document.getElementById('featImgPreview').style.display='none';document.getElementById('featImgPreview').src='';document.getElementById('featImgEmpty').style.display='';document.getElementById('featImgActions').style.display='none';resetAutoSave();analyzeSEO()}
+async function mpUploadFiles(input){const files=input.files;if(!files.length)return;const prog=document.getElementById('mpUploadProgress');prog.style.display='block';for(let i=0;i<files.length;i++){prog.textContent='Uploading '+(i+1)+' of '+files.length+'...';const fd=new FormData();fd.append('file',files[i]);try{await fetch('/api/media/upload',{method:'POST',body:fd})}catch(e){}}prog.textContent='✅ Done!';input.value='';setTimeout(()=>{prog.style.display='none';document.querySelectorAll('.mp-tab').forEach((t,i)=>t.classList.toggle('active',i===0));document.getElementById('mpLibraryView').style.display='';document.getElementById('mpUploadView').style.display='none';mpLoadMedia()},800)}
+// Upload zone click/drag
+(function(){const zone=document.getElementById('mpUploadZone');if(!zone)return;zone.addEventListener('click',e=>{if(e.target.tagName!=='INPUT')document.getElementById('mpFileInput').click()});zone.addEventListener('dragover',e=>{e.preventDefault();zone.style.borderColor='var(--ginger)'});zone.addEventListener('dragleave',()=>{zone.style.borderColor=''});zone.addEventListener('drop',e=>{e.preventDefault();zone.style.borderColor='';if(e.dataTransfer.files.length){document.getElementById('mpFileInput').files=e.dataTransfer.files;mpUploadFiles(document.getElementById('mpFileInput'))}})})();
 
-function updateTopTitle() {
-    const n = document.getElementById('doctorName').value;
-    document.getElementById('topTitle').textContent = n || 'New Doctor';
-}
+// === FILE ATTACH (AI context) ===
+let aiAttachedContent=null;
+function handleFileAttach(input){const file=input.files[0];if(!file)return;input.value='';if(file.type.startsWith('image/')){uploadImageToServer(file).then(url=>{if(url){const range=quill.getSelection(true);quill.insertEmbed(range?range.index:quill.getLength(),'image',url);quill.insertText((range?range.index:quill.getLength())+1,'\n');resetAutoSave();showToast('✅ Image inserted')}});return}
+    if(file.name.endsWith('.txt')||file.name.endsWith('.md')){const reader=new FileReader();reader.onload=e=>{aiAttachedContent=e.target.result;showToast('📎 File attached for AI context')};reader.readAsText(file)}}
+function importFile(input){const file=input.files[0];if(!file)return;input.value='';if(file.type.startsWith('image/')){uploadImageToServer(file).then(url=>{if(url){const range=quill.getSelection(true);quill.insertEmbed(range?range.index:quill.getLength(),'image',url);resetAutoSave();showToast('✅ Image inserted')}});return}
+    if(file.name.endsWith('.txt')||file.name.endsWith('.md')){const reader=new FileReader();reader.onload=e=>{saveUndoSnapshot();quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Text imported')};reader.readAsText(file)}}
+function showToast(msg){const t=document.getElementById('autosaveToast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
 
-function updatePublishUI() {
-    const status = document.getElementById('status').value;
-    document.getElementById('pubStatus').textContent = status === 'published' ? 'Published' : 'Draft';
-    const isPublished = status === 'published' || (docData && docData.status === 'published');
-    document.getElementById('publishBtn').textContent = isPublished ? 'Update' : 'Publish';
-    document.getElementById('publishBtnSidebar').textContent = isPublished ? '🔄 Update Article' : 'Publish';
-}
+function showTab(tab){const w=tab==='write';document.getElementById('tabWrite').classList.toggle('active',w);document.getElementById('tabPreview').classList.toggle('active',!w);document.getElementById('editorWrap').style.display=w?'':'none';document.getElementById('previewPane').classList.toggle('active',!w);
+    if(!w){const frame=document.getElementById('previewFrame'),content=quill.root.innerHTML,name=document.getElementById('doctorName').value,spec=document.getElementById('specialty').value;
+    frame.srcdoc='<!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><style>body{font-family:"DM Sans",sans-serif;max-width:720px;margin:0 auto;padding:40px 20px;color:#374151;line-height:1.8;font-size:16px}h1{font-family:"Playfair Display",serif;color:#0B2545;font-size:2rem;margin-bottom:4px}h2,h3{font-family:"Playfair Display",serif;color:#0B2545;margin:24px 0 12px}.spec{color:#0EA5A0;font-size:.9rem;font-weight:600;margin-bottom:16px}img{max-width:100%;border-radius:8px;margin:16px 0}blockquote{border-left:4px solid #0EA5A0;padding-left:16px;margin:16px 0;color:#6B7280;font-style:italic}a{color:#0EA5A0}</style></head><body><h1>'+name+'</h1>'+(spec?'<div class="spec">'+spec+'</div>':'')+content+'</body></html>'}}
+function togglePreview(){showTab(document.getElementById('previewPane').classList.contains('active')?'write':'preview')}
 
-function setTone(btn) {
-    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentTone = btn.dataset.tone;
-}
+// === LOAD DATA ===
+async function loadDropdowns(){try{const[hr,sr,tr]=await Promise.all([fetch('/api/hospitals'),fetch('/api/specialties'),fetch('/api/treatments')]);
+    allHospitals=await hr.json();allSpecialties=await sr.json();allTreatments=await tr.json();
+    document.getElementById('hospitalId').innerHTML='<option value="">Select hospital</option>'+allHospitals.map(h=>'<option value="'+h.id+'">'+h.name+(h.city?' — '+h.city:'')+'</option>').join('');
+    document.getElementById('specialty').innerHTML='<option value="">Select specialty</option>'+allSpecialties.map(s=>'<option value="'+s.name+'">'+s.name+'</option>').join('');
+    renderTreatments()}catch(e){console.error('Dropdown load failed',e)}}
 
-function updatePhotoPreview() {
-    const url = document.getElementById('image').value;
-    const prev = document.getElementById('photoPreview');
-    if (url) { prev.src = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url; prev.style.display = 'block'; }
-    else { prev.style.display = 'none'; }
-}
+async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doctors/'+editId);if(!r.ok)return;docData=await r.json();
+    document.getElementById('doctorName').value=docData.name||'';document.getElementById('slug').value=docData.slug||'';
+    document.getElementById('doctorTitle').value=docData.title||'';document.getElementById('specialty').value=docData.specialty||'';
+    document.getElementById('hospitalId').value=docData.hospital_id||'';document.getElementById('experienceYears').value=docData.experience_years||'';
+    document.getElementById('country').value=docData.country||'';document.getElementById('description').value=docData.description||'';
+    document.getElementById('isFeatured').value=docData.is_featured?'true':'false';document.getElementById('status').value=docData.status||'draft';
+    document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
+    if(docData.long_description) quill.root.innerHTML=docData.long_description;
+    if(docData.qualifications&&docData.qualifications.length){qualifications=docData.qualifications;renderChips('qual')}
+    if(docData.languages&&docData.languages.length){languages=docData.languages;renderChips('lang')}
+    if(docData.image){document.getElementById('image').value=docData.image;const src=docData.image.startsWith('http')?docData.image:'https://enter.ginger.healthcare'+docData.image;document.getElementById('featImgPreview').src=src;document.getElementById('featImgPreview').style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block';document.getElementById('featImgName').textContent=docData.image.split('/').pop()}
+    updateTopTitle();const badge=document.getElementById('statusBadge');badge.textContent=docData.status;badge.className='topbar__status topbar__status--'+docData.status;
+    updatePublishUI();updateCharCount('metaTitle','metaTitleCount',60);updateCharCount('metaDesc','metaDescCount',160);analyzeSEO();
+    if(docData.status==='published'&&docData.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href='https://ginger.healthcare/doctors/'+docData.slug+'/';document.getElementById('viewBtn').style.display=''}
+    slugEdited=true;
+    // Load doctor_treatments
+    try{const tr=await fetch('/api/doctor-treatments/'+editId);if(tr.ok){const tids=await tr.json();tids.forEach(t=>selectedTreatments.add(t.treatment_id));renderTreatments()}}catch(e){}
+}catch(e){console.error('Load failed',e)}}
 
-// Qualifications chip input
-function handleQualKey(e) {
-    if (e.key === 'Enter') { e.preventDefault(); const val = e.target.value.trim(); if (val && !qualifications.includes(val)) { qualifications.push(val); renderQuals(); } e.target.value = ''; }
-}
-function renderQuals() {
-    const wrap = document.getElementById('qualWrap');
-    wrap.innerHTML = qualifications.map((q,i) => '<span class="tag-chip">' + q + '<button onclick="qualifications.splice(' + i + ',1);renderQuals();resetAutoSave()">&times;</button></span>').join('') + '<input class="tag-input" id="qualInput" placeholder="Add qualification..." onkeydown="handleQualKey(event)">';
-}
-// Languages chip input
-function handleLangKey(e) {
-    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); const val = e.target.value.trim().replace(/,/g,''); if (val && !languages.includes(val)) { languages.push(val); renderLangs(); } e.target.value = ''; }
-}
-function renderLangs() {
-    const wrap = document.getElementById('langWrap');
-    wrap.innerHTML = languages.map((l,i) => '<span class="tag-chip">' + l + '<button onclick="languages.splice(' + i + ',1);renderLangs();resetAutoSave()">&times;</button></span>').join('') + '<input class="tag-input" id="langInput" placeholder="Add language..." onkeydown="handleLangKey(event)">';
-}
+async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
+    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:document.getElementById('specialty').value,hospital_id:document.getElementById('hospitalId').value||null,country:document.getElementById('country').value,experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
+    if(!data.name){if(!isAuto)alert('Doctor name is required');return}
+    if(!data.slug) data.slug=data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    try{const url=editId?'/api/doctors/'+editId:'/api/doctors';const method=editId?'PUT':'POST';
+        const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(r.ok){const result=await r.json();if(!editId&&result.id){window.location.href='/doctors/edit/'+result.id;return}
+            docData=result;document.getElementById('statusBadge').textContent=result.status;document.getElementById('statusBadge').className='topbar__status topbar__status--'+result.status;updatePublishUI();
+            if(result.status==='published'&&result.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href='https://ginger.healthcare/doctors/'+result.slug+'/';document.getElementById('viewBtn').style.display=''}
+            if(isAuto){showToast('💾 Auto-saved')}else{const saved=document.getElementById('savedIndicator');saved.style.display='inline';
+                if(result.status==='published'&&result.slug){saved.innerHTML='✅ Published! <a href="https://ginger.healthcare/doctors/'+result.slug+'/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';setTimeout(()=>saved.style.display='none',8000)}
+                else{saved.innerHTML='✅ Saved!';setTimeout(()=>saved.style.display='none',3000)}}
+        }else{const e=await r.json();if(!isAuto)alert('Error: '+(e.error||'Save failed'))}
+    }catch(e){if(!isAuto)alert('Save failed')}}
 
-function showTab(tab) {
-    const writeActive = tab === 'write';
-    document.getElementById('tabWrite').classList.toggle('active', writeActive);
-    document.getElementById('tabPreview').classList.toggle('active', !writeActive);
-    document.getElementById('editorWrap').style.display = writeActive ? '' : 'none';
-    document.getElementById('previewPane').classList.toggle('active', !writeActive);
-    if (!writeActive) {
-        const frame = document.getElementById('previewFrame');
-        const content = quill.root.innerHTML;
-        const name = document.getElementById('doctorName').value;
-        const spec = document.getElementById('specialty').value;
-        frame.srcdoc = '<!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><style>body{font-family:"DM Sans",sans-serif;max-width:720px;margin:0 auto;padding:40px 20px;color:#374151;line-height:1.8;font-size:16px}h1{font-family:"Playfair Display",serif;color:#0B2545;font-size:2rem;margin-bottom:4px}h2,h3{font-family:"Playfair Display",serif;color:#0B2545;margin:24px 0 12px}.spec{color:#0EA5A0;font-size:.9rem;font-weight:600;margin-bottom:16px}img{max-width:100%;border-radius:8px;margin:16px 0}blockquote{border-left:4px solid #0EA5A0;padding-left:16px;margin:16px 0;color:#6B7280;font-style:italic}a{color:#0EA5A0}</style></head><body><h1>'+name+'</h1>'+(spec?'<div class="spec">'+spec+'</div>':'')+content+'</body></html>';
-    }
-}
-function togglePreview() { showTab(document.getElementById('previewPane').classList.contains('active') ? 'write' : 'preview'); }
-
-// Load dropdowns
-async function loadDropdowns() {
-    try {
-        const [hr, sr] = await Promise.all([fetch('/api/hospitals'), fetch('/api/specialties')]);
-        allHospitals = await hr.json();
-        allSpecialties = await sr.json();
-        document.getElementById('hospitalId').innerHTML = '<option value="">Select hospital</option>' + allHospitals.map(h => '<option value="' + h.id + '">' + h.name + (h.city ? ' — ' + h.city : '') + '</option>').join('');
-        document.getElementById('specialty').innerHTML = '<option value="">Select specialty</option>' + allSpecialties.map(s => '<option value="' + s.name + '">' + s.name + '</option>').join('');
-    } catch(e) { console.error('Dropdown load failed', e); }
-}
-
-async function loadDoctor() {
-    if (!editId) return;
-    try {
-        const r = await fetch('/api/doctors/' + editId);
-        if (!r.ok) return;
-        docData = await r.json();
-        document.getElementById('doctorName').value = docData.name || '';
-        document.getElementById('slug').value = docData.slug || '';
-        document.getElementById('doctorTitle').value = docData.title || '';
-        document.getElementById('specialty').value = docData.specialty || '';
-        document.getElementById('hospitalId').value = docData.hospital_id || '';
-        document.getElementById('experienceYears').value = docData.experience_years || '';
-        document.getElementById('country').value = docData.country || '';
-        document.getElementById('description').value = docData.description || '';
-        document.getElementById('image').value = docData.image || '';
-        document.getElementById('isFeatured').value = docData.is_featured ? 'true' : 'false';
-        document.getElementById('status').value = docData.status || 'draft';
-        document.getElementById('metaTitle').value = docData.meta_title || '';
-        document.getElementById('metaDesc').value = docData.meta_description || '';
-        if (docData.long_description) quill.root.innerHTML = docData.long_description;
-        if (docData.qualifications && docData.qualifications.length) { qualifications = docData.qualifications; renderQuals(); }
-        if (docData.languages && docData.languages.length) { languages = docData.languages; renderLangs(); }
-        updateTopTitle();
-        updatePhotoPreview();
-        const badge = document.getElementById('statusBadge');
-        badge.textContent = docData.status;
-        badge.className = 'topbar__status topbar__status--' + docData.status;
-        updatePublishUI();
-        updateCharCount('metaTitle','metaTitleCount',60);
-        updateCharCount('metaDesc','metaDescCount',160);
-        analyzeSEO();
-        if (docData.status === 'published' && docData.slug) {
-            document.getElementById('viewArticle').style.display = '';
-            document.getElementById('viewArticle').href = 'https://ginger.healthcare/doctors/' + docData.slug + '/';
-            document.getElementById('viewBtn').style.display = '';
-        }
-        slugEdited = true;
-    } catch(e) { console.error('Load failed', e); }
-}
-
-async function saveDoctor(statusOverride) {
-    const isAuto = statusOverride === 'auto';
-    const data = {
-        name: document.getElementById('doctorName').value,
-        slug: document.getElementById('slug').value,
-        title: document.getElementById('doctorTitle').value,
-        specialty: document.getElementById('specialty').value,
-        hospital_id: document.getElementById('hospitalId').value || null,
-        country: document.getElementById('country').value,
-        experience_years: parseInt(document.getElementById('experienceYears').value) || null,
-        qualifications: qualifications,
-        description: document.getElementById('description').value,
-        long_description: quill.root.innerHTML,
-        image: document.getElementById('image').value,
-        languages: languages,
-        is_featured: document.getElementById('isFeatured').value === 'true',
-        status: isAuto ? document.getElementById('status').value : (statusOverride || document.getElementById('status').value),
-        meta_title: document.getElementById('metaTitle').value,
-        meta_description: document.getElementById('metaDesc').value
-    };
-    if (!data.name) { if (!isAuto) alert('Doctor name is required'); return; }
-    if (!data.slug) data.slug = data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    try {
-        const url = editId ? '/api/doctors/' + editId : '/api/doctors';
-        const method = editId ? 'PUT' : 'POST';
-        const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-        if (r.ok) {
-            const result = await r.json();
-            if (!editId && result.id) { window.location.href = '/doctors/edit/' + result.id; return; }
-            docData = result;
-            const badge = document.getElementById('statusBadge');
-            badge.textContent = result.status;
-            badge.className = 'topbar__status topbar__status--' + result.status;
-            updatePublishUI();
-            if (result.status === 'published' && result.slug) {
-                document.getElementById('viewArticle').style.display = '';
-                document.getElementById('viewArticle').href = 'https://ginger.healthcare/doctors/' + result.slug + '/';
-                document.getElementById('viewBtn').style.display = '';
-            }
-            if (isAuto) {
-                const toast = document.getElementById('autosaveToast');
-                toast.textContent = '💾 Auto-saved';
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 2000);
-            } else {
-                const saved = document.getElementById('savedIndicator');
-                saved.style.display = 'inline';
-                if (result.status === 'published' && result.slug) {
-                    saved.innerHTML = '✅ Published! <a href="https://ginger.healthcare/doctors/' + result.slug + '/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View Profile →</a>';
-                    setTimeout(() => saved.style.display = 'none', 8000);
-                } else {
-                    saved.innerHTML = '✅ Saved!';
-                    setTimeout(() => saved.style.display = 'none', 3000);
-                }
-            }
-        } else {
-            const e = await r.json();
-            if (!isAuto) alert('Error: ' + (e.error || 'Save failed'));
-        }
-    } catch(e) { if (!isAuto) alert('Save failed'); }
-}
-
-// AI Assistant
-let aiGenerating = false;
-async function aiCmd(customMsg) {
-    const input = document.getElementById('aiInput');
-    const msg = customMsg || input.value.trim();
-    if (!msg || aiGenerating) return;
-    input.value = '';
-    aiGenerating = true;
-    document.getElementById('aiSendBtn').disabled = true;
-    const messages = document.getElementById('aiMessages');
-    const userDiv = document.createElement('div');
-    userDiv.className = 'ai-msg ai-msg--user';
-    userDiv.textContent = msg;
-    messages.appendChild(userDiv);
-    const loadDiv = document.createElement('div');
-    loadDiv.className = 'ai-msg ai-msg--bot';
-    loadDiv.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
-    messages.appendChild(loadDiv);
-    messages.scrollTop = messages.scrollHeight;
-    try {
-        const content = quill.root.innerHTML;
-        const name = document.getElementById('doctorName').value;
-        const spec = document.getElementById('specialty').value;
-        const hosp = document.getElementById('hospitalId');
-        const hospName = hosp.options[hosp.selectedIndex] ? hosp.options[hosp.selectedIndex].text : '';
-        const exp = document.getElementById('experienceYears').value;
-        const prompt = `You are an AI writing assistant for a medical tourism website doctor profile. Tone: ${currentTone}.
-
-Doctor name: "${name}"
-Title/Position: "${document.getElementById('doctorTitle').value}"
-Specialty: "${spec}"
-Hospital: "${hospName}"
-Experience: ${exp || 'not set'} years
-Qualifications: ${qualifications.join(', ') || 'none'}
-Languages: ${languages.join(', ') || 'none'}
-Current bio (first 1000 chars): ${content.substring(0,1000)}
-
+// === AI ASSISTANT ===
+let aiGenerating=false;
+async function aiCmd(customMsg){const input=document.getElementById('aiInput');const msg=customMsg||input.value.trim();if(!msg||aiGenerating)return;input.value='';aiGenerating=true;document.getElementById('aiSendBtn').disabled=true;
+    const messages=document.getElementById('aiMessages');
+    const userDiv=document.createElement('div');userDiv.className='ai-msg ai-msg--user';userDiv.textContent=msg;messages.appendChild(userDiv);
+    const loadDiv=document.createElement('div');loadDiv.className='ai-msg ai-msg--bot';loadDiv.innerHTML='<div class="ai-typing"><span></span><span></span><span></span></div>';messages.appendChild(loadDiv);messages.scrollTop=messages.scrollHeight;
+    try{const content=quill.root.innerHTML,name=document.getElementById('doctorName').value,spec=document.getElementById('specialty').value;
+        const hosp=document.getElementById('hospitalId');const hospName=hosp.selectedIndex>0?hosp.options[hosp.selectedIndex].text:'';
+        const attachedText=aiAttachedContent?'\n\nATTACHED DOCUMENT:\n'+aiAttachedContent.substring(0,5000):'';
+        const prompt=`You are an AI writing assistant for a medical tourism website doctor profile. Tone: ${currentTone}.
+Doctor name: "${name}" | Title: "${document.getElementById('doctorTitle').value}" | Specialty: "${spec}" | Hospital: "${hospName}" | Experience: ${document.getElementById('experienceYears').value||'not set'} years
+Qualifications: ${qualifications.join(', ')||'none'} | Languages: ${languages.join(', ')||'none'}
+Current bio (first 1000 chars): ${content.substring(0,1000)}${attachedText}
 Request: ${msg}
+RULES: If request is about SEO/meta fields, respond ONLY in JSON: {"meta_title":"...","meta_description":"..."}. If about content, respond with HTML (h2,h3,p,ul,li,strong,em). No markdown. Add CTAs to /get-quote/ where appropriate. Write third-person.`;
+        const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,type:'doctor',context:name})});const data=await r.json();
+        if(r.ok){let result=data.content||'';let seoData=null;try{const clean=result.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();if(clean.startsWith('{'))seoData=JSON.parse(clean)}catch(e){}
+            if(seoData&&(seoData.meta_title||seoData.meta_description)){if(seoData.meta_title)document.getElementById('metaTitle').value=seoData.meta_title;if(seoData.meta_description)document.getElementById('metaDesc').value=seoData.meta_description;updateCharCount('metaTitle','metaTitleCount',60);updateCharCount('metaDesc','metaDescCount',160);analyzeSEO();loadDiv.innerHTML='✅ SEO fields updated!<br><strong>Meta title:</strong> '+(seoData.meta_title||'')+'<br><strong>Description:</strong> '+(seoData.meta_description||'').substring(0,80)+'...'}
+            else{const cid='ai_'+Date.now();window[cid]=result;const preview=result.replace(/<[^>]*>/g,'').substring(0,180);loadDiv.innerHTML=preview+(result.length>180?'...':'')+'<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\''+cid+'\')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\''+cid+'\')">➕ Append</button></div>'}
+        }else{loadDiv.innerHTML='❌ '+(data.error||'Failed')}
+    }catch(e){loadDiv.innerHTML='❌ Connection failed'}
+    aiGenerating=false;document.getElementById('aiSendBtn').disabled=false;messages.scrollTop=messages.scrollHeight}
+function insertAI(cid){saveUndoSnapshot();const h=window[cid];if(h){quill.root.innerHTML=h;updateStats();analyzeSEO()}}
+function appendAI(cid){saveUndoSnapshot();const h=window[cid];if(h){quill.root.innerHTML+=h;updateStats();analyzeSEO()}}
 
-IMPORTANT RULES:
-- If the request is about SEO/meta fields, respond ONLY in JSON: {"meta_title":"...","meta_description":"..."}
-- If the request is about content (writing, editing, improving), respond with HTML using h2,h3,p,ul,li,strong,em tags. No markdown, no code fences.
-- Add relevant CTAs (links to /get-quote/, /book-consultation/) where appropriate.
-- Write from a third-person perspective about the doctor.
-- NEVER respond with plain text suggestions - always use JSON for meta or HTML for content.`;
-        const r = await fetch('/api/ai/generate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ prompt, type: 'doctor', context: name }) });
-        const data = await r.json();
-        if (r.ok) {
-            let result = data.content || '';
-            let seoData = null;
-            try { const clean = result.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim(); if (clean.startsWith('{')) seoData = JSON.parse(clean); } catch(e) {}
-            if (seoData && (seoData.meta_title || seoData.meta_description)) {
-                if (seoData.meta_title) document.getElementById('metaTitle').value = seoData.meta_title;
-                if (seoData.meta_description) document.getElementById('metaDesc').value = seoData.meta_description;
-                updateCharCount('metaTitle','metaTitleCount',60);
-                updateCharCount('metaDesc','metaDescCount',160);
-                analyzeSEO();
-                loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...';
-            } else {
-                const contentId = 'ai_' + Date.now();
-                window[contentId] = result;
-                const preview = result.replace(/<[^>]*>/g,'').substring(0,180);
-                loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') +
-                    '<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\''+contentId+'\')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\''+contentId+'\')">➕ Append</button></div>';
-            }
-        } else { loadDiv.innerHTML = '❌ ' + (data.error || 'Failed'); }
-    } catch(e) { loadDiv.innerHTML = '❌ Connection failed'; }
-    aiGenerating = false;
-    document.getElementById('aiSendBtn').disabled = false;
-    messages.scrollTop = messages.scrollHeight;
-}
-function insertAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML = html; updateStats(); analyzeSEO(); } }
-function appendAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML += html; updateStats(); analyzeSEO(); } }
+// === DRAG HANDLES ===
+function setupDrag(hid,panel,dir){const handle=document.getElementById(hid);let dragging=false,startX,startW;
+    handle.addEventListener('mousedown',e=>{dragging=true;startX=e.clientX;startW=panel.offsetWidth;handle.classList.add('dragging');document.body.style.cursor='col-resize';document.body.style.userSelect='none';e.preventDefault()});
+    document.addEventListener('mousemove',e=>{if(!dragging)return;const dx=e.clientX-startX;panel.style.width=Math.max(200,Math.min(startW+(dir==='left'?dx:-dx),window.innerWidth-500))+'px'});
+    document.addEventListener('mouseup',()=>{if(!dragging)return;dragging=false;handle.classList.remove('dragging');document.body.style.cursor='';document.body.style.userSelect=''})}
+setupDrag('dragLeft',document.getElementById('panelLeft'),'left');
+setupDrag('dragRight',document.getElementById('panelRight'),'right');
 
-// Drag handles
-function setupDrag(handleId, panel, dir) {
-    const handle = document.getElementById(handleId);
-    let isDragging=false, startX, startW;
-    handle.addEventListener('mousedown', e => {
-        isDragging=true; startX=e.clientX; startW=panel.offsetWidth;
-        handle.classList.add('dragging');
-        document.body.style.cursor='col-resize'; document.body.style.userSelect='none';
-        e.preventDefault();
-    });
-    document.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const newW = Math.max(200, Math.min(startW + (dir === 'left' ? dx : -dx), window.innerWidth - 500));
-        panel.style.width = newW + 'px';
-    });
-    document.addEventListener('mouseup', () => {
-        if (!isDragging) return; isDragging=false;
-        handle.classList.remove('dragging');
-        document.body.style.cursor=''; document.body.style.userSelect='';
-    });
-}
-setupDrag('dragLeft', document.getElementById('panelLeft'), 'left');
-setupDrag('dragRight', document.getElementById('panelRight'), 'right');
+// === UNDO ===
+let undoStack=[];
+function saveUndoSnapshot(){undoStack.push({name:document.getElementById('doctorName').value,content:quill.root.innerHTML,slug:document.getElementById('slug').value});if(undoStack.length>20)undoStack.shift()}
+function undoChanges(){if(!undoStack.length){alert('Nothing to undo');return}const s=undoStack.pop();document.getElementById('doctorName').value=s.name;quill.root.innerHTML=s.content;document.getElementById('slug').value=s.slug;updateTopTitle();updateStats();analyzeSEO();showToast('↩ Undo applied')}
 
-// Undo
-let undoStack = [];
-function saveUndoSnapshot() {
-    undoStack.push({ name: document.getElementById('doctorName').value, content: quill.root.innerHTML, slug: document.getElementById('slug').value });
-    if (undoStack.length > 20) undoStack.shift();
-}
-function undoChanges() {
-    if (!undoStack.length) { alert('Nothing to undo'); return; }
-    const snap = undoStack.pop();
-    document.getElementById('doctorName').value = snap.name;
-    quill.root.innerHTML = snap.content;
-    document.getElementById('slug').value = snap.slug;
-    updateTopTitle(); updateStats(); analyzeSEO();
-    const toast = document.getElementById('autosaveToast');
-    toast.textContent = '↩ Undo applied'; toast.style.display = 'block';
-    setTimeout(() => toast.style.display = 'none', 2000);
-}
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveDoctor()}});
 
-// Keyboard shortcut
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDoctor(); }
-});
-
-// Init
-loadDropdowns().then(() => loadDoctor());
+// === INIT ===
+loadDropdowns().then(()=>loadDoctor());
 updateStats();
 
 }); // end waitForQuill
 </script>
-</body>
-</html>
+</body></html>

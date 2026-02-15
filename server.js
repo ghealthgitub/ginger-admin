@@ -573,14 +573,28 @@ app.get('/api/doctors/:id', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.get('/api/doctor-treatments/:doctorId', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM doctor_treatments WHERE doctor_id = $1', [req.params.doctorId]);
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description, treatment_ids } = req.body;
         const result = await pool.query(
             `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
             [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', meta_title || null, meta_description || null]
         );
+        // Save doctor_treatments junction
+        if (treatment_ids && treatment_ids.length) {
+            await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = $1', [result.rows[0].id]);
+            for (const tid of treatment_ids) {
+                await pool.query('INSERT INTO doctor_treatments (doctor_id, treatment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [result.rows[0].id, tid]);
+            }
+        }
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -588,12 +602,19 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description, treatment_ids } = req.body;
         const result = await pool.query(
             `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, meta_title=$15, meta_description=$16, updated_at=NOW()
              WHERE id=$17 RETURNING *`,
             [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, meta_title || null, meta_description || null, req.params.id]
         );
+        // Update doctor_treatments junction
+        if (treatment_ids) {
+            await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = $1', [req.params.id]);
+            for (const tid of treatment_ids) {
+                await pool.query('INSERT INTO doctor_treatments (doctor_id, treatment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [req.params.id, tid]);
+            }
+        }
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
