@@ -15,6 +15,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
 .topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
 .topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+/* Unsaved changes indicator */
+.topbar__unsaved{color:#D97706;font-size:.72rem;font-weight:600;display:none;align-items:center;gap:4px;flex-shrink:0;animation:fadeUnsaved .3s}
+.topbar__unsaved::before{content:'';width:6px;height:6px;border-radius:50%;background:#D97706;display:inline-block}
+@keyframes fadeUnsaved{from{opacity:0}to{opacity:1}}
 .topbar__actions{display:flex;gap:6px}
 .topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
 .topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
@@ -41,6 +45,17 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
 /* LAYOUT */
 .studio{display:flex;height:calc(100vh - 48px)}
+/* Focus mode */
+body.focus-mode .panel-left,body.focus-mode #dragLeft,body.focus-mode .panel-right,body.focus-mode #dragRight{width:0!important;min-width:0!important;overflow:hidden;opacity:0;pointer-events:none;border:none;padding:0;transition:all .35s ease}
+body.focus-mode .panel-middle{flex:1}
+body.focus-mode .topbar__actions .topbar__btn:not(.topbar__btn--focus){opacity:.4}
+body.focus-mode .topbar__actions .topbar__btn:not(.topbar__btn--focus):hover{opacity:1}
+/* Focus button */
+.topbar__btn--focus{background:transparent;color:var(--gray-400);border:1px solid var(--gray-200);padding:6px 10px;font-size:.9rem;line-height:1}
+.topbar__btn--focus:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.topbar__btn--focus.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* Shortcut hint toast */
+.shortcut-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(11,37,69,.9);color:#fff;padding:6px 16px;border-radius:50px;font-size:.72rem;font-weight:600;display:none;z-index:101;backdrop-filter:blur(8px)}
 
 /* LEFT: AI Assistant (clean white) */
 .panel-left{width:300px;min-width:220px;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
@@ -48,9 +63,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-header__title{color:var(--navy);font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:6px}
 .ai-header__sub{color:var(--gray-400);font-size:.72rem;margin-top:2px}
 .tone-row{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--gray-100);flex-shrink:0;flex-wrap:wrap}
-.tone-btn{padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-400);font-family:inherit;transition:all .2s}
-.tone-btn:hover{color:var(--navy);border-color:var(--gray-300)}
-.tone-btn.active{background:rgba(14,165,160,.08);color:var(--teal);border-color:var(--teal)}
+.tone-btn{padding:4px 11px;border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--gray-200);background:var(--white);color:var(--gray-400);font-family:inherit;transition:all .25s}
+.tone-btn:hover{color:var(--navy);border-color:var(--gray-300);background:var(--gray-50)}
+.tone-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 2px 6px rgba(14,165,160,.3)}
 .ai-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-height:0;background:var(--gray-50)}
 .ai-messages::-webkit-scrollbar{width:3px}.ai-messages::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 .ai-msg{padding:10px 12px;border-radius:10px;font-size:.82rem;line-height:1.6;max-width:95%;animation:fadeMsg .3s}
@@ -63,9 +78,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-msg__btn{padding:4px 10px;border-radius:5px;font-size:.73rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
 .ai-msg__btn--insert{background:var(--teal);color:#fff}.ai-msg__btn--insert:hover{background:#0c918c}
 .ai-msg__btn--append{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200)}.ai-msg__btn--append:hover{background:var(--gray-200)}
-.ai-quick{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;border-top:1px solid var(--gray-100);flex-shrink:0;background:var(--white)}
-.ai-qbtn{background:var(--gray-50);border:1px solid var(--gray-200);color:var(--gray-500);border-radius:6px;padding:4px 10px;font-size:.72rem;cursor:pointer;font-family:inherit;transition:all .2s}
-.ai-qbtn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.ai-msg__time{font-size:.6rem;margin-top:4px;opacity:.5}
+.ai-msg--user .ai-msg__time{text-align:right}
+.ai-msg--bot .ai-msg__time{text-align:left}
+.ai-quick{display:flex;flex-direction:column;border-top:1px solid var(--gray-100);flex-shrink:0;background:var(--white)}
+.ai-quick__group{padding:6px 12px 4px}
+.ai-quick__label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gray-400);margin-bottom:4px}
+.ai-quick__row{display:flex;flex-wrap:wrap;gap:4px}
+.ai-qbtn{background:var(--gray-50);border:1px solid var(--gray-200);color:var(--gray-600);border-radius:6px;padding:4px 10px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:3px}
+.ai-qbtn:hover{background:var(--teal);color:#fff;border-color:var(--teal);transform:translateY(-1px);box-shadow:0 2px 6px rgba(14,165,160,.15)}
 .ai-input{padding:10px 12px;border-top:1px solid var(--gray-200);background:var(--white);flex-shrink:0}
 .ai-input__row{display:flex;gap:6px;align-items:flex-end}
 .ai-input textarea{flex:1;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;color:var(--navy);font-size:.82rem;font-family:inherit;resize:none;min-height:130px;max-height:200px;line-height:1.5}
@@ -117,8 +138,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-editor img{cursor:pointer;border:2px solid transparent;border-radius:4px;transition:border .2s;max-width:100%}
 .editor-wrap .ql-editor img:hover{border-color:var(--teal)}
 .editor-wrap .ql-editor img.img-selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2)}
-.ai-typing{display:flex;gap:4px;padding:6px 10px}.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gray-400);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.ai-typing{display:flex;gap:5px;padding:6px 10px;align-items:center}.ai-typing span{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:aiBounce 1.4s infinite ease-in-out}.ai-typing span:nth-child(2){animation-delay:.16s}.ai-typing span:nth-child(3){animation-delay:.32s}
+@keyframes aiBounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
 
 /* DRAG HANDLE */
 .drag-handle{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;position:relative;transition:background .2s}
@@ -149,7 +170,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-tab{padding:6px 14px;font-size:.8rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-radius:6px;transition:all .2s;display:flex;align-items:center;gap:4px}
 .editor-tab.active{color:var(--teal);background:rgba(14,165,160,.08)}
 .editor-tab:hover:not(.active){color:var(--gray-600)}
-.editor-stats{display:flex;gap:12px;font-size:.75rem;color:var(--gray-400)}
+.editor-stats{display:flex;gap:12px;font-size:.75rem;color:var(--gray-400);align-items:center}
+.word-goal{display:flex;align-items:center;gap:6px}
+.word-goal__bar{width:60px;height:5px;background:var(--gray-200);border-radius:5px;overflow:hidden}
+.word-goal__fill{height:100%;border-radius:5px;transition:width .4s ease,background .4s;width:0}
+.word-goal__fill--red{background:#DC2626}
+.word-goal__fill--amber{background:#D97706}
+.word-goal__fill--green{background:#059669}
 
 .editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .editor-wrap .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-200)!important;background:var(--white);padding:6px 12px!important}
@@ -166,27 +193,29 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 
 /* Sidebar boxes (WordPress-style metaboxes) */
-.sb-box{border:1px solid var(--gray-200);border-radius:8px;margin:12px 12px 0;overflow:hidden}
+.sb-box{border:1px solid var(--gray-200);border-radius:10px;margin:12px 12px 0;overflow:hidden;transition:box-shadow .2s}
+.sb-box:hover{box-shadow:0 2px 8px rgba(11,37,69,.04)}
 .sb-box:last-child{margin-bottom:12px}
-.sb-box__head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);cursor:pointer;user-select:none}
+.sb-box__head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);cursor:pointer;user-select:none;transition:background .2s}
+.sb-box__head:hover{background:var(--gray-100)}
 .sb-box__title{font-size:.82rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
-.sb-box__toggle{font-size:.7rem;color:var(--gray-400);transition:transform .2s}
-.sb-box.collapsed .sb-box__body{display:none}
+.sb-box__toggle{font-size:.7rem;color:var(--gray-400);transition:transform .3s ease}
+.sb-box.collapsed .sb-box__body{max-height:0;padding-top:0;padding-bottom:0;overflow:hidden;opacity:0}
 .sb-box.collapsed .sb-box__toggle{transform:rotate(-90deg)}
-.sb-box__body{padding:14px}
+.sb-box__body{padding:14px;max-height:600px;transition:max-height .35s ease,opacity .25s,padding .25s;opacity:1;overflow:hidden}
 .sb-label{font-size:.75rem;font-weight:600;color:var(--gray-500);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
 .sb-label .char-count{font-weight:400;color:var(--gray-400);text-transform:none;letter-spacing:0}
-.sb-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;transition:border .2s;margin-bottom:10px}
-.sb-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.08)}
-.sb-textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;resize:vertical;min-height:55px;line-height:1.5;margin-bottom:10px}
-.sb-textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.08)}
-.sb-select{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;background:var(--white);margin-bottom:10px}
+.sb-input{width:100%;padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:7px;font-family:inherit;font-size:.82rem;transition:all .2s;margin-bottom:10px}
+.sb-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.08)}
+.sb-textarea{width:100%;padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:7px;font-family:inherit;font-size:.82rem;resize:vertical;min-height:55px;line-height:1.5;margin-bottom:10px;transition:all .2s}
+.sb-textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.08)}
+.sb-select{width:100%;padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:7px;font-family:inherit;font-size:.82rem;background:var(--white);margin-bottom:10px;transition:border .2s}
 .sb-select:focus{outline:none;border-color:var(--teal)}
 .sb-hint{font-size:.72rem;color:var(--gray-400);margin:-6px 0 10px}
 
 /* Publish Box (special) */
-.publish-box{border-color:var(--teal)}
-.publish-box .sb-box__head{background:rgba(14,165,160,.04);border-bottom-color:rgba(14,165,160,.15)}
+.publish-box{border-color:var(--teal);box-shadow:0 0 0 1px rgba(14,165,160,.06)}
+.publish-box .sb-box__head{background:rgba(14,165,160,.03);border-bottom-color:rgba(14,165,160,.12)}
 .publish-row{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--gray-600);margin-bottom:8px}
 .publish-row span:first-child{color:var(--gray-400);width:14px;text-align:center}
 .publish-row a{color:var(--teal);font-size:.72rem;font-weight:600;cursor:pointer;text-decoration:none;margin-left:auto}
@@ -211,18 +240,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .seo-badge--red{background:#FEE2E2;color:#DC2626}
 .seo-badge--gray{background:var(--gray-100);color:var(--gray-400)}
 
-/* Featured Image */
-.feat-img-preview{width:100%;border-radius:6px;object-fit:cover;border:1px solid var(--gray-200);margin-bottom:8px;display:none;max-height:160px;background:var(--gray-50)}
-.feat-img-empty{border:2px dashed var(--gray-200);border-radius:8px;padding:24px;text-align:center;color:var(--gray-400);font-size:.8rem;cursor:pointer;transition:all .2s}
-.feat-img-empty:hover{border-color:var(--teal);background:rgba(14,165,160,.03)}
+/* Featured Image — Drop Zone */
+.feat-img-preview{width:100%;border-radius:8px;object-fit:cover;border:1px solid var(--gray-200);margin-bottom:8px;display:none;max-height:180px;background:var(--gray-50)}
+.feat-img-empty{border:2px dashed var(--gray-300);border-radius:10px;padding:26px 16px;text-align:center;color:var(--gray-400);font-size:.8rem;cursor:pointer;transition:all .3s;background:var(--gray-50)}
+.feat-img-empty:hover{border-color:var(--teal);background:rgba(14,165,160,.03);color:var(--teal)}
+.feat-img-empty.dragover{border-color:var(--teal);background:rgba(14,165,160,.06);transform:scale(1.01)}
 .feat-img-btns{display:flex;gap:6px;margin-top:6px}
-.feat-img-btn{padding:4px 10px;border-radius:5px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-family:inherit}
+.feat-img-btn{padding:5px 12px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-family:inherit;transition:all .2s}
 .feat-img-btn:hover{border-color:var(--teal);color:var(--teal)}
 
 /* Tags */
 .tags-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:6px;border:1px solid var(--gray-200);border-radius:6px;min-height:34px;cursor:text;margin-bottom:10px}
 .tags-wrap:focus-within{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.08)}
-.tag-chip{background:rgba(14,165,160,.08);color:var(--teal);padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600;display:flex;align-items:center;gap:4px}
+.tag-chip{background:rgba(14,165,160,.08);color:var(--teal);padding:3px 9px;border-radius:50px;font-size:.73rem;font-weight:600;display:flex;align-items:center;gap:4px}
 .tag-chip button{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.8rem;padding:0;line-height:1}.tag-chip button:hover{color:#EF4444}
 .tag-input{border:none;outline:none;font-family:inherit;font-size:.82rem;flex:1;min-width:60px;padding:2px}
 
@@ -298,8 +328,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="topbar__title" id="topTitle">New Post</div>
     <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
     <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
+    <span class="topbar__unsaved" id="unsavedIndicator">Unsaved changes</span>
     <div class="topbar__actions">
         <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()" title="Undo recent changes">↩ Undo</button>
+        <button class="topbar__btn topbar__btn--focus" id="focusBtn" onclick="toggleFocus()" title="Focus mode (Ctrl+\)">⛶</button>
         <button class="topbar__btn topbar__btn--preview" onclick="togglePreview()">👁 Preview</button>
         <!-- Draft state buttons -->
         <button class="topbar__btn topbar__btn--save" id="topDraftBtn" onclick="savePost('draft')">Save Draft</button>
@@ -331,14 +363,24 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize your post. What would you like to do?</div>
     </div>
     <div class="ai-quick">
-        <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion')">✨ Write full post</button>
-        <button class="ai-qbtn" onclick="aiCmd('Generate meta title, meta description, excerpt, and focus keywords based on the content')">🏷 Auto SEO</button>
-        <button class="ai-qbtn" onclick="aiCmd('Improve the current content - make it more engaging with better structure')">🎯 Improve</button>
-        <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">✏ Fix grammar</button>
-        <button class="ai-qbtn" onclick="aiCmd('Add a compelling introduction paragraph')">📝 Add intro</button>
-        <button class="ai-qbtn" onclick="aiCmd('Add a conclusion with a call-to-action')">🎬 Conclusion</button>
-        <button class="ai-qbtn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
-        <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+        <div class="ai-quick__group">
+            <div class="ai-quick__label">✍ Write</div>
+            <div class="ai-quick__row">
+                <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion')">✨ Full post</button>
+                <button class="ai-qbtn" onclick="aiCmd('Add a compelling introduction paragraph')">📝 Intro</button>
+                <button class="ai-qbtn" onclick="aiCmd('Add a conclusion with a call-to-action')">🎬 Conclusion</button>
+                <button class="ai-qbtn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
+            </div>
+        </div>
+        <div class="ai-quick__group" style="padding-bottom:8px">
+            <div class="ai-quick__label">🎯 Optimize</div>
+            <div class="ai-quick__row">
+                <button class="ai-qbtn" onclick="aiCmd('Generate meta title, meta description, excerpt, and focus keywords based on the content')">🏷 Auto SEO</button>
+                <button class="ai-qbtn" onclick="aiCmd('Improve the current content - make it more engaging with better structure')">🎯 Improve</button>
+                <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">✏ Grammar</button>
+                <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+            </div>
+        </div>
     </div>
     <div class="ai-input">
         <div class="ai-input__row">
@@ -385,6 +427,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="editor-stats">
             <span id="wordCount">0 words</span>
             <span id="readTime">0 min read</span>
+            <div class="word-goal">
+                <div class="word-goal__bar"><div class="word-goal__fill" id="wordGoalFill"></div></div>
+                <span id="wordGoalLabel" style="font-size:.68rem">0/600</span>
+            </div>
         </div>
     </div>
     <div class="editor-wrap" id="editorWrap">
@@ -480,11 +526,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <div id="featImgBox" style="cursor:pointer" onclick="openMediaPicker()">
+            <div id="featImgBox">
                 <img class="feat-img-preview" id="featImgPreview">
-                <div class="feat-img-empty" id="featImgEmpty">
-                    <div style="font-size:1.5rem;margin-bottom:4px">🖼</div>
-                    Click to set featured image
+                <div class="feat-img-empty" id="featImgEmpty" onclick="openMediaPicker()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');handleFeatDrop(event)">
+                    <div style="font-size:1.8rem;margin-bottom:4px">🖼</div>
+                    <div style="font-weight:500">Click or drag image here</div>
+                    <div style="font-size:.68rem;color:var(--gray-400);margin-top:4px">Recommended: 1200 × 630px</div>
                 </div>
             </div>
             <div id="featImgActions" style="display:none;margin-top:6px">
@@ -543,6 +590,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 </div>
 
 <div class="autosave-toast" id="autosaveToast">💾 Auto-saved</div>
+<div class="shortcut-toast" id="shortcutToast"></div>
 
 <!-- Image Editor Overlay -->
 <div class="img-edit-overlay" id="imgEditOverlay" onclick="if(event.target===this)closeImgEdit()">
@@ -670,6 +718,21 @@ let currentTone = 'professional';
 let autoSaveTimer = null;
 let tags = [];
 let slugEdited = false;
+let hasUnsavedChanges = false;
+
+function markUnsaved() {
+    hasUnsavedChanges = true;
+    document.getElementById('unsavedIndicator').style.display = 'flex';
+    document.getElementById('savedIndicator').style.display = 'none';
+}
+function markSaved() {
+    hasUnsavedChanges = false;
+    document.getElementById('unsavedIndicator').style.display = 'none';
+}
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', function(e) {
+    if (hasUnsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+});
 
 const quill = new Quill('#editor', {
     theme: 'snow',
@@ -683,6 +746,7 @@ const quill = new Quill('#editor', {
 
 quill.on('text-change', () => {
     updateStats(); analyzeSEO();
+    markUnsaved();
     resetAutoSave();
 });
 
@@ -691,12 +755,52 @@ function resetAutoSave() {
     autoSaveTimer = setTimeout(() => savePost('auto'), 15000);
 }
 
+/* ═══ Focus mode ═══ */
+function toggleFocus() {
+    document.body.classList.toggle('focus-mode');
+    document.getElementById('focusBtn').classList.toggle('active');
+    showShortcut(document.body.classList.contains('focus-mode') ? 'Focus mode ON — Esc to exit' : 'Focus mode OFF');
+}
+function showShortcut(text) {
+    const el = document.getElementById('shortcutToast');
+    el.textContent = text; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 1800);
+}
+
+/* ═══ Keyboard shortcuts ═══ */
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        savePost(document.getElementById('status').value);
+        showShortcut('💾 Saved!');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        togglePreview();
+        showShortcut('👁 Preview toggled');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === '\\') {
+        e.preventDefault();
+        toggleFocus();
+    }
+    if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) {
+        toggleFocus();
+    }
+});
+
 function updateStats() {
     const text = quill.getText().trim();
     const words = text ? text.split(/\s+/).length : 0;
     const readMin = Math.max(1, Math.ceil(words / 200));
     document.getElementById('wordCount').textContent = words + ' words';
     document.getElementById('readTime').textContent = readMin + ' min read';
+    // Word goal progress bar
+    const goal = 600;
+    const pct = Math.min(100, Math.round((words / goal) * 100));
+    const fill = document.getElementById('wordGoalFill');
+    fill.style.width = pct + '%';
+    fill.className = 'word-goal__fill ' + (pct >= 100 ? 'word-goal__fill--green' : pct >= 50 ? 'word-goal__fill--amber' : 'word-goal__fill--red');
+    document.getElementById('wordGoalLabel').textContent = words + '/' + goal;
     const analysis = [];
     if (words < 300) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--red"></span>Content is short (' + words + ' words, aim for 600+)</div>');
     else if (words > 600) analysis.push('<div class="analysis-item"><span class="analysis-dot analysis-dot--green"></span>Good length (' + words + ' words)</div>');
@@ -932,6 +1036,8 @@ async function loadPost() {
             document.getElementById('pubDate').textContent = new Date(postData.published_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'});
         }
         slugEdited = true;
+        hasUnsavedChanges = false;
+        document.getElementById('unsavedIndicator').style.display = 'none';
     } catch(e) { console.error('Load failed', e); }
 }
 
@@ -971,6 +1077,7 @@ async function savePost(statusOverride) {
             badge.textContent = result.status;
             badge.className = 'topbar__status topbar__status--' + result.status;
             updatePublishUI();
+            markSaved();
             if (result.published_at) {
                 document.getElementById('pubDateRow').style.display = '';
                 document.getElementById('pubDate').textContent = new Date(result.published_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit'});
@@ -1004,7 +1111,9 @@ async function aiCmd(customMsg) {
     const messages = document.getElementById('aiMessages');
     const userDiv = document.createElement('div');
     userDiv.className = 'ai-msg ai-msg--user';
-    userDiv.textContent = msg;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    userDiv.innerHTML = msg + '<div class="ai-msg__time">' + timeStr + '</div>';
     messages.appendChild(userDiv);
     const loadDiv = document.createElement('div');
     loadDiv.className = 'ai-msg ai-msg--bot';
@@ -1042,7 +1151,7 @@ IMPORTANT RULES:
                     // Slug/URL suggestion
                     document.getElementById('slug').value = seoData.slug;
                     slugEdited = true;
-                    loadDiv.innerHTML = '✅ URL updated!<br><strong>New slug:</strong> /' + seoData.slug + '/<br>' + (seoData.explanation || '');
+                    loadDiv.innerHTML = '✅ URL updated!<br><strong>New slug:</strong> /' + seoData.slug + '/<br>' + (seoData.explanation || '') + '<div class="ai-msg__time">' + timeStr + '</div>';
                 } else if (seoData.meta_title || seoData.meta_description) {
                     // SEO fields
                     if (seoData.meta_title) document.getElementById('metaTitle').value = seoData.meta_title;
@@ -1053,7 +1162,7 @@ IMPORTANT RULES:
                     updateCharCount('metaTitle','metaTitleCount',60);
                     updateCharCount('metaDesc','metaDescCount',160);
                     analyzeSEO();
-                    loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...';
+                    loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Meta title:</strong> ' + (seoData.meta_title||'') + '<br><strong>Description:</strong> ' + (seoData.meta_description||'').substring(0,80) + '...<div class="ai-msg__time">' + timeStr + '</div>';
                 }
             } else {
                 // Content response — store in variable for safe retrieval
@@ -1061,7 +1170,7 @@ IMPORTANT RULES:
                 window[contentId] = result;
                 const preview = result.replace(/<[^>]*>/g,'').substring(0,180);
                 loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') +
-                    `<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI('${contentId}')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI('${contentId}')">➕ Append</button></div>`;
+                    `<div class="ai-msg__actions"><button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI('${contentId}')">📋 Replace</button><button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI('${contentId}')">➕ Append</button></div><div class="ai-msg__time">${timeStr}</div>`;
             }
         } else { loadDiv.innerHTML = '❌ ' + (data.error || 'Failed'); }
     } catch(e) { loadDiv.innerHTML = '❌ Connection failed'; }
@@ -1433,6 +1542,26 @@ function removeAiAttachment() {
     document.getElementById('aiAttachments').style.display = 'none';
 }
 
+// ===== FEATURED IMAGE DRAG-DROP =====
+async function handleFeatDrop(e) {
+    const files = e.dataTransfer.files;
+    if (!files.length || !files[0].type.startsWith('image/')) return;
+    const toast = document.getElementById('autosaveToast');
+    toast.textContent = '📤 Uploading...'; toast.style.display = 'block';
+    const url = await uploadImageToServer(files[0]);
+    if (url) {
+        document.getElementById('coverImage').value = url;
+        document.getElementById('featImgPreview').src = url;
+        document.getElementById('featImgPreview').style.display = 'block';
+        document.getElementById('featImgEmpty').style.display = 'none';
+        document.getElementById('featImgActions').style.display = 'block';
+        document.getElementById('featImgName').textContent = files[0].name;
+        markUnsaved();
+        toast.textContent = '✅ Featured image set';
+    } else { toast.textContent = '❌ Upload failed'; }
+    setTimeout(() => toast.style.display = 'none', 2500);
+}
+
 // ===== IMAGE EDITOR (WordPress-style) =====
 let editingImg = null;
 let imgOrigW = 0, imgOrigH = 0;
@@ -1616,10 +1745,15 @@ window.undoChanges = undoChanges;
 window.restoreRevision = restoreRevision;
 window.updatePublishUI = updatePublishUI;
 window.resetAutoSave = resetAutoSave;
+window.toggleFocus = toggleFocus;
+window.showShortcut = showShortcut;
+window.markUnsaved = markUnsaved;
+window.markSaved = markSaved;
 window.importDocx = importDocx;
 window.uploadAndInsertImages = uploadAndInsertImages;
 window.handleFileAttach = handleFileAttach;
 window.removeAiAttachment = removeAiAttachment;
+window.handleFeatDrop = handleFeatDrop;
 window.openImgEdit = openImgEdit;
 window.closeImgEdit = closeImgEdit;
 window.applyImgSize = applyImgSize;
