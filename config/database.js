@@ -356,6 +356,9 @@ async function initDB() {
             // Videos — also add specialty/treatment links if table already exists
             "ALTER TABLE videos ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)",
             "ALTER TABLE videos ADD COLUMN IF NOT EXISTS treatment_id INTEGER REFERENCES treatments(id)",
+            // Doctors — add SEO fields
+            "ALTER TABLE doctors ADD COLUMN IF NOT EXISTS meta_title VARCHAR(200)",
+            "ALTER TABLE doctors ADD COLUMN IF NOT EXISTS meta_description TEXT",
         ];
         for (const sql of migrations) {
             try { await client.query(sql); } catch(e) { /* column may already exist */ }

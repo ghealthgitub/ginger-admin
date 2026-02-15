@@ -539,6 +539,12 @@ app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (re
 app.get('/doctors', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'doctors.html'));
 });
+app.get('/doctors/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
+});
+app.get('/doctors/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
+});
 
 app.get('/api/doctors', apiAuth, async (req, res) => {
     try {
@@ -551,13 +557,29 @@ app.get('/api/doctors', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.get('/api/doctor-slug-check/:slug', apiAuth, async (req, res) => {
+    try {
+        const excludeId = req.query.exclude || 0;
+        const result = await pool.query('SELECT id, name FROM doctors WHERE slug = $1 AND id != $2', [req.params.slug, excludeId]);
+        res.json({ available: result.rows.length === 0, existing: result.rows[0] || null });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/doctors/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM doctors WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description } = req.body;
         const result = await pool.query(
-            `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft']
+            `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', meta_title || null, meta_description || null]
         );
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -566,11 +588,11 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, meta_title, meta_description } = req.body;
         const result = await pool.query(
-            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, updated_at=NOW()
-             WHERE id=$15 RETURNING *`,
-            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, req.params.id]
+            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, meta_title=$15, meta_description=$16, updated_at=NOW()
+             WHERE id=$17 RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, meta_title || null, meta_description || null, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
