@@ -362,11 +362,11 @@ app.get('/api/testimonials', apiAuth, async (req, res) => {
 
 app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status } = req.body;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
         const result = await pool.query(
-            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating || 5, quote, avatar_color, is_featured || false, status || 'draft']
+            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, doctor_id, hospital_id, specialty_id, treatment_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating || 5, quote, avatar_color, is_featured || false, status || 'draft', doctor_id || null, hospital_id || null, specialty_id || null, treatment_id || null]
         );
         await logActivity(req.user.id, 'create', 'testimonial', result.rows[0].id, `Created testimonial: ${patient_name}`);
         res.json(result.rows[0]);
@@ -375,11 +375,11 @@ app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), as
 
 app.put('/api/testimonials/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status } = req.body;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
         const result = await pool.query(
-            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, updated_at=NOW()
-             WHERE id=$12 RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, req.params.id]
+            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, doctor_id=$12, hospital_id=$13, specialty_id=$14, treatment_id=$15, updated_at=NOW()
+             WHERE id=$16 RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, doctor_id || null, hospital_id || null, specialty_id || null, treatment_id || null, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'testimonial', req.params.id, `Updated: ${patient_name}`);
         res.json(result.rows[0]);
@@ -411,6 +411,59 @@ app.delete('/api/testimonials/:id', apiAuth, roleRequired('super_admin'), async 
     try {
         await pool.query('DELETE FROM testimonials WHERE id = $1', [req.params.id]);
         await logActivity(req.user.id, 'delete', 'testimonial', parseInt(req.params.id), 'Deleted testimonial');
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ============== VIDEOS CRUD ==============
+app.get('/videos', authRequired, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'videos.html'));
+});
+
+app.get('/api/videos', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT v.*, d.name as doctor_name, h.name as hospital_name, s.name as specialty_name, t.name as treatment_name
+             FROM videos v LEFT JOIN doctors d ON v.doctor_id = d.id 
+             LEFT JOIN hospitals h ON v.hospital_id = h.id 
+             LEFT JOIN specialties s ON v.specialty_id = s.id
+             LEFT JOIN treatments t ON v.treatment_id = t.id
+             ORDER BY v.sort_order ASC, v.created_at DESC`
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/videos', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status } = req.body;
+        const result = await pool.query(
+            `INSERT INTO videos (title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+            [title, slug, youtube_url, thumbnail || null, description || null, doctor_id || null, hospital_id || null, specialty_id || null, treatment_id || null, sort_order || 0, is_featured || false, status || 'draft']
+        );
+        await logActivity(req.user.id, 'create', 'video', result.rows[0].id, `Created video: ${title}`);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/videos/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status } = req.body;
+        const result = await pool.query(
+            `UPDATE videos SET title=$1, slug=$2, youtube_url=$3, thumbnail=$4, description=$5, doctor_id=$6, hospital_id=$7, specialty_id=$8, treatment_id=$9, sort_order=$10, is_featured=$11, status=$12, updated_at=NOW()
+             WHERE id=$13 RETURNING *`,
+            [title, slug, youtube_url, thumbnail, description, doctor_id || null, hospital_id || null, specialty_id || null, treatment_id || null, sort_order || 0, is_featured, status, req.params.id]
+        );
+        await logActivity(req.user.id, 'update', 'video', req.params.id, `Updated video: ${title}`);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/videos/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        await pool.query('DELETE FROM videos WHERE id = $1', [req.params.id]);
+        await logActivity(req.user.id, 'delete', 'video', parseInt(req.params.id), 'Deleted video');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
@@ -500,11 +553,11 @@ app.get('/api/doctors', apiAuth, async (req, res) => {
 
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
         const result = await pool.query(
-            `INSERT INTO doctors (name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
-            [name, slug, title, specialty, specialties || [], hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
+            `INSERT INTO doctors (name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft']
         );
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -513,11 +566,11 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status } = req.body;
         const result = await pool.query(
-            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, specialties=$5, hospital_id=$6, country=$7, experience_years=$8, qualifications=$9, description=$10, long_description=$11, image=$12, languages=$13, is_featured=$14, status=$15, treatments=$16, updated_at=NOW()
-             WHERE id=$17 RETURNING *`,
-            [name, slug, title, specialty, specialties || [], hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
+            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, hospital_id=$5, country=$6, experience_years=$7, qualifications=$8, description=$9, long_description=$10, image=$11, languages=$12, is_featured=$13, status=$14, updated_at=NOW()
+             WHERE id=$15 RETURNING *`,
+            [name, slug, title, specialty, hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);

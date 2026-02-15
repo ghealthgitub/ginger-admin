@@ -61,19 +61,22 @@ window.gingerUser = (async function() {
         { href: '/hospitals', icon: '🏥', label: 'Hospitals', roles: ['super_admin', 'editor'] },
         { href: '/doctors', icon: '👨‍⚕️', label: 'Doctors', roles: ['super_admin', 'editor'] },
         { href: '/testimonials', icon: '⭐', label: 'Testimonials', roles: ['super_admin', 'editor'] },
+        { href: '/videos', icon: '🎬', label: 'Videos', roles: ['super_admin', 'editor'] },
         { section: 'Page A (Country-Specific)', roles: ['super_admin', 'editor'] },
-        { href: '/d-specialties', icon: '🌍', label: 'D. Specialties', roles: ['super_admin', 'editor'] },
-        { href: '/d-treatments', icon: '🌐', label: 'D. Treatments', roles: ['super_admin', 'editor'] },
+        { href: '/d-specialties', icon: '🩺', label: 'D. Specialties', roles: ['super_admin', 'editor'] },
+        { href: '/d-treatments', icon: '💉', label: 'D. Treatments', roles: ['super_admin', 'editor'] },
         { section: 'Management', roles: ['super_admin', 'editor'] },
         { href: '/costs', icon: '💰', label: 'Cost Manager', roles: ['super_admin', 'editor'] },
         { href: '/submissions', icon: '📋', label: 'Submissions', roles: ['super_admin'] },
         { href: '/static-pages', icon: '📄', label: 'Static Pages', roles: ['super_admin', 'editor'] },
         { href: '/page-content', icon: '🔧', label: 'Page Content', roles: ['super_admin'] },
         { href: '/media', icon: '🖼️', label: 'Media Library', roles: ['super_admin', 'editor'] },
+        { href: '/theme-templates', icon: '🎨', label: 'Theme Templates', roles: ['super_admin'] },
         { section: 'Tools', roles: ['super_admin'] },
         { href: '/ai-assistant', icon: '🤖', label: 'AI Assistant', roles: ['super_admin'] },
         { href: '/users', icon: '👥', label: 'Users', roles: ['super_admin'] },
         { href: '/settings', icon: '⚙️', label: 'Settings', roles: ['super_admin'] },
+
     ];
 
     let navHTML = '';
