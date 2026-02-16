@@ -59,7 +59,7 @@
     <div class="modal__header"><h3 id="modalTitle">Add Hospital</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
         <div class="form-row"><div class="form-group"><label class="form-label">Hospital Name *</label><input class="form-input" id="f_name" oninput="if(!editId)document.getElementById('f_slug').value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')"></div><div class="form-group"><label class="form-label">Slug *</label><input class="form-input" id="f_slug"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Country *</label><input class="form-input" id="f_country"></div><div class="form-group"><label class="form-label">City</label><input class="form-input" id="f_city"></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Country / Destination *</label><select class="form-select" id="f_destination_id"><option value="">Select destination...</option></select></div><div class="form-group"><label class="form-label">City</label><input class="form-input" id="f_city"></div></div>
         <div class="form-group"><label class="form-label">Address</label><input class="form-input" id="f_address"></div>
         <div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc"></textarea></div>
         <div class="form-group"><label class="form-label">Detailed Description</label><div id="quillEditor"></div></div>
@@ -73,15 +73,18 @@
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-let items=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
+let items=[],destinations=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
 const API='/api/hospitals';
 async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
 
+async function loadDestinations(){try{const r=await safeFetch('/api/destinations');if(r&&r.ok){destinations=await r.json();const s=document.getElementById('f_destination_id');s.innerHTML='<option value="">Select destination...</option>';destinations.forEach(d=>{s.innerHTML+='<option value="'+d.id+'">'+d.flag+' '+d.name+'</option>';});}}catch(e){}}
+function getDestName(id){const d=destinations.find(x=>x.id===id);return d?d.name:'';}
+function getDestSlug(id){const d=destinations.find(x=>x.id===id);return d?d.slug:'india';}
+function getDestFlag(id){const d=destinations.find(x=>x.id===id);return d?(d.flag||''):'';}
 async function load(){
     try{const r=await safeFetch(API);if(!r||!r.ok)return;items=await r.json();
-    // Build country filter
-    const countries=[...new Set(items.map(i=>i.country).filter(Boolean))].sort();
-    const cf=document.getElementById('countryFilter');cf.innerHTML='<option value="">All Countries</option>'+countries.map(c=>'<option>'+c+'</option>').join('');
+    // Build country filter from destinations
+    const cf=document.getElementById('countryFilter');cf.innerHTML='<option value="">All Countries</option>'+destinations.map(d=>'<option value="'+d.id+'">'+d.name+'</option>').join('');
     updateCounts();doFilter();}catch(e){document.getElementById('list').innerHTML='<tr><td colspan="9" class="empty-state">Error loading.</td></tr>';}
 }
 
@@ -90,7 +93,7 @@ function setTab(s){activeTab=s;curPage=1;document.querySelectorAll('.status-tab'
 
 function doFilter(){
     const q=document.getElementById('searchInput').value.toLowerCase(),co=document.getElementById('countryFilter').value;
-    let f=items.filter(i=>(!activeTab||i.status===activeTab)&&(!q||i.name.toLowerCase().includes(q)||(i.city||'').toLowerCase().includes(q)||(i.country||'').toLowerCase().includes(q))&&(!co||i.country===co));
+    let f=items.filter(i=>(!activeTab||i.status===activeTab)&&(!q||i.name.toLowerCase().includes(q)||(i.city||'').toLowerCase().includes(q)||(i.country||'').toLowerCase().includes(q)||(i.destination_name||'').toLowerCase().includes(q))&&(!co||i.destination_id===+co));
     f.sort((a,b)=>{let va,vb;
         if(sortField==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase();}
         else if(sortField==='country'){va=(a.country||'');vb=(b.country||'');}
@@ -115,19 +118,21 @@ function render(list){
     tb.innerHTML=list.map(s=>{
         const ck=sel.has(s.id)?'checked':'',sc=sel.has(s.id)?' selected':'';
         const dt=new Date(s.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const destSlug=s.destination_slug||getDestSlug(s.destination_id)||'india';
+        const destName=s.destination_name||getDestName(s.destination_id)||s.country||'—';
         return `<tr id="row-${s.id}" class="${sc}">
             <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${s.id},this.checked)"></td>
             <td class="item-title-cell">
                 <strong><a href="#" onclick="editItem(${s.id});return false">${esc(s.name)}</a></strong>
-                <span class="item-slug">/hospitals/${esc(s.slug)}/</span>
+                <span class="item-slug">/destinations/${esc(destSlug)}/hospitals/${esc(s.slug)}/</span>
                 <div class="row-actions">
                     <button onclick="editItem(${s.id})">Edit</button><span class="sep">|</span>
                     <button onclick="toggleQE(${s.id})">Quick Edit</button><span class="sep">|</span>
-                    <a href="https://ginger.healthcare/hospitals/${esc(s.slug)}/" target="_blank">View</a><span class="sep">|</span>
+                    <a href="https://ginger.healthcare/destinations/${esc(destSlug)}/hospitals/${esc(s.slug)}/" target="_blank">View</a><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${s.id})">Trash</button>
                 </div>
             </td>
-            <td>${esc(s.country||'—')}</td>
+            <td>${esc(destName)}</td>
             <td>${esc(s.city||'—')}</td>
             <td style="text-align:center">${s.beds||'—'}</td>
             <td>${s.rating?'⭐ '+s.rating:'—'}</td>
@@ -139,7 +144,7 @@ function render(list){
             <div class="quick-edit__title">QUICK EDIT — ${esc(s.name)}</div>
             <div class="quick-edit__grid">
                 <div><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="qn-${s.id}" value="${esc(s.name)}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qs-${s.id}" value="${esc(s.slug)}"></div></div>
-                <div><div class="form-group"><label class="form-label">Country</label><input class="form-input" id="qc-${s.id}" value="${esc(s.country||'')}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">City</label><input class="form-input" id="qy-${s.id}" value="${esc(s.city||'')}"></div></div>
+                <div><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="qd-${s.id}">${destinations.map(d=>'<option value="'+d.id+'" '+(s.destination_id===d.id?'selected':'')+'>'+d.name+'</option>').join('')}</select></div><div class="form-group" style="margin-top:10px"><label class="form-label">City</label><input class="form-input" id="qy-${s.id}" value="${esc(s.city||'')}"></div></div>
                 <div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="qt-${s.id}"><option value="draft" ${s.status==='draft'?'selected':''}>Draft</option><option value="published" ${s.status==='published'?'selected':''}>Published</option></select></div><div class="form-group" style="margin-top:10px"><label class="form-label">Featured</label><select class="form-select" id="qf-${s.id}"><option value="false" ${!s.is_featured?'selected':''}>No</option><option value="true" ${s.is_featured?'selected':''}>Yes</option></select></div></div>
             </div>
             <div class="quick-edit__actions"><button class="btn btn--primary btn--sm" onclick="quickSave(${s.id})" style="padding:6px 16px;font-size:.82rem">💾 Update</button><button class="btn btn--outline btn--sm" onclick="toggleQE(${s.id})" style="padding:6px 16px;font-size:.82rem">Cancel</button></div>
@@ -155,24 +160,25 @@ async function applyBulk(){const action=document.getElementById('bulkAction').va
 function sortBy(f){if(sortField===f)sortDir=sortDir==='asc'?'desc':'asc';else{sortField=f;sortDir=f==='date'?'desc':'asc';}doFilter();}
 function changePage(d){curPage+=d;doFilter();window.scrollTo({top:0,behavior:'smooth'});}
 function toggleQE(id){const r=document.getElementById('qe-'+id);if(r)r.style.display=r.style.display==='none'?'':'none';}
-async function quickSave(id){const data={name:document.getElementById('qn-'+id).value,slug:document.getElementById('qs-'+id).value,country:document.getElementById('qc-'+id).value,city:document.getElementById('qy-'+id).value,status:document.getElementById('qt-'+id).value,is_featured:document.getElementById('qf-'+id).value==='true'};try{const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok)load();else alert('Save failed');}catch(e){alert('Save failed');}}
+async function quickSave(id){const destId=+document.getElementById('qd-'+id).value;const data={name:document.getElementById('qn-'+id).value,slug:document.getElementById('qs-'+id).value,destination_id:destId,country:getDestName(destId),city:document.getElementById('qy-'+id).value,status:document.getElementById('qt-'+id).value,is_featured:document.getElementById('qf-'+id).value==='true'};try{const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok)load();else alert('Save failed');}catch(e){alert('Save failed');}}
 async function deleteItem(id){if(!confirm('Delete permanently?'))return;try{await fetch(API+'/'+id,{method:'DELETE'});sel.delete(id);load();}catch(e){alert('Failed');}}
 
 function initQuill(){if(quill)return;quill=new Quill('#quillEditor',{theme:'snow',placeholder:'Detailed description...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link','image'],['clean']]}});}
 
-function openModal(){editId=null;document.getElementById('modalTitle').textContent='Add Hospital';document.getElementById('modal').classList.add('open');['f_name','f_slug','f_country','f_city','f_address','f_desc','f_rating','f_image','f_accreditations','f_specialties'].forEach(f=>document.getElementById(f).value='');document.getElementById('f_beds').value='0';document.getElementById('f_established').value='';document.getElementById('f_status').value='draft';document.getElementById('f_featured').value='false';initQuill();quill.root.innerHTML='';}
+function openModal(){editId=null;document.getElementById('modalTitle').textContent='Add Hospital';document.getElementById('modal').classList.add('open');['f_name','f_slug','f_city','f_address','f_desc','f_rating','f_image','f_accreditations','f_specialties'].forEach(f=>document.getElementById(f).value='');document.getElementById('f_destination_id').value='';document.getElementById('f_beds').value='0';document.getElementById('f_established').value='';document.getElementById('f_status').value='draft';document.getElementById('f_featured').value='false';initQuill();quill.root.innerHTML='';}
 
-function editItem(id){const s=items.find(i=>i.id===id);if(!s)return;editId=id;document.getElementById('modalTitle').textContent='Edit Hospital';document.getElementById('modal').classList.add('open');document.getElementById('f_name').value=s.name||'';document.getElementById('f_slug').value=s.slug||'';document.getElementById('f_country').value=s.country||'';document.getElementById('f_city').value=s.city||'';document.getElementById('f_address').value=s.address||'';document.getElementById('f_desc').value=s.description||'';document.getElementById('f_beds').value=s.beds||0;document.getElementById('f_established').value=s.established||'';document.getElementById('f_rating').value=s.rating||'';document.getElementById('f_image').value=s.image||'';document.getElementById('f_accreditations').value=(s.accreditations||[]).join(', ');document.getElementById('f_specialties').value=(s.specialties||[]).join(', ');document.getElementById('f_featured').value=s.is_featured?'true':'false';document.getElementById('f_status').value=s.status||'draft';initQuill();quill.root.innerHTML=s.long_description||'';}
+function editItem(id){const s=items.find(i=>i.id===id);if(!s)return;editId=id;document.getElementById('modalTitle').textContent='Edit Hospital';document.getElementById('modal').classList.add('open');document.getElementById('f_name').value=s.name||'';document.getElementById('f_slug').value=s.slug||'';document.getElementById('f_destination_id').value=s.destination_id||'';document.getElementById('f_city').value=s.city||'';document.getElementById('f_address').value=s.address||'';document.getElementById('f_desc').value=s.description||'';document.getElementById('f_beds').value=s.beds||0;document.getElementById('f_established').value=s.established||'';document.getElementById('f_rating').value=s.rating||'';document.getElementById('f_image').value=s.image||'';document.getElementById('f_accreditations').value=(s.accreditations||[]).join(', ');document.getElementById('f_specialties').value=(s.specialties||[]).join(', ');document.getElementById('f_featured').value=s.is_featured?'true':'false';document.getElementById('f_status').value=s.status||'draft';initQuill();quill.root.innerHTML=s.long_description||'';}
 
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 
 async function saveItem(){
-    const data={name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,country:document.getElementById('f_country').value,city:document.getElementById('f_city').value,address:document.getElementById('f_address').value,description:document.getElementById('f_desc').value,long_description:quill?quill.root.innerHTML:'',beds:+document.getElementById('f_beds').value||0,established:+document.getElementById('f_established').value||null,rating:document.getElementById('f_rating').value||null,image:document.getElementById('f_image').value,accreditations:document.getElementById('f_accreditations').value?document.getElementById('f_accreditations').value.split(',').map(s=>s.trim()).filter(s=>s):[],specialties:document.getElementById('f_specialties').value?document.getElementById('f_specialties').value.split(',').map(s=>s.trim()).filter(s=>s):[],is_featured:document.getElementById('f_featured').value==='true',status:document.getElementById('f_status').value};
-    if(!data.name)return alert('Name is required');if(!data.slug)data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    const destId=+document.getElementById('f_destination_id').value;
+    const data={name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,destination_id:destId,country:getDestName(destId),city:document.getElementById('f_city').value,address:document.getElementById('f_address').value,description:document.getElementById('f_desc').value,long_description:quill?quill.root.innerHTML:'',beds:+document.getElementById('f_beds').value||0,established:+document.getElementById('f_established').value||null,rating:document.getElementById('f_rating').value||null,image:document.getElementById('f_image').value,accreditations:document.getElementById('f_accreditations').value?document.getElementById('f_accreditations').value.split(',').map(s=>s.trim()).filter(s=>s):[],specialties:document.getElementById('f_specialties').value?document.getElementById('f_specialties').value.split(',').map(s=>s.trim()).filter(s=>s):[],is_featured:document.getElementById('f_featured').value==='true',status:document.getElementById('f_status').value};
+    if(!data.name)return alert('Name is required');if(!data.destination_id)return alert('Please select a destination (country)');if(!data.slug)data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?API+'/'+editId:API;const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load();}else{const e=await r.json();alert(e.error||'Save failed');}}catch(e){alert('Save failed');}
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearSel();closeModal();}});
-load();
+loadDestinations().then(()=>load());
 </script>
 </body></html>
