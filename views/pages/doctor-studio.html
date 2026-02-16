@@ -490,17 +490,17 @@ let allDestinations=[];
 // LOCKED: Doctor canonical URL is /destinations/{country-slug}/doctors/{slug}/
 function getDoctorUrl() {
     const slug = document.getElementById('slug').value;
-    const country = (doctorCountry || '').trim().toLowerCase();
-    // Try to match country to a destination slug
-    const dest = allDestinations.find(d => d.name.toLowerCase() === country);
-    const destSlug = dest ? dest.slug : country.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'india';
+    // Use destination from allDestinations matched by destination_id
+    const destId = doctorDestinationId;
+    const dest = allDestinations.find(d => d.id == destId);
+    const destSlug = dest ? dest.slug : 'india';
     return 'https://ginger.healthcare/destinations/' + destSlug + '/doctors/' + slug + '/';
 }
 
 function updatePermalinkCountry() {
-    const country = (doctorCountry || '').trim().toLowerCase();
-    const dest = allDestinations.find(d => d.name.toLowerCase() === country);
-    const destSlug = dest ? dest.slug : country.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '...';
+    const destId = doctorDestinationId;
+    const dest = allDestinations.find(d => d.id == destId);
+    const destSlug = dest ? dest.slug : '...';
     document.getElementById('permalinkCountry').textContent = destSlug;
 }
 
@@ -542,9 +542,13 @@ function updateTopTitle(){document.getElementById('topTitle').textContent=docume
 function updatePublishUI(){const s=document.getElementById('status').value;document.getElementById('pubStatus').textContent=s==='published'?'Published':'Draft';const p=s==='published'||(docData&&docData.status==='published');document.getElementById('publishBtn').textContent=p?'Update':'Publish';document.getElementById('publishBtnSidebar').textContent=p?'🔄 Update':'Publish'}
 function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTone=btn.dataset.tone}
 
-// Auto-fill country from hospital selection (country field removed from UI, stored internally)
-let doctorCountry='';
-function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h&&h.country){doctorCountry=h.country;updatePermalinkCountry()}}
+// Auto-fill destination from hospital selection
+let doctorDestinationId=null;
+function autoFillCountry(){const hid=document.getElementById('hospitalId').value;if(!hid)return;const h=allHospitals.find(x=>x.id==hid);if(h){
+    // Use hospital's destination_id if available, otherwise match by country name
+    if(h.destination_id){doctorDestinationId=h.destination_id}
+    else if(h.country){const dest=allDestinations.find(d=>d.name.toLowerCase()===h.country.toLowerCase());if(dest)doctorDestinationId=dest.id}
+    updatePermalinkCountry()}}
 
 // === CHIP INPUTS ===
 function handleChipKey(e,type){if(e.key==='Enter'){e.preventDefault();const val=e.target.value.trim();if(!val)return;if(!qualifications.includes(val)){qualifications.push(val);renderChips('qual')}e.target.value='';resetAutoSave()}}
@@ -618,7 +622,11 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     document.getElementById('doctorName').value=docData.name||'';document.getElementById('slug').value=docData.slug||'';
     document.getElementById('doctorTitle').value=docData.title||'';document.getElementById('specialty').value=docData.specialty||'';
     document.getElementById('hospitalId').value=docData.hospital_id||'';document.getElementById('experienceYears').value=docData.experience_years||'';
-    doctorCountry=docData.country||'';updatePermalinkCountry();
+    // Set destination from loaded data
+    doctorDestinationId=docData.destination_id||null;
+    if(!doctorDestinationId&&docData.country){const dest=allDestinations.find(d=>d.name.toLowerCase()===docData.country.toLowerCase());if(dest)doctorDestinationId=dest.id}
+    if(!doctorDestinationId&&docData.hospital_id){const h=allHospitals.find(x=>x.id==docData.hospital_id);if(h&&h.destination_id)doctorDestinationId=h.destination_id}
+    updatePermalinkCountry();
     document.getElementById('description').value=docData.description||'';
     document.getElementById('isFeatured').value=docData.is_featured?'true':'false';document.getElementById('status').value=docData.status||'draft';
     document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
@@ -635,7 +643,10 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
 }catch(e){console.error('Load failed',e)}}
 
 async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
-    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:document.getElementById('specialty').value,hospital_id:document.getElementById('hospitalId').value||null,country:doctorCountry,experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
+    const specName=document.getElementById('specialty').value;
+    const specObj=allSpecialties.find(s=>s.name===specName);
+    const destObj=allDestinations.find(d=>d.id==doctorDestinationId);
+    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:specName,specialty_id:specObj?specObj.id:null,hospital_id:document.getElementById('hospitalId').value||null,destination_id:doctorDestinationId||null,country:destObj?destObj.name:'',experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
     if(!data.name){if(!isAuto)alert('Doctor name is required');return}
     if(!data.slug) data.slug=data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?'/api/doctors/'+editId:'/api/doctors';const method=editId?'PUT':'POST';

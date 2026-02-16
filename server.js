@@ -564,6 +564,61 @@ app.delete('/api/doctors/:id', apiAuth, roleRequired('super_admin'), async (req,
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// ============== DOCTOR STUDIO ==============
+app.get('/doctors/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
+});
+app.get('/doctors/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
+});
+
+// Single doctor GET (for studio editor)
+app.get('/api/doctors/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT d.*, h.name as hospital_name, h.country as hospital_country,
+                    dest.name as destination_name, dest.slug as destination_slug
+             FROM doctors d
+             LEFT JOIN hospitals h ON d.hospital_id = h.id
+             LEFT JOIN destinations dest ON d.destination_id = dest.id
+             WHERE d.id = $1`, [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// Doctor slug uniqueness check
+app.get('/api/doctor-slug-check/:slug', apiAuth, async (req, res) => {
+    try {
+        const excludeId = req.query.exclude || 0;
+        const result = await pool.query('SELECT id, name FROM doctors WHERE slug = $1 AND id != $2', [req.params.slug, excludeId]);
+        res.json({ available: result.rows.length === 0, existing: result.rows[0] || null });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// Doctor-treatments junction (GET linked treatment IDs)
+app.get('/api/doctor-treatments/:doctorId', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT treatment_id FROM doctor_treatments WHERE doctor_id = $1', [req.params.doctorId]);
+        res.json(result.rows);
+    } catch (err) { res.json([]); }
+});
+
+// Doctor-treatments junction (PUT — replace all links)
+app.put('/api/doctor-treatments/:doctorId', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { treatment_ids } = req.body;
+        const doctorId = req.params.doctorId;
+        await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = $1', [doctorId]);
+        if (treatment_ids && treatment_ids.length) {
+            const values = treatment_ids.map((tid, i) => `($1, $${i + 2})`).join(',');
+            await pool.query(`INSERT INTO doctor_treatments (doctor_id, treatment_id) VALUES ${values} ON CONFLICT DO NOTHING`, [doctorId, ...treatment_ids]);
+        }
+        res.json({ success: true, count: (treatment_ids || []).length });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ============== SUBMISSIONS ==============
 app.get('/submissions', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'submissions.html'));
