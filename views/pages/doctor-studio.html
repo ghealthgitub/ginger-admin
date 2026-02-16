@@ -667,7 +667,11 @@ async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
     if(!data.slug) data.slug=data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?'/api/doctors/'+editId:'/api/doctors';const method=editId?'PUT':'POST';
         const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-        if(r.ok){const result=await r.json();if(!editId&&result.id){window.location.href='/doctors/edit/'+result.id;return}
+        if(r.ok){const result=await r.json();
+            // Save doctor-treatments junction table
+            const docId=editId||result.id;
+            if(docId&&data.treatment_ids.length){try{await fetch('/api/doctor-treatments/'+docId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({treatment_ids:data.treatment_ids})})}catch(e){console.error('Treatment link save failed',e)}}
+            if(!editId&&result.id){window.location.href='/doctors/edit/'+result.id;return}
             docData=result;document.getElementById('statusBadge').textContent=result.status;document.getElementById('statusBadge').className='topbar__status topbar__status--'+result.status;updatePublishUI();
             if(result.status==='published'&&result.slug){document.getElementById('viewArticle').style.display='';document.getElementById('viewArticle').href=getDoctorUrl();document.getElementById('viewBtn').style.display=''}
             if(isAuto){showToast('💾 Auto-saved')}else{const saved=document.getElementById('savedIndicator');saved.style.display='inline';
