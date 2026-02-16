@@ -511,11 +511,11 @@ app.get('/api/doctors', apiAuth, async (req, res) => {
 
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `INSERT INTO doctors (name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
-            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
+            `INSERT INTO doctors (name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, city || null, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
         );
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -524,11 +524,11 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, specialty_id=$5, specialties=$6, hospital_id=$7, destination_id=$8, country=$9, experience_years=$10, qualifications=$11, description=$12, long_description=$13, image=$14, languages=$15, is_featured=$16, status=$17, treatments=$18, updated_at=NOW()
-             WHERE id=$19 RETURNING *`,
-            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
+            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, specialty_id=$5, specialties=$6, hospital_id=$7, destination_id=$8, country=$9, city=$10, experience_years=$11, qualifications=$12, description=$13, long_description=$14, image=$15, languages=$16, is_featured=$17, status=$18, treatments=$19, updated_at=NOW()
+             WHERE id=$20 RETURNING *`,
+            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, city || null, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
         );
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);

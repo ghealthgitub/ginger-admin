@@ -59,7 +59,7 @@
     <div class="modal__header"><h3 id="modalTitle">Add Hospital</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
     <div class="modal__body">
         <div class="form-row"><div class="form-group"><label class="form-label">Hospital Name *</label><input class="form-input" id="f_name" oninput="if(!editId)document.getElementById('f_slug').value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')"></div><div class="form-group"><label class="form-label">Slug *</label><input class="form-input" id="f_slug"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Country / Destination *</label><select class="form-select" id="f_destination_id"><option value="">Select destination...</option></select></div><div class="form-group"><label class="form-label">City</label><input class="form-input" id="f_city"></div></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">Country / Destination *</label><select class="form-select" id="f_destination_id"><option value="">Select destination...</option></select></div><div class="form-group"><label class="form-label">City</label><select class="form-select" id="f_city"><option value="">Select city...</option></select></div></div>
         <div class="form-group"><label class="form-label">Address</label><input class="form-input" id="f_address"></div>
         <div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc"></textarea></div>
         <div class="form-group"><label class="form-label">Detailed Description</label><div id="quillEditor"></div></div>
@@ -77,7 +77,10 @@ let items=[],destinations=[],sel=new Set(),curPage=1,perPage=20,sortField='date'
 const API='/api/hospitals';
 async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
 
-async function loadDestinations(){try{const r=await safeFetch('/api/destinations');if(r&&r.ok){destinations=await r.json();const s=document.getElementById('f_destination_id');s.innerHTML='<option value="">Select destination...</option>';destinations.forEach(d=>{s.innerHTML+='<option value="'+d.id+'">'+d.flag+' '+d.name+'</option>';});}}catch(e){}}
+const CITY_LIST = ['Delhi NCR','Mumbai','Bengaluru','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Guwahati','Gurugram','Noida','Jaipur','Lucknow','Chandigarh','Kochi','Thiruvananthapuram','Coimbatore','Nagpur','Visakhapatnam','Bhubaneswar','Indore','Mangalore'];
+
+async function loadDestinations(){try{const r=await safeFetch('/api/destinations');if(r&&r.ok){destinations=await r.json();const s=document.getElementById('f_destination_id');s.innerHTML='<option value="">Select destination...</option>';destinations.forEach(d=>{s.innerHTML+='<option value="'+d.id+'">'+d.flag+' '+d.name+'</option>';});
+const citySelect=document.getElementById('f_city');citySelect.innerHTML='<option value="">Select city...</option>'+CITY_LIST.map(c=>'<option value="'+c+'">'+c+'</option>').join('');}}catch(e){}}
 function getDestName(id){const d=destinations.find(x=>x.id===id);return d?d.name:'';}
 function getDestSlug(id){const d=destinations.find(x=>x.id===id);return d?d.slug:'india';}
 function getDestFlag(id){const d=destinations.find(x=>x.id===id);return d?(d.flag||''):'';}
@@ -144,7 +147,7 @@ function render(list){
             <div class="quick-edit__title">QUICK EDIT — ${esc(s.name)}</div>
             <div class="quick-edit__grid">
                 <div><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="qn-${s.id}" value="${esc(s.name)}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qs-${s.id}" value="${esc(s.slug)}"></div></div>
-                <div><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="qd-${s.id}">${destinations.map(d=>'<option value="'+d.id+'" '+(s.destination_id===d.id?'selected':'')+'>'+d.name+'</option>').join('')}</select></div><div class="form-group" style="margin-top:10px"><label class="form-label">City</label><input class="form-input" id="qy-${s.id}" value="${esc(s.city||'')}"></div></div>
+                <div><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="qd-${s.id}">${destinations.map(d=>'<option value="'+d.id+'" '+(s.destination_id===d.id?'selected':'')+'>'+d.name+'</option>').join('')}</select></div><div class="form-group" style="margin-top:10px"><label class="form-label">City</label><select class="form-select" id="qy-${s.id}"><option value="">Select city...</option>${CITY_LIST.map(c=>'<option value="'+c+'" '+(s.city===c?'selected':'')+'>'+c+'</option>').join('')}</select></div></div>
                 <div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="qt-${s.id}"><option value="draft" ${s.status==='draft'?'selected':''}>Draft</option><option value="published" ${s.status==='published'?'selected':''}>Published</option></select></div><div class="form-group" style="margin-top:10px"><label class="form-label">Featured</label><select class="form-select" id="qf-${s.id}"><option value="false" ${!s.is_featured?'selected':''}>No</option><option value="true" ${s.is_featured?'selected':''}>Yes</option></select></div></div>
             </div>
             <div class="quick-edit__actions"><button class="btn btn--primary btn--sm" onclick="quickSave(${s.id})" style="padding:6px 16px;font-size:.82rem">💾 Update</button><button class="btn btn--outline btn--sm" onclick="toggleQE(${s.id})" style="padding:6px 16px;font-size:.82rem">Cancel</button></div>

@@ -99,6 +99,7 @@ async function initDB() {
                 hospital_id INTEGER REFERENCES hospitals(id),
                 destination_id INTEGER REFERENCES destinations(id),
                 country VARCHAR(100),
+                city VARCHAR(100),
                 experience_years INTEGER,
                 qualifications TEXT[],
                 description TEXT,
@@ -340,6 +341,7 @@ async function initDB() {
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS destination_id INTEGER REFERENCES destinations(id)`);
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS destination_id INTEGER REFERENCES destinations(id)`);
+        await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS city VARCHAR(100)`);
 
         console.log('✅ Database tables initialized');
     } catch (err) {

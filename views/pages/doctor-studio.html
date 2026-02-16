@@ -348,6 +348,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <select class="sb-select" id="specialty" onchange="resetAutoSave();filterTreatments()"><option value="">Select specialty</option></select>
             <div class="sb-label">Hospital</div>
             <select class="sb-select" id="hospitalId" onchange="resetAutoSave();autoFillCountry()"><option value="">Select hospital</option></select>
+            <div class="sb-label">Destination (Country)</div>
+            <select class="sb-select" id="destinationId" onchange="onDestinationChange();resetAutoSave()"><option value="">Auto (from hospital) or select...</option></select>
+            <div class="sb-hint">Auto-fills when hospital is selected. Override manually if needed.</div>
+            <div class="sb-label">City</div>
+            <select class="sb-select" id="doctorCity" onchange="resetAutoSave()"><option value="">Select city...</option></select>
             <div class="sb-row">
                 <div><div class="sb-label">Experience (years)</div><input class="sb-input" id="experienceYears" type="number" placeholder="e.g. 30" oninput="resetAutoSave()"></div>
                 <div></div>
@@ -548,7 +553,12 @@ function autoFillCountry(){const hid=document.getElementById('hospitalId').value
     // Use hospital's destination_id if available, otherwise match by country name
     if(h.destination_id){doctorDestinationId=h.destination_id}
     else if(h.country){const dest=allDestinations.find(d=>d.name.toLowerCase()===h.country.toLowerCase());if(dest)doctorDestinationId=dest.id}
+    else if(h.destination_name){const dest=allDestinations.find(d=>d.name===h.destination_name);if(dest)doctorDestinationId=dest.id}
+    document.getElementById('destinationId').value=doctorDestinationId||'';
+    // Auto-fill city from hospital if doctor city not already set
+    if(h.city&&!document.getElementById('doctorCity').value){document.getElementById('doctorCity').value=h.city}
     updatePermalinkCountry()}}
+function onDestinationChange(){doctorDestinationId=+document.getElementById('destinationId').value||null;updatePermalinkCountry()}
 
 // === CHIP INPUTS ===
 function handleChipKey(e,type){if(e.key==='Enter'){e.preventDefault();const val=e.target.value.trim();if(!val)return;if(!qualifications.includes(val)){qualifications.push(val);renderChips('qual')}e.target.value='';resetAutoSave()}}
@@ -612,10 +622,14 @@ function showTab(tab){const w=tab==='write';document.getElementById('tabWrite').
 function togglePreview(){showTab(document.getElementById('previewPane').classList.contains('active')?'write':'preview')}
 
 // === LOAD DATA ===
+const CITY_LIST = ['Delhi NCR','Mumbai','Bengaluru','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Guwahati','Gurugram','Noida','Jaipur','Lucknow','Chandigarh','Kochi','Thiruvananthapuram','Coimbatore','Nagpur','Visakhapatnam','Bhubaneswar','Indore','Mangalore'];
+
 async function loadDropdowns(){try{const[hr,sr,tr,dr]=await Promise.all([fetch('/api/hospitals'),fetch('/api/specialties'),fetch('/api/treatments'),fetch('/api/destinations')]);
     allHospitals=await hr.json();allSpecialties=await sr.json();allTreatments=await tr.json();allDestinations=await dr.json();
-    document.getElementById('hospitalId').innerHTML='<option value="">Select hospital</option>'+allHospitals.map(h=>'<option value="'+h.id+'">'+h.name+(h.city?' — '+h.city:'')+'</option>').join('');
+    document.getElementById('hospitalId').innerHTML='<option value="">Select hospital</option>'+allHospitals.map(h=>'<option value="'+h.id+'">'+(h.destination_name?h.destination_name+' — ':'')+h.name+(h.city?' — '+h.city:'')+'</option>').join('');
     document.getElementById('specialty').innerHTML='<option value="">Select specialty</option>'+allSpecialties.map(s=>'<option value="'+s.name+'">'+s.name+'</option>').join('');
+    document.getElementById('destinationId').innerHTML='<option value="">Auto (from hospital) or select...</option>'+allDestinations.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
+    document.getElementById('doctorCity').innerHTML='<option value="">Select city...</option>'+CITY_LIST.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
     renderTreatments()}catch(e){console.error('Dropdown load failed',e)}}
 
 async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doctors/'+editId);if(!r.ok)return;docData=await r.json();
@@ -626,8 +640,10 @@ async function loadDoctor(){if(!editId)return;try{const r=await fetch('/api/doct
     doctorDestinationId=docData.destination_id||null;
     if(!doctorDestinationId&&docData.country){const dest=allDestinations.find(d=>d.name.toLowerCase()===docData.country.toLowerCase());if(dest)doctorDestinationId=dest.id}
     if(!doctorDestinationId&&docData.hospital_id){const h=allHospitals.find(x=>x.id==docData.hospital_id);if(h&&h.destination_id)doctorDestinationId=h.destination_id}
+    document.getElementById('destinationId').value=doctorDestinationId||'';
     updatePermalinkCountry();
     document.getElementById('description').value=docData.description||'';
+    if(docData.city){document.getElementById('doctorCity').value=docData.city}
     document.getElementById('isFeatured').value=docData.is_featured?'true':'false';document.getElementById('status').value=docData.status||'draft';
     document.getElementById('metaTitle').value=docData.meta_title||'';document.getElementById('metaDesc').value=docData.meta_description||'';
     if(docData.long_description) quill.root.innerHTML=docData.long_description;
@@ -646,7 +662,7 @@ async function saveDoctor(statusOverride){const isAuto=statusOverride==='auto';
     const specName=document.getElementById('specialty').value;
     const specObj=allSpecialties.find(s=>s.name===specName);
     const destObj=allDestinations.find(d=>d.id==doctorDestinationId);
-    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:specName,specialty_id:specObj?specObj.id:null,hospital_id:document.getElementById('hospitalId').value||null,destination_id:doctorDestinationId||null,country:destObj?destObj.name:'',experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
+    const data={name:document.getElementById('doctorName').value,slug:document.getElementById('slug').value,title:document.getElementById('doctorTitle').value,specialty:specName,specialty_id:specObj?specObj.id:null,hospital_id:document.getElementById('hospitalId').value||null,destination_id:doctorDestinationId||null,country:destObj?destObj.name:'',city:document.getElementById('doctorCity').value||null,experience_years:parseInt(document.getElementById('experienceYears').value)||null,qualifications:qualifications,description:document.getElementById('description').value,long_description:quill.root.innerHTML,image:document.getElementById('image').value,languages:languages,is_featured:document.getElementById('isFeatured').value==='true',status:isAuto?document.getElementById('status').value:(statusOverride||document.getElementById('status').value),meta_title:document.getElementById('metaTitle').value,meta_description:document.getElementById('metaDesc').value,treatment_ids:[...selectedTreatments]};
     if(!data.name){if(!isAuto)alert('Doctor name is required');return}
     if(!data.slug) data.slug=data.name.toLowerCase().replace(/^dr\.?\s*/i,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try{const url=editId?'/api/doctors/'+editId:'/api/doctors';const method=editId?'PUT':'POST';
@@ -709,7 +725,7 @@ window.saveDoctor=saveDoctor;window.undoChanges=undoChanges;window.setTone=setTo
 window.aiCmd=aiCmd;window.insertAI=insertAI;window.appendAI=appendAI;window.toggleTx=toggleTx;window.toggleLang=toggleLang;
 window.removeChip=removeChip;window.handleChipKey=handleChipKey;window.autoSlug=autoSlug;window.updateTopTitle=updateTopTitle;
 window.filterTreatments=filterTreatments;window.renderTreatments=renderTreatments;window.renderLanguageList=renderLanguageList;
-window.autoFillCountry=autoFillCountry;window.resetAutoSave=resetAutoSave;window.updatePublishUI=updatePublishUI;
+window.autoFillCountry=autoFillCountry;window.onDestinationChange=onDestinationChange;window.resetAutoSave=resetAutoSave;window.updatePublishUI=updatePublishUI;
 window.analyzeSEO=analyzeSEO;window.updateCharCount=updateCharCount;window.checkSlugUnique=checkSlugUnique;
 window.handleFileAttach=handleFileAttach;window.importFile=importFile;window.showToast=showToast;
 
