@@ -433,12 +433,12 @@ app.get('/api/hospitals', apiAuth, async (req, res) => {
 
 app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured || false, status || 'draft']
+            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING *`,
+            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured || false, status || 'draft']
         );
         await logActivity(req.user.id, 'create', 'hospital', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -447,12 +447,12 @@ app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async
 
 app.put('/api/hospitals/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, latitude=$7, longitude=$8, description=$9, long_description=$10, accreditations=$11, specialties=$12, beds=$13, established=$14, image=$15, gallery=$16, rating=$17, is_featured=$18, status=$19, updated_at=NOW()
-             WHERE id=$20 RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured, status, req.params.id]
+            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, latitude=$7, longitude=$8, airport_id=$9, airport_distance=$10, description=$11, long_description=$12, accreditations=$13, specialties=$14, beds=$15, established=$16, image=$17, gallery=$18, rating=$19, is_featured=$20, status=$21, updated_at=NOW()
+             WHERE id=$22 RETURNING *`,
+            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'hospital', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
@@ -500,12 +500,53 @@ app.get('/hospitals/edit/:id', authRequired, roleRequired('super_admin', 'editor
 app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT h.*, d.name as destination_name, d.slug as destination_slug
-             FROM hospitals h LEFT JOIN destinations d ON h.destination_id = d.id
+            `SELECT h.*, d.name as destination_name, d.slug as destination_slug,
+                    a.name as airport_name, a.code as airport_code, a.latitude as airport_lat, a.longitude as airport_lng
+             FROM hospitals h
+             LEFT JOIN destinations d ON h.destination_id = d.id
+             LEFT JOIN airports a ON h.airport_id = a.id
              WHERE h.id = $1`, [req.params.id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ============== AIRPORTS CRUD ==============
+app.get('/api/airports', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM airports ORDER BY country, city, name');
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { name, code, city, country, latitude, longitude } = req.body;
+        if (!name || !city) return res.status(400).json({ error: 'Name and city are required' });
+        const result = await pool.query(
+            'INSERT INTO airports (name, code, city, country, latitude, longitude) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null]
+        );
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/airports/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { name, code, city, country, latitude, longitude } = req.body;
+        const result = await pool.query(
+            'UPDATE airports SET name=$1, code=$2, city=$3, country=$4, latitude=$5, longitude=$6 WHERE id=$7 RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null, req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/airports/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        await pool.query('DELETE FROM airports WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 

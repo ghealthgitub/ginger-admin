@@ -212,6 +212,21 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div style="flex:1"><div class="sb-label">Longitude</div><input class="sb-input" id="longitude" type="number" step="any" placeholder="e.g. 77.0266" onchange="resetAutoSave()"></div>
         </div>
         <div class="sb-hint">Enter coordinates for Google Maps embed</div>
+        <div class="sb-label">Nearest Airport</div>
+        <select class="sb-select" id="airportId" onchange="resetAutoSave()"><option value="">Select airport...</option></select>
+        <div id="addAirportToggle" style="margin-top:4px"><a href="#" style="font-size:.72rem;color:var(--teal);font-weight:600" onclick="document.getElementById('addAirportForm').style.display='block';this.parentElement.style.display='none';return false">+ Add New Airport</a></div>
+        <div id="addAirportForm" style="display:none;margin-top:6px;padding:10px;background:var(--gray-50);border-radius:6px;border:1px solid var(--gray-200)">
+            <div class="sb-label" style="margin-top:0">Airport Name</div>
+            <input class="sb-input" id="newAirportName" placeholder="e.g. Indira Gandhi International Airport">
+            <div style="display:flex;gap:6px"><div style="flex:1"><div class="sb-label">Code</div><input class="sb-input" id="newAirportCode" placeholder="DEL"></div><div style="flex:1"><div class="sb-label">City</div><input class="sb-input" id="newAirportCity" placeholder="Delhi"></div></div>
+            <div style="display:flex;gap:6px"><div style="flex:1"><div class="sb-label">Latitude</div><input class="sb-input" id="newAirportLat" type="number" step="any"></div><div style="flex:1"><div class="sb-label">Longitude</div><input class="sb-input" id="newAirportLng" type="number" step="any"></div></div>
+            <div style="display:flex;gap:6px;margin-top:8px">
+                <button class="sb-btn sb-btn--primary" style="flex:1;padding:5px" onclick="saveNewAirport()">Save Airport</button>
+                <button class="sb-btn sb-btn--outline" style="flex:1;padding:5px" onclick="document.getElementById('addAirportForm').style.display='none';document.getElementById('addAirportToggle').style.display='block'">Cancel</button>
+            </div>
+        </div>
+        <div class="sb-label">Distance from Airport</div>
+        <input class="sb-input" id="airportDistance" placeholder="e.g. 25 km / 45 mins" onchange="resetAutoSave()">
         <div class="sb-label">Short Description</div>
         <textarea class="sb-textarea" id="description" rows="2" onchange="resetAutoSave()"></textarea>
     </div>
@@ -287,7 +302,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], accreditations = [], specialtiesList = [], galleryImages = [], currentTone = 'professional';
+let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
@@ -305,10 +320,13 @@ quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); })
 
 async function init() {
     try {
-        const dr = await fetch('/api/destinations');
+        const [dr, ar] = await Promise.all([fetch('/api/destinations'), fetch('/api/airports')]);
         allDestinations = await dr.json();
         const dd = document.getElementById('destinationId');
         allDestinations.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
+
+        allAirports = await ar.json();
+        renderAirportDropdown();
     } catch(e) { console.error('Init error:', e); }
     if (editId) await loadHospital();
     startAutoSave();
@@ -327,6 +345,8 @@ async function loadHospital() {
         document.getElementById('address').value = hospData.address || '';
         document.getElementById('latitude').value = hospData.latitude || '';
         document.getElementById('longitude').value = hospData.longitude || '';
+        if (hospData.airport_id) document.getElementById('airportId').value = hospData.airport_id;
+        document.getElementById('airportDistance').value = hospData.airport_distance || '';
         document.getElementById('beds').value = hospData.beds || '';
         document.getElementById('established').value = hospData.established || '';
         document.getElementById('rating').value = hospData.rating || '';
@@ -405,6 +425,8 @@ async function saveHospital(isAuto, statusOverride) {
         address: document.getElementById('address').value,
         latitude: parseFloat(document.getElementById('latitude').value) || null,
         longitude: parseFloat(document.getElementById('longitude').value) || null,
+        airport_id: parseInt(document.getElementById('airportId').value) || null,
+        airport_distance: document.getElementById('airportDistance').value || null,
         description: document.getElementById('description').value,
         long_description: quill.root.innerHTML,
         accreditations: accreditations,
@@ -632,6 +654,45 @@ function removeFeatImage() {
     resetAutoSave();
 }
 function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('open'); }
+
+// ============== AIRPORTS ==============
+function renderAirportDropdown() {
+    const dd = document.getElementById('airportId');
+    const current = dd.value;
+    dd.innerHTML = '<option value="">Select airport...</option>';
+    allAirports.forEach(a => {
+        const o = document.createElement('option');
+        o.value = a.id;
+        o.textContent = (a.code ? a.code + ' — ' : '') + a.name + ' (' + a.city + ')';
+        dd.appendChild(o);
+    });
+    if (current) dd.value = current;
+}
+async function saveNewAirport() {
+    const data = {
+        name: document.getElementById('newAirportName').value,
+        code: document.getElementById('newAirportCode').value,
+        city: document.getElementById('newAirportCity').value,
+        country: (() => { const d = allDestinations.find(x => x.id == document.getElementById('destinationId').value); return d ? d.name : ''; })(),
+        latitude: parseFloat(document.getElementById('newAirportLat').value) || null,
+        longitude: parseFloat(document.getElementById('newAirportLng').value) || null
+    };
+    if (!data.name || !data.city) { alert('Airport name and city are required'); return; }
+    try {
+        const r = await fetch('/api/airports', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (r.ok) {
+            const newAirport = await r.json();
+            allAirports.push(newAirport);
+            renderAirportDropdown();
+            document.getElementById('airportId').value = newAirport.id;
+            document.getElementById('addAirportForm').style.display = 'none';
+            document.getElementById('addAirportToggle').style.display = 'block';
+            ['newAirportName','newAirportCode','newAirportCity','newAirportLat','newAirportLng'].forEach(id => document.getElementById(id).value = '');
+            showToast('✅ Airport saved!');
+            resetAutoSave();
+        } else { const e = await r.json(); alert('Error: ' + (e.error || 'Save failed')); }
+    } catch(e) { alert('Network error: ' + e.message); }
+}
 
 // ============== GALLERY ==============
 function renderGallery() {

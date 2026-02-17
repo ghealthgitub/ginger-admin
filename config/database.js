@@ -95,6 +95,18 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT NOW()
             );
 
+            -- AIRPORTS (reference table)
+            CREATE TABLE IF NOT EXISTS airports (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(300) NOT NULL,
+                code VARCHAR(10),
+                city VARCHAR(100) NOT NULL,
+                country VARCHAR(100),
+                latitude DECIMAL(10,7),
+                longitude DECIMAL(10,7),
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
             -- HOSPITALS
             CREATE TABLE IF NOT EXISTS hospitals (
                 id SERIAL PRIMARY KEY,
@@ -106,6 +118,8 @@ async function initDB() {
                 address TEXT,
                 latitude DECIMAL(10,7),
                 longitude DECIMAL(10,7),
+                airport_id INTEGER REFERENCES airports(id),
+                airport_distance VARCHAR(100),
                 description TEXT,
                 long_description TEXT,
                 accreditations TEXT[],
@@ -370,6 +384,8 @@ async function initDB() {
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS destination_id INTEGER REFERENCES destinations(id)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,7)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_id INTEGER REFERENCES airports(id)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_distance VARCHAR(100)`);
 
         // Doctors — FK columns + extra fields
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);
