@@ -104,6 +104,8 @@ async function initDB() {
                 country VARCHAR(100),
                 city VARCHAR(100),
                 address TEXT,
+                latitude DECIMAL(10,7),
+                longitude DECIMAL(10,7),
                 description TEXT,
                 long_description TEXT,
                 accreditations TEXT[],
@@ -364,8 +366,10 @@ async function initDB() {
         // Blog
         await client.query(`ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS focus_keywords TEXT`);
 
-        // Hospitals — FK to destinations
+        // Hospitals — FK to destinations + geo
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS destination_id INTEGER REFERENCES destinations(id)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,7)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7)`);
 
         // Doctors — FK columns + extra fields
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);

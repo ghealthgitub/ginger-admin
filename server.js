@@ -433,12 +433,12 @@ app.get('/api/hospitals', apiAuth, async (req, res) => {
 
 app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
-            [name, slug, destination_id, country, city, address, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured || false, status || 'draft']
+            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured || false, status || 'draft']
         );
         await logActivity(req.user.id, 'create', 'hospital', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -447,12 +447,12 @@ app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async
 
 app.put('/api/hospitals/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude, description, long_description, accreditations, specialties, beds, established, image, gallery, rating, is_featured, status } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, description=$7, long_description=$8, accreditations=$9, specialties=$10, beds=$11, established=$12, image=$13, gallery=$14, rating=$15, is_featured=$16, status=$17, updated_at=NOW()
-             WHERE id=$18 RETURNING *`,
-            [name, slug, destination_id, country, city, address, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured, status, req.params.id]
+            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, latitude=$7, longitude=$8, description=$9, long_description=$10, accreditations=$11, specialties=$12, beds=$13, established=$14, image=$15, gallery=$16, rating=$17, is_featured=$18, status=$19, updated_at=NOW()
+             WHERE id=$20 RETURNING *`,
+            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, description, long_description, accreditations || [], specialties || [], beds, established, image, gallery || [], rating, is_featured, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'hospital', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);

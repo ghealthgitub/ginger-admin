@@ -207,6 +207,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <select class="sb-select" id="hospitalCity" onchange="resetAutoSave()"><option value="">Select city...</option></select>
         <div class="sb-label">Address</div>
         <textarea class="sb-textarea" id="address" rows="2" onchange="resetAutoSave()"></textarea>
+        <div style="display:flex;gap:8px">
+            <div style="flex:1"><div class="sb-label">Latitude</div><input class="sb-input" id="latitude" type="number" step="any" placeholder="e.g. 28.4595" onchange="resetAutoSave()"></div>
+            <div style="flex:1"><div class="sb-label">Longitude</div><input class="sb-input" id="longitude" type="number" step="any" placeholder="e.g. 77.0266" onchange="resetAutoSave()"></div>
+        </div>
+        <div class="sb-hint">Enter coordinates for Google Maps embed</div>
         <div class="sb-label">Short Description</div>
         <textarea class="sb-textarea" id="description" rows="2" onchange="resetAutoSave()"></textarea>
     </div>
@@ -320,6 +325,8 @@ async function loadHospital() {
         document.getElementById('slug').value = hospData.slug || '';
         document.getElementById('description').value = hospData.description || '';
         document.getElementById('address').value = hospData.address || '';
+        document.getElementById('latitude').value = hospData.latitude || '';
+        document.getElementById('longitude').value = hospData.longitude || '';
         document.getElementById('beds').value = hospData.beds || '';
         document.getElementById('established').value = hospData.established || '';
         document.getElementById('rating').value = hospData.rating || '';
@@ -396,6 +403,8 @@ async function saveHospital(isAuto, statusOverride) {
         country: destObj ? destObj.name : '',
         city: document.getElementById('hospitalCity').value || null,
         address: document.getElementById('address').value,
+        latitude: parseFloat(document.getElementById('latitude').value) || null,
+        longitude: parseFloat(document.getElementById('longitude').value) || null,
         description: document.getElementById('description').value,
         long_description: quill.root.innerHTML,
         accreditations: accreditations,
