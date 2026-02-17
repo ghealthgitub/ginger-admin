@@ -96,6 +96,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .feat-img-preview{width:100%;border-radius:8px;max-height:180px;object-fit:cover;display:none;margin-top:6px}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
+.drag-handle{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;position:relative;transition:background .2s}
+.drag-handle:hover,.drag-handle.dragging{background:var(--teal)}
+.drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--gray-400);font-size:12px}.drag-handle:hover::after{color:#fff}
 .mp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
 .mp-overlay.open{display:flex}
 .mp-modal{background:var(--white);border-radius:12px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column}
@@ -128,7 +131,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="studio">
 
 <!-- LEFT: AI ASSISTANT -->
-<div class="panel--ai">
+<div class="panel--ai" id="panelLeft">
     <div class="ai-header"><div class="ai-header__title">🤖 AI Writing Assistant</div><div class="ai-header__sub">Write, edit, optimize — powered by Claude</div></div>
     <div class="tone-row">
         <button class="tone-btn active" data-tone="professional" onclick="setTone(this)">Professional</button>
@@ -159,7 +162,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <button class="ai-send" id="aiSendBtn" onclick="sendAI()">▶</button>
     </div>
 </div>
-
+<div class="drag-handle" id="dragLeft"></div>
 <!-- MIDDLE: EDITOR -->
 <div class="panel--editor">
     <div class="editor-header">
@@ -176,9 +179,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="quill-wrap" id="writePanel"><div id="editor"></div></div>
     <div id="previewPanel" style="display:none;flex:1;overflow-y:auto"><div class="preview-frame" id="previewContent"></div></div>
 </div>
-
+<div class="drag-handle" id="dragRight"></div>
 <!-- RIGHT: SIDEBAR -->
-<div class="panel--sidebar">
+<div class="panel--sidebar" id="panelRight">
     <div class="sb-box">
         <div class="sb-box__title">🚀 Publish</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:.78rem;color:var(--gray-500)">Status:</span><span style="font-size:.78rem;font-weight:600" id="sidebarStatus">Draft</span></div>
@@ -696,6 +699,17 @@ document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveHospital(false); }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); undoChanges(); }
 });
+
+// ============== PANEL DRAG RESIZE ==============
+function setupDrag(hid, panel, dir) {
+    const handle = document.getElementById(hid);
+    let dragging = false, startX, startW;
+    handle.addEventListener('mousedown', e => { dragging = true; startX = e.clientX; startW = panel.offsetWidth; handle.classList.add('dragging'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault(); });
+    document.addEventListener('mousemove', e => { if (!dragging) return; const dx = e.clientX - startX; panel.style.width = Math.max(180, Math.min(startW + (dir === 'left' ? dx : -dx), window.innerWidth - 500)) + 'px'; });
+    document.addEventListener('mouseup', () => { if (!dragging) return; dragging = false; handle.classList.remove('dragging'); document.body.style.cursor = ''; document.body.style.userSelect = ''; });
+}
+setupDrag('dragLeft', document.getElementById('panelLeft'), 'left');
+setupDrag('dragRight', document.getElementById('panelRight'), 'right');
 
 // ============== INIT ==============
 init();
