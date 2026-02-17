@@ -143,7 +143,14 @@
     <!-- Media Picker -->
     <div class="mp-bg" id="mediaPicker" onclick="if(event.target===this)closeMediaPicker()">
         <div class="mp-modal">
-            <div class="mp-header">Select Logo <button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMediaPicker()">✕</button></div>
+            <div class="mp-header">
+                <span>Select Logo</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <label class="btn btn--outline btn--sm" style="margin:0;cursor:pointer">📤 Upload<input type="file" id="uploadInput" accept="image/*" onchange="uploadFile(this)" style="display:none"></label>
+                    <button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMediaPicker()">✕</button>
+                </div>
+            </div>
+            <div id="uploadStatus" style="display:none;padding:8px 20px;font-size:.82rem;color:var(--teal);background:var(--gray-50);border-bottom:1px solid var(--gray-200)"></div>
             <div class="mp-grid" id="mediaGrid"></div>
             <div class="mp-footer">
                 <button class="btn btn--outline btn--sm" onclick="closeMediaPicker()">Cancel</button>
@@ -190,6 +197,7 @@ function render() {
             '</div>' +
             (a.description ? '<div class="card__desc">' + a.description + '</div>' : '') +
             '<div class="card__actions">' +
+                '<a class="btn btn--outline btn--sm" href="https://ginger.healthcare/accreditations/' + (a.slug||'') + '/" target="_blank">👁 View</a>' +
                 '<button class="btn btn--outline btn--sm" onclick="editAccreditation(' + a.id + ')">✏️ Edit</button>' +
                 '<button class="btn btn--outline btn--sm btn--danger" onclick="deleteAccreditation(' + a.id + ',\'' + a.name.replace(/'/g, "\\'") + '\')">🗑️</button>' +
             '</div>' +
@@ -302,6 +310,32 @@ function removeIcon() {
 }
 
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+async function uploadFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const status = document.getElementById('uploadStatus');
+    status.style.display = '';
+    status.textContent = '⏳ Uploading ' + file.name + '...';
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const r = await fetch('/api/media/upload', { method: 'POST', body: formData });
+        if (r.ok) {
+            status.textContent = '✅ Uploaded! Refreshing...';
+            input.value = '';
+            setTimeout(async () => {
+                status.style.display = 'none';
+                await openMediaPicker();
+            }, 500);
+        } else {
+            const e = await r.json();
+            status.textContent = '❌ Error: ' + (e.error || 'Upload failed');
+        }
+    } catch(e) {
+        status.textContent = '❌ Network error: ' + e.message;
+    }
+}
 
 init();
 </script>
