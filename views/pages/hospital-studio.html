@@ -249,6 +249,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <select class="sb-select" id="isFeatured" onchange="resetAutoSave()"><option value="false">No</option><option value="true">⭐ Yes — Featured Hospital</option></select>
     </div>
     <div class="sb-box">
+        <div class="sb-box__title">📸 Hospital Photos</div>
+        <div class="chip-wrap" id="galleryPreview" style="gap:6px"></div>
+        <button class="sb-btn sb-btn--outline" style="margin-top:8px" onclick="openGalleryPicker()">+ Add Photos</button>
+        <div class="sb-hint">Select multiple photos from the media library</div>
+    </div>
+    <div class="sb-box">
         <div class="sb-box__title">🔍 SEO Settings</div>
         <div class="sb-label">Meta Title <span style="float:right;color:var(--gray-400)" id="metaTitleCount">0/60</span></div>
         <input class="sb-input" id="metaTitle" placeholder="SEO title" oninput="document.getElementById('metaTitleCount').textContent=this.value.length+'/60';analyzeSEO();resetAutoSave()">
@@ -275,7 +281,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], accreditations = [], specialtiesList = [], currentTone = 'professional';
+let hospData = null, allDestinations = [], accreditations = [], specialtiesList = [], galleryImages = [], currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, aiGenerating = false;
 
 const CITY_MAP = {
@@ -337,6 +343,10 @@ async function loadHospital() {
         specialtiesList = hospData.specialties || [];
         renderChips('spec');
 
+        // Gallery
+        galleryImages = hospData.gallery || [];
+        renderGallery();
+
         // Long description
         if (hospData.long_description) quill.root.innerHTML = hospData.long_description;
 
@@ -389,6 +399,7 @@ async function saveHospital(isAuto, statusOverride) {
         long_description: quill.root.innerHTML,
         accreditations: accreditations,
         specialties: specialtiesList,
+        gallery: galleryImages,
         beds: parseInt(document.getElementById('beds').value) || null,
         established: parseInt(document.getElementById('established').value) || null,
         image: document.getElementById('image').value,
@@ -579,6 +590,15 @@ function selectMediaItem(el, url) {
 }
 function selectMedia() {
     if (!selectedMediaUrl) { alert('Please select an image'); return; }
+    if (galleryPickerMode) {
+        if (!galleryImages.includes(selectedMediaUrl)) {
+            galleryImages.push(selectedMediaUrl);
+            renderGallery(); resetAutoSave();
+        }
+        galleryPickerMode = false;
+        closeMediaPicker();
+        return;
+    }
     document.getElementById('image').value = selectedMediaUrl;
     const src = selectedMediaUrl.startsWith('http') ? selectedMediaUrl : 'https://enter.ginger.healthcare' + selectedMediaUrl;
     document.getElementById('featImgPreview').src = src;
@@ -596,6 +616,21 @@ function removeFeatImage() {
     resetAutoSave();
 }
 function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('open'); }
+
+// ============== GALLERY ==============
+function renderGallery() {
+    const wrap = document.getElementById('galleryPreview');
+    wrap.innerHTML = galleryImages.map((img, i) => {
+        const src = img.startsWith('http') ? img : 'https://enter.ginger.healthcare' + img;
+        return '<div style="position:relative;width:60px;height:60px;border-radius:6px;overflow:hidden;border:1px solid var(--gray-200)">' +
+            '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">' +
+            '<button onclick="removeGalleryImg(' + i + ')" style="position:absolute;top:-2px;right:-2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>' +
+            '</div>';
+    }).join('');
+}
+function removeGalleryImg(idx) { galleryImages.splice(idx, 1); renderGallery(); resetAutoSave(); }
+let galleryPickerMode = false;
+function openGalleryPicker() { galleryPickerMode = true; openMediaPicker(); }
 
 // ============== AI ASSISTANT ==============
 let currentToneVal = 'professional';
