@@ -270,8 +270,9 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="mp-header"><h3>Media Library</h3><button class="mp-close" onclick="closeMediaPicker()">✕</button></div>
         <div class="mp-body" id="mediaGrid"></div>
         <div class="mp-footer">
+            <span id="mpSelectCount" style="font-size:.82rem;color:var(--teal);font-weight:600;margin-right:auto"></span>
             <button class="sb-btn sb-btn--outline" style="width:auto" onclick="closeMediaPicker()">Cancel</button>
-            <button class="sb-btn sb-btn--primary" style="width:auto" onclick="selectMedia()">Select Image</button>
+            <button class="sb-btn sb-btn--primary" style="width:auto" id="mpSelectBtn" onclick="selectMedia()">Select Image</button>
         </div>
     </div>
 </div>
@@ -282,7 +283,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
 let hospData = null, allDestinations = [], accreditations = [], specialtiesList = [], galleryImages = [], currentTone = 'professional';
-let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, aiGenerating = false;
+let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
     'india': ['Delhi NCR','Mumbai','Bengaluru','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Guwahati','Gurugram','Noida','Jaipur','Lucknow','Chandigarh','Kochi','Thiruvananthapuram','Coimbatore','Nagpur','Visakhapatnam','Bhubaneswar','Indore','Mangalore'],
@@ -575,6 +576,9 @@ function undoChanges() { if(!undoStack.length){alert('Nothing to undo');return} 
 let allMedia = [];
 async function openMediaPicker() {
     document.getElementById('mediaPicker').classList.add('open');
+    selectedMediaUrls.clear();
+    document.getElementById('mpSelectBtn').textContent = galleryPickerMode ? 'Add Selected Photos' : 'Select Image';
+    document.getElementById('mpSelectCount').textContent = '';
     try {
         const r = await fetch('/api/media'); allMedia = await r.json();
         const grid = document.getElementById('mediaGrid');
@@ -585,20 +589,23 @@ async function openMediaPicker() {
     } catch(e) { console.error('Media load error:', e); }
 }
 function selectMediaItem(el, url) {
-    document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected'));
-    el.classList.add('selected'); selectedMediaUrl = url;
+    if (galleryPickerMode) {
+        if (selectedMediaUrls.has(url)) { selectedMediaUrls.delete(url); el.classList.remove('selected'); }
+        else { selectedMediaUrls.add(url); el.classList.add('selected'); }
+        document.getElementById('mpSelectCount').textContent = selectedMediaUrls.size > 0 ? selectedMediaUrls.size + ' selected' : '';
+    } else {
+        document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected'));
+        el.classList.add('selected'); selectedMediaUrl = url;
+    }
 }
 function selectMedia() {
-    if (!selectedMediaUrl) { alert('Please select an image'); return; }
     if (galleryPickerMode) {
-        if (!galleryImages.includes(selectedMediaUrl)) {
-            galleryImages.push(selectedMediaUrl);
-            renderGallery(); resetAutoSave();
-        }
-        galleryPickerMode = false;
-        closeMediaPicker();
-        return;
+        if (selectedMediaUrls.size === 0) { alert('Please select at least one photo'); return; }
+        selectedMediaUrls.forEach(url => { if (!galleryImages.includes(url)) galleryImages.push(url); });
+        renderGallery(); resetAutoSave();
+        galleryPickerMode = false; closeMediaPicker(); return;
     }
+    if (!selectedMediaUrl) { alert('Please select an image'); return; }
     document.getElementById('image').value = selectedMediaUrl;
     const src = selectedMediaUrl.startsWith('http') ? selectedMediaUrl : 'https://enter.ginger.healthcare' + selectedMediaUrl;
     document.getElementById('featImgPreview').src = src;
