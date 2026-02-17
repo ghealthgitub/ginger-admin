@@ -269,10 +269,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <select class="sb-select" id="isFeatured" onchange="resetAutoSave()"><option value="false">No</option><option value="true">⭐ Yes — Featured Hospital</option></select>
     </div>
     <div class="sb-box">
-        <div class="sb-box__title">📸 Hospital Photos</div>
+        <div class="sb-box__title">🏥 Infrastructure & Interior Photos</div>
         <div class="chip-wrap" id="galleryPreview" style="gap:6px"></div>
         <button class="sb-btn sb-btn--outline" style="margin-top:8px" onclick="openGalleryPicker()">+ Add Photos</button>
-        <div class="sb-hint">Select multiple photos from the media library</div>
+        <div class="sb-hint">Building, rooms, OTs, lobbies, equipment</div>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">👥 Patients, Doctors & Staff Photos</div>
+        <div class="chip-wrap" id="galleryPeoplePreview" style="gap:6px"></div>
+        <button class="sb-btn sb-btn--outline" style="margin-top:8px" onclick="openPeopleGalleryPicker()">+ Add Photos</button>
+        <div class="sb-hint">Patients, staff, events, team photos</div>
     </div>
     <div class="sb-box">
         <div class="sb-box__title">📍 Location Image</div>
@@ -308,7 +314,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], locationImage = '', currentTone = 'professional';
+let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], galleryPeople = [], locationImage = '', currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
@@ -380,6 +386,8 @@ async function loadHospital() {
         // Gallery
         galleryImages = hospData.gallery || [];
         renderGallery();
+        galleryPeople = hospData.gallery_people || [];
+        renderPeopleGallery();
         locationImage = hospData.location_image || '';
         renderLocationImage();
 
@@ -440,6 +448,7 @@ async function saveHospital(isAuto, statusOverride) {
         accreditations: accreditations,
         specialties: specialtiesList,
         gallery: galleryImages,
+        gallery_people: galleryPeople,
         location_image: locationImage || null,
         beds: parseInt(document.getElementById('beds').value) || null,
         established: parseInt(document.getElementById('established').value) || null,
@@ -617,7 +626,7 @@ let allMedia = [];
 async function openMediaPicker() {
     document.getElementById('mediaPicker').classList.add('open');
     selectedMediaUrls.clear();
-    document.getElementById('mpSelectBtn').textContent = galleryPickerMode ? 'Add Selected Photos' : 'Select Image';
+    document.getElementById('mpSelectBtn').textContent = (galleryPickerMode || peopleGalleryPickerMode) ? 'Add Selected Photos' : 'Select Image';
     document.getElementById('mpSelectCount').textContent = '';
     try {
         const r = await fetch('/api/media'); allMedia = await r.json();
@@ -629,7 +638,7 @@ async function openMediaPicker() {
     } catch(e) { console.error('Media load error:', e); }
 }
 function selectMediaItem(el, url) {
-    if (galleryPickerMode) {
+    if (galleryPickerMode || peopleGalleryPickerMode) {
         if (selectedMediaUrls.has(url)) { selectedMediaUrls.delete(url); el.classList.remove('selected'); }
         else { selectedMediaUrls.add(url); el.classList.add('selected'); }
         document.getElementById('mpSelectCount').textContent = selectedMediaUrls.size > 0 ? selectedMediaUrls.size + ' selected' : '';
@@ -644,6 +653,12 @@ function selectMedia() {
         selectedMediaUrls.forEach(url => { if (!galleryImages.includes(url)) galleryImages.push(url); });
         renderGallery(); resetAutoSave();
         galleryPickerMode = false; closeMediaPicker(); return;
+    }
+    if (peopleGalleryPickerMode) {
+        if (selectedMediaUrls.size === 0) { alert('Please select at least one photo'); return; }
+        selectedMediaUrls.forEach(url => { if (!galleryPeople.includes(url)) galleryPeople.push(url); });
+        renderPeopleGallery(); resetAutoSave();
+        peopleGalleryPickerMode = false; closeMediaPicker(); return;
     }
     if (!selectedMediaUrl) { alert('Please select an image'); return; }
     if (locationImagePickerMode) {
@@ -734,7 +749,21 @@ function renderGallery() {
 }
 function removeGalleryImg(idx) { galleryImages.splice(idx, 1); renderGallery(); resetAutoSave(); }
 let galleryPickerMode = false;
+let peopleGalleryPickerMode = false;
 function openGalleryPicker() { galleryPickerMode = true; openMediaPicker(); }
+function openPeopleGalleryPicker() { peopleGalleryPickerMode = true; openMediaPicker(); }
+
+function renderPeopleGallery() {
+    const wrap = document.getElementById('galleryPeoplePreview');
+    wrap.innerHTML = galleryPeople.map((img, i) => {
+        const src = img.startsWith('http') ? img : 'https://enter.ginger.healthcare' + img;
+        return '<div style="position:relative;width:60px;height:60px;border-radius:6px;overflow:hidden;border:1px solid var(--gray-200)">' +
+            '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover">' +
+            '<button onclick="removePeopleImg(' + i + ')" style="position:absolute;top:-2px;right:-2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>' +
+            '</div>';
+    }).join('');
+}
+function removePeopleImg(idx) { galleryPeople.splice(idx, 1); renderPeopleGallery(); resetAutoSave(); }
 
 // ============== AI ASSISTANT ==============
 let currentToneVal = 'professional';

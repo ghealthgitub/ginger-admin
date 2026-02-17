@@ -95,6 +95,26 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT NOW()
             );
 
+            -- ACCREDITATIONS (reference table)
+            CREATE TABLE IF NOT EXISTS accreditations (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(200) NOT NULL,
+                slug VARCHAR(200),
+                short_name VARCHAR(50),
+                full_name VARCHAR(500),
+                icon VARCHAR(500),
+                description TEXT,
+                status VARCHAR(20) DEFAULT 'published',
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- HOSPITAL_ACCREDITATIONS junction table
+            CREATE TABLE IF NOT EXISTS hospital_accreditations (
+                hospital_id INTEGER REFERENCES hospitals(id) ON DELETE CASCADE,
+                accreditation_id INTEGER REFERENCES accreditations(id) ON DELETE CASCADE,
+                PRIMARY KEY (hospital_id, accreditation_id)
+            );
+
             -- AIRPORTS (reference table)
             CREATE TABLE IF NOT EXISTS airports (
                 id SERIAL PRIMARY KEY,
@@ -391,6 +411,7 @@ async function initDB() {
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_id INTEGER REFERENCES airports(id)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_distance VARCHAR(100)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS location_image VARCHAR(500)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS gallery_people TEXT[]`);
 
         // Airports — arrival instructions
         await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS arrival_instructions TEXT`);
