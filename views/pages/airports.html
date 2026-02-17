@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airports — Ginger Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        :root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:12px}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);display:flex;min-height:100vh}
+        .main{flex:1;overflow-y:auto}
+        .airports-wrap{padding:24px 32px;max-width:1200px}
+        .airports-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+        .airports-header h1{font-size:1.5rem;font-weight:700;color:var(--navy)}
+        .airports-header h1 span{font-weight:400;color:var(--gray-400);font-size:1rem;margin-left:6px}
+        .header-actions{display:flex;gap:8px;align-items:center}
+        .search-box{padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;width:220px;outline:none;transition:border .2s;font-family:inherit}
+        .search-box:focus{border-color:var(--teal)}
+        .btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit}
+        .btn--primary{background:var(--teal);color:#fff}
+        .btn--primary:hover{background:#0c918c;transform:translateY(-1px)}
+        .btn--outline{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-600)}
+        .btn--outline:hover{border-color:var(--teal);color:var(--teal)}
+        .btn--sm{padding:6px 12px;font-size:.78rem}
+        .btn--danger{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}
+        .btn--danger:hover{background:#DC2626;color:#fff}
+        .airport-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px}
+        .ap-card{background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:20px;transition:all .25s}
+        .ap-card:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+        .ap-card__header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+        .ap-card__icon{width:46px;height:46px;background:linear-gradient(135deg,var(--ginger),#e0551a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;flex-shrink:0}
+        .ap-card__title{flex:1}
+        .ap-card__name{font-weight:700;font-size:.95rem;color:var(--navy)}
+        .ap-card__sub{font-size:.78rem;color:var(--gray-400);margin-top:2px}
+        .ap-card__code{font-size:.72rem;font-weight:700;background:#F0FDF9;color:var(--teal);padding:3px 10px;border-radius:5px;flex-shrink:0}
+        .ap-card__details{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:.82rem;margin-bottom:14px;padding:12px;background:var(--gray-50);border-radius:8px}
+        .ap-card__label{font-size:.68rem;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.4px}
+        .ap-card__value{font-weight:500;color:var(--gray-600);margin-top:1px}
+        .ap-card__actions{display:flex;gap:6px}
+        .empty{text-align:center;padding:80px 20px}
+        .empty__icon{font-size:3.5rem;margin-bottom:16px}
+        .empty__title{font-size:1.1rem;font-weight:600;color:var(--navy);margin-bottom:6px}
+        .empty__desc{font-size:.88rem;color:var(--gray-400);margin-bottom:20px}
+        .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+        .modal-bg.open{display:flex}
+        .modal{background:#fff;border-radius:16px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+        .modal__header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center}
+        .modal__header h2{font-size:1.1rem;font-weight:700;color:var(--navy)}
+        .modal__close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px}
+        .modal__body{padding:24px}
+        .modal__footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:8px}
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:.78rem;font-weight:600;color:var(--gray-600);margin-bottom:5px}
+        .form-input,.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border .2s}
+        .form-input:focus,.form-select:focus{border-color:var(--teal)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .form-hint{font-size:.72rem;color:var(--gray-400);margin-top:3px}
+        .form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;resize:vertical;min-height:80px;transition:border .2s}
+        .form-textarea:focus{border-color:var(--teal)}
+        .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--navy);color:#fff;border-radius:8px;font-size:.85rem;font-weight:500;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s}
+        .toast.show{transform:translateY(0);opacity:1}
+        .country-divider{grid-column:1/-1;font-size:.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.8px;padding:12px 0 4px;margin-top:8px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px}
+        .country-divider:first-child{margin-top:0}
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+        <div class="airports-wrap">
+            <div class="airports-header">
+                <h1>✈️ Airports <span id="airportCount"></span></h1>
+                <div class="header-actions">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search airports..." oninput="filterAirports()">
+                    <button class="btn btn--primary" onclick="openModal()">+ Add Airport</button>
+                </div>
+            </div>
+            <div id="airportGrid" class="airport-grid"></div>
+            <div id="emptyState" class="empty" style="display:none">
+                <div class="empty__icon">✈️</div>
+                <div class="empty__title">No airports yet</div>
+                <div class="empty__desc">Add airports that serve your hospital cities. Each airport can be linked to multiple hospitals.</div>
+                <button class="btn btn--primary" onclick="openModal()">+ Add First Airport</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <div class="modal__header">
+                <h2 id="modalTitle">Add Airport</h2>
+                <button class="modal__close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal__body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label class="form-label">Airport Name *</label>
+                    <input class="form-input" id="fName" placeholder="e.g. Indira Gandhi International Airport">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">IATA Code</label>
+                        <input class="form-input" id="fCode" placeholder="DEL" maxlength="5" style="text-transform:uppercase">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <select class="form-select" id="fCountry"><option value="">Select country...</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">City *</label>
+                    <input class="form-input" id="fCity" placeholder="e.g. New Delhi">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input class="form-input" id="fLat" type="number" step="any" placeholder="e.g. 28.5562">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input class="form-input" id="fLng" type="number" step="any" placeholder="e.g. 77.1000">
+                    </div>
+                </div>
+                <div class="form-hint" style="margin-bottom:16px">Coordinates enable driving route maps on hospital pages</div>
+                <div class="form-group">
+                    <label class="form-label">Arrival Instructions for Patients</label>
+                    <textarea class="form-textarea" id="fInstructions" rows="4" placeholder="Gate to exit from, immigration tips, visa on arrival info, vaccination requirements, recommended taxi services, things patients should know on arrival..."></textarea>
+                    <div class="form-hint">This will appear on hospital pages to help international patients navigate the airport</div>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn--outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn--primary" id="saveBtn" onclick="saveAirport()">Save Airport</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script src="/js/sidebar.js" defer></script>
+<script>
+let airports = [], destinations = [];
+
+async function init() {
+    try {
+        const [ar, dr] = await Promise.all([fetch('/api/airports'), fetch('/api/destinations')]);
+        airports = await ar.json();
+        destinations = await dr.json();
+        const dd = document.getElementById('fCountry');
+        destinations.forEach(d => { const o = document.createElement('option'); o.value = d.name; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
+        render();
+    } catch(e) { console.error('Load error:', e); }
+}
+
+function render() {
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    const filtered = airports.filter(a =>
+        (a.name||'').toLowerCase().includes(search) || (a.code||'').toLowerCase().includes(search) ||
+        (a.city||'').toLowerCase().includes(search) || (a.country||'').toLowerCase().includes(search)
+    );
+    document.getElementById('airportCount').textContent = '(' + airports.length + ')';
+    if (airports.length === 0) { document.getElementById('airportGrid').innerHTML = ''; document.getElementById('emptyState').style.display = ''; return; }
+    document.getElementById('emptyState').style.display = 'none';
+
+    const grouped = {};
+    filtered.forEach(a => { const c = a.country || 'Other'; if (!grouped[c]) grouped[c] = []; grouped[c].push(a); });
+
+    let html = '';
+    Object.keys(grouped).sort().forEach(country => {
+        const dest = destinations.find(d => d.name === country);
+        html += '<div class="country-divider">' + (dest && dest.flag ? dest.flag + ' ' : '') + country + ' (' + grouped[country].length + ')</div>';
+        grouped[country].forEach(a => {
+            const coords = (a.latitude && a.longitude) ? parseFloat(a.latitude).toFixed(4) + ', ' + parseFloat(a.longitude).toFixed(4) : '—';
+            html += `<div class="ap-card">
+                <div class="ap-card__header">
+                    <div class="ap-card__icon">✈️</div>
+                    <div class="ap-card__title">
+                        <div class="ap-card__name">${esc(a.name)}</div>
+                        <div class="ap-card__sub">${esc(a.city)}${a.country ? ', ' + esc(a.country) : ''}</div>
+                    </div>
+                    ${a.code ? '<div class="ap-card__code">' + esc(a.code) + '</div>' : ''}
+                </div>
+                <div class="ap-card__details">
+                    <div><div class="ap-card__label">City</div><div class="ap-card__value">${esc(a.city)}</div></div>
+                    <div><div class="ap-card__label">Country</div><div class="ap-card__value">${esc(a.country || '—')}</div></div>
+                    <div><div class="ap-card__label">Coordinates</div><div class="ap-card__value">${coords}</div></div>
+                    <div><div class="ap-card__label">Instructions</div><div class="ap-card__value">${a.arrival_instructions ? '✅ Added' : '—'}</div></div>
+                </div>
+                <div class="ap-card__actions">
+                    <button class="btn btn--outline btn--sm" onclick="editAirport(${a.id})">✏️ Edit</button>
+                    <button class="btn btn--danger btn--sm" onclick="deleteAirport(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">🗑️ Delete</button>
+                </div>
+            </div>`;
+        });
+    });
+    document.getElementById('airportGrid').innerHTML = html || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No airports match your search</div>';
+}
+
+function filterAirports() { render(); }
+
+function openModal() {
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').textContent = 'Add Airport';
+    document.getElementById('saveBtn').textContent = 'Save Airport';
+    ['fName','fCode','fCity','fLat','fLng','fInstructions'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('fCountry').value = '';
+    document.getElementById('modalBg').classList.add('open');
+    setTimeout(() => document.getElementById('fName').focus(), 100);
+}
+
+function editAirport(id) {
+    const a = airports.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('modalTitle').textContent = 'Edit Airport';
+    document.getElementById('saveBtn').textContent = 'Update Airport';
+    document.getElementById('fName').value = a.name || '';
+    document.getElementById('fCode').value = a.code || '';
+    document.getElementById('fCity').value = a.city || '';
+    document.getElementById('fCountry').value = a.country || '';
+    document.getElementById('fLat').value = a.latitude || '';
+    document.getElementById('fLng').value = a.longitude || '';
+    document.getElementById('fInstructions').value = a.arrival_instructions || '';
+    document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+
+async function saveAirport() {
+    const id = document.getElementById('editId').value;
+    const data = {
+        name: document.getElementById('fName').value.trim(),
+        code: document.getElementById('fCode').value.trim().toUpperCase(),
+        city: document.getElementById('fCity').value.trim(),
+        country: document.getElementById('fCountry').value,
+        latitude: parseFloat(document.getElementById('fLat').value) || null,
+        longitude: parseFloat(document.getElementById('fLng').value) || null,
+        arrival_instructions: document.getElementById('fInstructions').value.trim() || null
+    };
+    if (!data.name || !data.city) { alert('Airport name and city are required'); return; }
+    document.getElementById('saveBtn').textContent = 'Saving...';
+    try {
+        const r = await fetch(id ? '/api/airports/' + id : '/api/airports', {
+            method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+        });
+        if (r.ok) {
+            const saved = await r.json();
+            if (id) { const idx = airports.findIndex(x => x.id == id); if (idx >= 0) airports[idx] = saved; }
+            else airports.push(saved);
+            closeModal(); render();
+            showToast(id ? '✅ Airport updated!' : '✅ Airport added!');
+        } else { const e = await r.json(); alert('Error: ' + (e.error || 'Save failed')); }
+    } catch(e) { alert('Network error: ' + e.message); }
+    document.getElementById('saveBtn').textContent = id ? 'Update Airport' : 'Save Airport';
+}
+
+async function deleteAirport(id, name) {
+    if (!confirm('Delete "' + name + '"?\n\nHospitals linked to this airport will lose their airport assignment.')) return;
+    try {
+        const r = await fetch('/api/airports/' + id, { method: 'DELETE' });
+        if (r.ok) { airports = airports.filter(x => x.id !== id); render(); showToast('🗑️ Airport deleted'); }
+        else alert('Delete failed');
+    } catch(e) { alert('Network error'); }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+init();
+</script>
+</body>
+</html>

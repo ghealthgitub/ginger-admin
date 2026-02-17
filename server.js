@@ -513,6 +513,10 @@ app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
 });
 
 // ============== AIRPORTS CRUD ==============
+app.get('/airports', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'airports.html'));
+});
+
 app.get('/api/airports', apiAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM airports ORDER BY country, city, name');
@@ -522,11 +526,11 @@ app.get('/api/airports', apiAuth, async (req, res) => {
 
 app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, code, city, country, latitude, longitude } = req.body;
+        const { name, code, city, country, latitude, longitude, arrival_instructions } = req.body;
         if (!name || !city) return res.status(400).json({ error: 'Name and city are required' });
         const result = await pool.query(
-            'INSERT INTO airports (name, code, city, country, latitude, longitude) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-            [name, code||null, city, country||null, latitude||null, longitude||null]
+            'INSERT INTO airports (name, code, city, country, latitude, longitude, arrival_instructions) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null]
         );
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -534,10 +538,10 @@ app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async 
 
 app.put('/api/airports/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, code, city, country, latitude, longitude } = req.body;
+        const { name, code, city, country, latitude, longitude, arrival_instructions } = req.body;
         const result = await pool.query(
-            'UPDATE airports SET name=$1, code=$2, city=$3, country=$4, latitude=$5, longitude=$6 WHERE id=$7 RETURNING *',
-            [name, code||null, city, country||null, latitude||null, longitude||null, req.params.id]
+            'UPDATE airports SET name=$1, code=$2, city=$3, country=$4, latitude=$5, longitude=$6, arrival_instructions=$7 WHERE id=$8 RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, req.params.id]
         );
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }

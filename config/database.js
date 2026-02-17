@@ -104,6 +104,7 @@ async function initDB() {
                 country VARCHAR(100),
                 latitude DECIMAL(10,7),
                 longitude DECIMAL(10,7),
+                arrival_instructions TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
             );
 
