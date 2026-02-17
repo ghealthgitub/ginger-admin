@@ -233,9 +233,14 @@ async function loadAirport() {
         galleryImages = ap.photos || [];
         renderGallery();
 
-        // Show permalink info
-        document.getElementById('permalinkWrap').style.display = '';
-        document.getElementById('permalinkWrap').innerHTML = '<strong>' + (ap.code||'') + '</strong> · ' + (ap.city||'') + ', ' + (ap.country||'') + (ap.latitude ? ' · 📍 ' + parseFloat(ap.latitude).toFixed(4) + ', ' + parseFloat(ap.longitude).toFixed(4) : '');
+        // Show permalink & view link
+        if (ap.slug) {
+            document.getElementById('permalinkWrap').style.display = '';
+            document.getElementById('permalinkWrap').innerHTML = '🔗 <a href="https://ginger.healthcare/airports/' + ap.slug + '/" target="_blank">/airports/' + ap.slug + '/</a> · ' + (ap.code||'') + ' · ' + (ap.city||'') + ', ' + (ap.country||'');
+            const viewLink = document.getElementById('viewLink');
+            viewLink.href = 'https://ginger.healthcare/airports/' + ap.slug + '/';
+            viewLink.style.display = '';
+        }
 
         // Load linked hospitals
         try {

@@ -99,6 +99,7 @@ async function initDB() {
             CREATE TABLE IF NOT EXISTS airports (
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(300) NOT NULL,
+                slug VARCHAR(300),
                 code VARCHAR(10),
                 city VARCHAR(100) NOT NULL,
                 country VARCHAR(100),
@@ -394,6 +395,7 @@ async function initDB() {
         await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS arrival_instructions TEXT`);
         await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS photos TEXT[]`);
         await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'draft'`);
+        await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS slug VARCHAR(300)`);
 
         // Doctors — FK columns + extra fields
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);

@@ -6,80 +6,106 @@
     <title>Airports — Ginger Admin</title>
     <link rel="stylesheet" href="/css/admin.css">
     <style>
-        :root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:12px}
+        :root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:10px}
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);display:flex;min-height:100vh}
         .main{flex:1;overflow-y:auto}
-        .airports-wrap{padding:24px 32px;max-width:1200px}
-        .airports-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-        .airports-header h1{font-size:1.5rem;font-weight:700;color:var(--navy)}
-        .airports-header h1 span{font-weight:400;color:var(--gray-400);font-size:1rem;margin-left:6px}
+        .wrap{padding:24px 32px;max-width:1100px}
+
+        /* Header */
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+        .page-header h1{font-size:1.4rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+        .page-header h1 .count{font-weight:400;color:var(--gray-400);font-size:.95rem}
         .header-actions{display:flex;gap:8px;align-items:center}
-        .search-box{padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;width:220px;outline:none;transition:border .2s;font-family:inherit}
+        .search-box{padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;width:200px;outline:none;font-family:inherit;transition:border .2s}
         .search-box:focus{border-color:var(--teal)}
-        .btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit}
-        .btn--primary{background:var(--teal);color:#fff}
-        .btn--primary:hover{background:#0c918c;transform:translateY(-1px)}
-        .btn--outline{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-600)}
-        .btn--outline:hover{border-color:var(--teal);color:var(--teal)}
-        .btn--sm{padding:6px 12px;font-size:.78rem}
-        .btn--danger{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}
-        .btn--danger:hover{background:#DC2626;color:#fff}
-        .airport-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px}
-        .ap-card{background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:20px;transition:all .25s}
-        .ap-card:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(0,0,0,.06)}
-        .ap-card__header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-        .ap-card__icon{width:46px;height:46px;background:linear-gradient(135deg,var(--ginger),#e0551a);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:#fff;flex-shrink:0}
-        .ap-card__title{flex:1}
-        .ap-card__name{font-weight:700;font-size:.95rem;color:var(--navy)}
-        .ap-card__sub{font-size:.78rem;color:var(--gray-400);margin-top:2px}
-        .ap-card__code{font-size:.72rem;font-weight:700;background:#F0FDF9;color:var(--teal);padding:3px 10px;border-radius:5px;flex-shrink:0}
-        .ap-card__details{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:.82rem;margin-bottom:14px;padding:12px;background:var(--gray-50);border-radius:8px}
-        .ap-card__label{font-size:.68rem;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.4px}
-        .ap-card__value{font-weight:500;color:var(--gray-600);margin-top:1px}
-        .ap-card__actions{display:flex;gap:6px}
-        .empty{text-align:center;padding:80px 20px}
-        .empty__icon{font-size:3.5rem;margin-bottom:16px}
-        .empty__title{font-size:1.1rem;font-weight:600;color:var(--navy);margin-bottom:6px}
-        .empty__desc{font-size:.88rem;color:var(--gray-400);margin-bottom:20px}
-        .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
-        .modal-bg.open{display:flex}
-        .modal{background:#fff;border-radius:16px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-        .modal__header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center}
-        .modal__header h2{font-size:1.1rem;font-weight:700;color:var(--navy)}
-        .modal__close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px}
-        .modal__body{padding:24px}
-        .modal__footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:8px}
-        .form-group{margin-bottom:16px}
-        .form-label{display:block;font-size:.78rem;font-weight:600;color:var(--gray-600);margin-bottom:5px}
-        .form-input,.form-select{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border .2s}
-        .form-input:focus,.form-select:focus{border-color:var(--teal)}
-        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .form-hint{font-size:.72rem;color:var(--gray-400);margin-top:3px}
-        .form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;resize:vertical;min-height:80px;transition:border .2s}
-        .form-textarea:focus{border-color:var(--teal)}
+        .btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:.84rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit;text-decoration:none}
+        .btn--primary{background:var(--teal);color:#fff}.btn--primary:hover{background:#0c918c;transform:translateY(-1px)}
+        .btn--sm{padding:5px 10px;font-size:.76rem}
+        .btn--outline{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-600)}.btn--outline:hover{border-color:var(--teal);color:var(--teal)}
+        .btn--danger-text{background:none;border:none;color:#DC2626;font-size:.76rem;font-weight:600;cursor:pointer;padding:2px 6px}.btn--danger-text:hover{text-decoration:underline}
+
+        /* Filter tabs */
+        .filter-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--gray-200)}
+        .filter-tab{padding:8px 16px;font-size:.82rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+        .filter-tab:hover{color:var(--navy)}
+        .filter-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+        .filter-tab .tab-count{background:var(--gray-100);color:var(--gray-500);padding:1px 7px;border-radius:10px;font-size:.72rem;margin-left:4px}
+        .filter-tab.active .tab-count{background:rgba(14,165,160,.1);color:var(--teal)}
+
+        /* Table */
+        .cpt-table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+        .cpt-table th{text-align:left;padding:10px 14px;font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;border-bottom:1.5px solid var(--gray-200);background:var(--gray-50)}
+        .cpt-table td{padding:12px 14px;font-size:.85rem;color:var(--gray-600);border-bottom:1px solid var(--gray-100);vertical-align:middle}
+        .cpt-table tr:hover td{background:var(--gray-50)}
+        .cpt-table tr:last-child td{border-bottom:none}
+
+        /* Row name column */
+        .row-name{font-weight:700;color:var(--navy);font-size:.88rem}
+        .row-name a{color:var(--navy);text-decoration:none}.row-name a:hover{color:var(--teal)}
+        .row-sub{font-size:.75rem;color:var(--gray-400);margin-top:2px}
+        .row-actions{display:flex;gap:6px;margin-top:4px;opacity:0;transition:opacity .15s}
+        .cpt-table tr:hover .row-actions{opacity:1}
+        .row-action{font-size:.75rem;color:var(--teal);font-weight:600;text-decoration:none;cursor:pointer}
+        .row-action:hover{text-decoration:underline}
+        .row-action--danger{color:#DC2626}
+
+        /* Code badge */
+        .code-badge{font-size:.72rem;font-weight:700;background:#F0FDF9;color:var(--teal);padding:2px 8px;border-radius:4px;display:inline-block}
+
+        /* Status badge */
+        .status{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:12px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+        .status--published{background:#D1FAE5;color:#065F46}
+        .status--draft{background:#FEF3C7;color:#92400E}
+
+        /* Empty */
+        .empty{text-align:center;padding:60px 20px}
+        .empty__icon{font-size:3rem;margin-bottom:12px}
+        .empty__title{font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:4px}
+        .empty__desc{font-size:.85rem;color:var(--gray-400);margin-bottom:16px}
+
+        /* Toast */
         .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--navy);color:#fff;border-radius:8px;font-size:.85rem;font-weight:500;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s}
         .toast.show{transform:translateY(0);opacity:1}
-        .country-divider{grid-column:1/-1;font-size:.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.8px;padding:12px 0 4px;margin-top:8px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:8px}
-        .country-divider:first-child{margin-top:0}
     </style>
 </head>
 <body>
     <aside class="sidebar" id="sidebar"></aside>
     <main class="main">
-        <div class="airports-wrap">
-            <div class="airports-header">
-                <h1>✈️ Airports <span id="airportCount"></span></h1>
+        <div class="wrap">
+            <div class="page-header">
+                <h1>✈️ Airports <span class="count" id="airportCount"></span></h1>
                 <div class="header-actions">
-                    <input type="text" class="search-box" id="searchBox" placeholder="Search airports..." oninput="filterAirports()">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search..." oninput="render()">
                     <a href="/airports/new" class="btn btn--primary">+ Add Airport</a>
                 </div>
             </div>
-            <div id="airportGrid" class="airport-grid"></div>
+
+            <div class="filter-tabs" id="filterTabs">
+                <div class="filter-tab active" data-filter="all" onclick="setFilter('all')">All <span class="tab-count" id="countAll">0</span></div>
+                <div class="filter-tab" data-filter="published" onclick="setFilter('published')">Published <span class="tab-count" id="countPublished">0</span></div>
+                <div class="filter-tab" data-filter="draft" onclick="setFilter('draft')">Draft <span class="tab-count" id="countDraft">0</span></div>
+            </div>
+
+            <table class="cpt-table" id="airportTable" style="display:none">
+                <thead>
+                    <tr>
+                        <th>Airport</th>
+                        <th>Code</th>
+                        <th>City</th>
+                        <th>Country</th>
+                        <th>Coordinates</th>
+                        <th>Instructions</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+
             <div id="emptyState" class="empty" style="display:none">
                 <div class="empty__icon">✈️</div>
                 <div class="empty__title">No airports yet</div>
-                <div class="empty__desc">Add airports that serve your hospital cities. Each airport can be linked to multiple hospitals.</div>
+                <div class="empty__desc">Add airports that serve your hospital cities</div>
                 <a href="/airports/new" class="btn btn--primary">+ Add First Airport</a>
             </div>
         </div>
@@ -89,62 +115,79 @@
 
 <script src="/js/sidebar.js" defer></script>
 <script>
-let airports = [], destinations = [];
+let airports = [], currentFilter = 'all';
 
 async function init() {
     try {
-        const [ar, dr] = await Promise.all([fetch('/api/airports'), fetch('/api/destinations')]);
-        airports = await ar.json();
-        destinations = await dr.json();
+        const r = await fetch('/api/airports');
+        airports = await r.json();
         render();
     } catch(e) { console.error('Load error:', e); }
 }
 
+function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+    render();
+}
+
 function render() {
     const search = document.getElementById('searchBox').value.toLowerCase();
-    const filtered = airports.filter(a =>
+    let filtered = airports.filter(a =>
         (a.name||'').toLowerCase().includes(search) || (a.code||'').toLowerCase().includes(search) ||
         (a.city||'').toLowerCase().includes(search) || (a.country||'').toLowerCase().includes(search)
     );
+
+    // Counts
+    const allCount = filtered.length;
+    const pubCount = filtered.filter(a => a.status === 'published').length;
+    const draftCount = filtered.filter(a => a.status !== 'published').length;
+    document.getElementById('countAll').textContent = allCount;
+    document.getElementById('countPublished').textContent = pubCount;
+    document.getElementById('countDraft').textContent = draftCount;
     document.getElementById('airportCount').textContent = '(' + airports.length + ')';
-    if (airports.length === 0) { document.getElementById('airportGrid').innerHTML = ''; document.getElementById('emptyState').style.display = ''; return; }
+
+    if (currentFilter === 'published') filtered = filtered.filter(a => a.status === 'published');
+    else if (currentFilter === 'draft') filtered = filtered.filter(a => a.status !== 'published');
+
+    if (airports.length === 0) {
+        document.getElementById('airportTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = '';
+        return;
+    }
     document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('airportTable').style.display = '';
 
-    const grouped = {};
-    filtered.forEach(a => { const c = a.country || 'Other'; if (!grouped[c]) grouped[c] = []; grouped[c].push(a); });
+    // Sort by country then name
+    filtered.sort((a, b) => (a.country||'').localeCompare(b.country||'') || (a.name||'').localeCompare(b.name||''));
 
-    let html = '';
-    Object.keys(grouped).sort().forEach(country => {
-        const dest = destinations.find(d => d.name === country);
-        html += '<div class="country-divider">' + (dest && dest.flag ? dest.flag + ' ' : '') + country + ' (' + grouped[country].length + ')</div>';
-        grouped[country].forEach(a => {
-            const coords = (a.latitude && a.longitude) ? parseFloat(a.latitude).toFixed(4) + ', ' + parseFloat(a.longitude).toFixed(4) : '—';
-            html += `<div class="ap-card">
-                <div class="ap-card__header">
-                    <div class="ap-card__icon">✈️</div>
-                    <div class="ap-card__title">
-                        <div class="ap-card__name">${esc(a.name)}</div>
-                        <div class="ap-card__sub">${esc(a.city)}${a.country ? ', ' + esc(a.country) : ''}</div>
-                    </div>
-                    ${a.code ? '<div class="ap-card__code">' + esc(a.code) + '</div>' : ''}
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = filtered.map(a => {
+        const coords = (a.latitude && a.longitude) ? parseFloat(a.latitude).toFixed(4) + ', ' + parseFloat(a.longitude).toFixed(4) : '—';
+        const statusClass = a.status === 'published' ? 'published' : 'draft';
+        const statusText = a.status === 'published' ? 'Published' : 'Draft';
+        return `<tr>
+            <td>
+                <div class="row-name"><a href="/airports/edit/${a.id}">${esc(a.name)}</a></div>
+                <div class="row-actions">
+                    <a class="row-action" href="/airports/edit/${a.id}">Edit</a>
+                    <span style="color:var(--gray-300)">|</span>
+                    <span class="row-action row-action--danger" onclick="deleteAirport(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">Delete</span>
                 </div>
-                <div class="ap-card__details">
-                    <div><div class="ap-card__label">City</div><div class="ap-card__value">${esc(a.city)}</div></div>
-                    <div><div class="ap-card__label">Country</div><div class="ap-card__value">${esc(a.country || '—')}</div></div>
-                    <div><div class="ap-card__label">Coordinates</div><div class="ap-card__value">${coords}</div></div>
-                    <div><div class="ap-card__label">Instructions</div><div class="ap-card__value">${a.arrival_instructions ? '✅ Added' : '—'}</div></div>
-                </div>
-                <div class="ap-card__actions">
-                    <button class="btn btn--outline btn--sm" onclick="window.open('/airports/edit/${a.id}','_blank')">✏️ Edit</button>
-                    <button class="btn btn--danger btn--sm" onclick="deleteAirport(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">🗑️ Delete</button>
-                </div>
-            </div>`;
-        });
-    });
-    document.getElementById('airportGrid').innerHTML = html || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No airports match your search</div>';
+            </td>
+            <td>${a.code ? '<span class="code-badge">' + esc(a.code) + '</span>' : '—'}</td>
+            <td>${esc(a.city||'—')}</td>
+            <td>${esc(a.country||'—')}</td>
+            <td style="font-size:.78rem;color:var(--gray-400)">${coords}</td>
+            <td>${a.arrival_instructions ? '✅' : '—'}</td>
+            <td><span class="status status--${statusClass}">${statusText}</span></td>
+        </tr>`;
+    }).join('');
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--gray-400)">No airports match</td></tr>';
+    }
 }
-
-function filterAirports() { render(); }
 
 async function deleteAirport(id, name) {
     if (!confirm('Delete "' + name + '"?\n\nHospitals linked to this airport will lose their airport assignment.')) return;
