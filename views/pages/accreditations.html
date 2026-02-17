@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accreditations — Ginger Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        :root{--navy:#0B2545;--ginger:#F26522;--ginger-dark:#d9551a;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:12px}
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);display:flex;min-height:100vh}.main{flex:1;overflow-y:auto}
+        .wrap{padding:24px 32px;max-width:1100px}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+        .header h1{font-size:1.5rem;font-weight:700;color:var(--navy)}.header h1 span{font-weight:400;color:var(--gray-400);font-size:1rem;margin-left:6px}
+        .btn{padding:9px 20px;border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .2s;font-family:inherit}
+        .btn--primary{background:var(--teal);color:#fff}.btn--primary:hover{background:#0c918c}
+        .btn--ginger{background:var(--ginger);color:#fff}.btn--ginger:hover{background:var(--ginger-dark)}
+        .btn--outline{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-600)}.btn--outline:hover{border-color:var(--teal);color:var(--teal)}
+        .btn--sm{padding:6px 12px;font-size:.78rem}
+        .btn--danger{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}.btn--danger:hover{background:#DC2626;color:#fff}
+
+        /* Grid */
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+        .card{background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:20px;transition:all .25s}
+        .card:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(0,0,0,.06)}
+        .card__top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+        .card__icon{width:56px;height:56px;border-radius:12px;border:1.5px solid var(--gray-200);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:var(--gray-50)}
+        .card__icon img{width:100%;height:100%;object-fit:contain;padding:6px}
+        .card__icon--emoji{font-size:2rem}
+        .card__info{flex:1;min-width:0}
+        .card__name{font-weight:700;font-size:1rem;color:var(--navy)}
+        .card__full{font-size:.78rem;color:var(--gray-400);margin-top:2px}
+        .card__short{display:inline-block;background:var(--gray-100);color:var(--navy);font-weight:700;font-size:.72rem;padding:2px 8px;border-radius:4px;margin-top:4px}
+        .card__desc{font-size:.84rem;color:var(--gray-500);margin-bottom:14px;line-height:1.6}
+        .card__meta{display:flex;gap:12px;font-size:.75rem;color:var(--gray-400);margin-bottom:14px}
+        .card__actions{display:flex;gap:8px}
+        .card__status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:700;text-transform:uppercase}
+        .card__status--published{background:#D1FAE5;color:#065F46}
+        .card__status--draft{background:#FEF3C7;color:#92400E}
+
+        /* Modal */
+        .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}.modal-bg.open{display:flex}
+        .modal{background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+        .modal__header{padding:20px 24px;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center}
+        .modal__header h2{font-size:1.1rem;font-weight:700;color:var(--navy)}.modal__close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400)}
+        .modal__body{padding:24px}.modal__footer{padding:16px 24px;border-top:1px solid var(--gray-100);display:flex;justify-content:flex-end;gap:8px}
+        .form-group{margin-bottom:16px}.form-label{display:block;font-size:.78rem;font-weight:600;color:var(--gray-600);margin-bottom:5px}
+        .form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border .2s}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal)}
+        .form-textarea{resize:vertical;min-height:60px}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .form-hint{font-size:.72rem;color:var(--gray-400);margin-top:3px}
+
+        /* Icon preview */
+        .icon-preview{margin-top:8px;display:flex;align-items:center;gap:12px}
+        .icon-preview__img{width:64px;height:64px;border:1.5px solid var(--gray-200);border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--gray-50)}
+        .icon-preview__img img{width:100%;height:100%;object-fit:contain;padding:4px}
+        .icon-preview__actions{display:flex;flex-direction:column;gap:4px}
+
+        /* Media Picker */
+        .mp-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1100;align-items:center;justify-content:center}.mp-bg.open{display:flex}
+        .mp-modal{background:#fff;border-radius:16px;width:600px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column}
+        .mp-header{padding:14px 20px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:.92rem;display:flex;justify-content:space-between;align-items:center}
+        .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;padding:16px;overflow-y:auto;flex:1}
+        .mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1}.mp-item:hover{border-color:var(--teal)}.mp-item.selected{border-color:var(--ginger)}
+        .mp-item img{width:100%;height:100%;object-fit:cover}
+        .mp-footer{padding:10px 16px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px}
+
+        .empty{text-align:center;padding:80px 20px}.empty__icon{font-size:3.5rem;margin-bottom:16px}.empty__title{font-size:1.1rem;font-weight:600;color:var(--navy);margin-bottom:6px}.empty__desc{font-size:.88rem;color:var(--gray-400);margin-bottom:20px}
+        .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--navy);color:#fff;border-radius:8px;font-size:.85rem;font-weight:500;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s}.toast.show{transform:translateY(0);opacity:1}
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+        <div class="wrap">
+            <div class="header">
+                <h1>🏅 Accreditations <span id="count"></span></h1>
+                <button class="btn btn--ginger" onclick="openModal()">+ Add Accreditation</button>
+            </div>
+            <div id="grid" class="grid"></div>
+            <div id="empty" class="empty" style="display:none">
+                <div class="empty__icon">🏅</div>
+                <div class="empty__title">No accreditations yet</div>
+                <div class="empty__desc">Add accreditations like JCI, NABH, ISO with their official logos.<br>Hospitals can then select from these when editing their profile.</div>
+                <button class="btn btn--ginger" onclick="openModal()">+ Add First Accreditation</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <div class="modal__header"><h2 id="modalTitle">Add Accreditation</h2><button class="modal__close" onclick="closeModal()">✕</button></div>
+            <div class="modal__body">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label class="form-label">Accreditation Name *</label>
+                    <input class="form-input" id="fName" placeholder="e.g. JCI Accreditation">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Short Code</label>
+                        <input class="form-input" id="fShort" placeholder="e.g. JCI">
+                        <div class="form-hint">Used as badge label</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="fStatus">
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input class="form-input" id="fFull" placeholder="e.g. Joint Commission International">
+                    <div class="form-hint">Displayed as subtitle on hospital pages</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="fDesc" rows="3" placeholder="Brief description of what this accreditation means for patients..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Logo / Icon</label>
+                    <div class="icon-preview" id="iconPreview">
+                        <div class="icon-preview__img" id="iconImg"><span style="font-size:1.8rem">🏅</span></div>
+                        <div class="icon-preview__actions">
+                            <button class="btn btn--outline btn--sm" onclick="openMediaPicker()">Choose from Media</button>
+                            <button class="btn btn--outline btn--sm" id="removeIconBtn" style="display:none" onclick="removeIcon()">Remove</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="fIcon">
+                    <div class="form-hint" style="margin-top:6px">Upload the official accreditation logo via Media Library first</div>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn--outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn--ginger" id="saveBtn" onclick="saveAccreditation()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Media Picker -->
+    <div class="mp-bg" id="mediaPicker" onclick="if(event.target===this)closeMediaPicker()">
+        <div class="mp-modal">
+            <div class="mp-header">Select Logo <button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMediaPicker()">✕</button></div>
+            <div class="mp-grid" id="mediaGrid"></div>
+            <div class="mp-footer">
+                <button class="btn btn--outline btn--sm" onclick="closeMediaPicker()">Cancel</button>
+                <button class="btn btn--primary btn--sm" onclick="selectIcon()">Use This Image</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script src="/js/sidebar.js" defer></script>
+<script>
+let accreditations = [], selectedMediaUrl = null;
+
+async function init() {
+    try {
+        const r = await fetch('/api/accreditations');
+        accreditations = await r.json();
+        render();
+    } catch(e) { console.error('Load error:', e); }
+}
+
+function render() {
+    document.getElementById('count').textContent = '(' + accreditations.length + ')';
+    if (accreditations.length === 0) {
+        document.getElementById('grid').innerHTML = '';
+        document.getElementById('empty').style.display = '';
+        return;
+    }
+    document.getElementById('empty').style.display = 'none';
+    document.getElementById('grid').innerHTML = accreditations.map(a => {
+        const iconHtml = a.icon
+            ? '<img src="' + (a.icon.startsWith('http') ? a.icon : 'https://enter.ginger.healthcare' + a.icon) + '" alt="' + a.name + '">'
+            : '<span class="card__icon--emoji">🏅</span>';
+        return '<div class="card">' +
+            '<div class="card__top">' +
+                '<div class="card__icon">' + iconHtml + '</div>' +
+                '<div class="card__info">' +
+                    '<div class="card__name">' + a.name + '</div>' +
+                    (a.full_name ? '<div class="card__full">' + a.full_name + '</div>' : '') +
+                    (a.short_name ? '<span class="card__short">' + a.short_name + '</span> ' : '') +
+                    '<span class="card__status card__status--' + (a.status||'published') + '">' + (a.status||'published') + '</span>' +
+                '</div>' +
+            '</div>' +
+            (a.description ? '<div class="card__desc">' + a.description + '</div>' : '') +
+            '<div class="card__actions">' +
+                '<button class="btn btn--outline btn--sm" onclick="editAccreditation(' + a.id + ')">✏️ Edit</button>' +
+                '<button class="btn btn--outline btn--sm btn--danger" onclick="deleteAccreditation(' + a.id + ',\'' + a.name.replace(/'/g, "\\'") + '\')">🗑️</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function openModal(id) {
+    document.getElementById('editId').value = '';
+    document.getElementById('fName').value = '';
+    document.getElementById('fShort').value = '';
+    document.getElementById('fFull').value = '';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fIcon').value = '';
+    document.getElementById('fStatus').value = 'published';
+    document.getElementById('iconImg').innerHTML = '<span style="font-size:1.8rem">🏅</span>';
+    document.getElementById('removeIconBtn').style.display = 'none';
+    document.getElementById('modalTitle').textContent = 'Add Accreditation';
+    document.getElementById('modalBg').classList.add('open');
+    document.getElementById('fName').focus();
+}
+
+function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
+
+function editAccreditation(id) {
+    const a = accreditations.find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('editId').value = a.id;
+    document.getElementById('fName').value = a.name || '';
+    document.getElementById('fShort').value = a.short_name || '';
+    document.getElementById('fFull').value = a.full_name || '';
+    document.getElementById('fDesc').value = a.description || '';
+    document.getElementById('fIcon').value = a.icon || '';
+    document.getElementById('fStatus').value = a.status || 'published';
+    if (a.icon) {
+        const src = a.icon.startsWith('http') ? a.icon : 'https://enter.ginger.healthcare' + a.icon;
+        document.getElementById('iconImg').innerHTML = '<img src="' + src + '">';
+        document.getElementById('removeIconBtn').style.display = '';
+    } else {
+        document.getElementById('iconImg').innerHTML = '<span style="font-size:1.8rem">🏅</span>';
+        document.getElementById('removeIconBtn').style.display = 'none';
+    }
+    document.getElementById('modalTitle').textContent = 'Edit Accreditation';
+    document.getElementById('modalBg').classList.add('open');
+}
+
+async function saveAccreditation() {
+    const name = document.getElementById('fName').value.trim();
+    if (!name) { alert('Name is required'); return; }
+    const editId = document.getElementById('editId').value;
+    const data = {
+        name,
+        short_name: document.getElementById('fShort').value.trim() || null,
+        full_name: document.getElementById('fFull').value.trim() || null,
+        description: document.getElementById('fDesc').value.trim() || null,
+        icon: document.getElementById('fIcon').value || null,
+        status: document.getElementById('fStatus').value
+    };
+    document.getElementById('saveBtn').textContent = '⏳ Saving...';
+    try {
+        const url = editId ? '/api/accreditations/' + editId : '/api/accreditations';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (r.ok) {
+            closeModal();
+            showToast(editId ? '✅ Updated!' : '✅ Created!');
+            const rr = await fetch('/api/accreditations'); accreditations = await rr.json(); render();
+        } else { const e = await r.json(); alert('Error: ' + (e.error || 'Save failed')); }
+    } catch(e) { alert('Network error: ' + e.message); }
+    document.getElementById('saveBtn').textContent = '💾 Save';
+}
+
+async function deleteAccreditation(id, name) {
+    if (!confirm('Delete "' + name + '"? This will unlink it from all hospitals.')) return;
+    try {
+        const r = await fetch('/api/accreditations/' + id, { method: 'DELETE' });
+        if (r.ok) { showToast('🗑️ Deleted'); const rr = await fetch('/api/accreditations'); accreditations = await rr.json(); render(); }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Media picker for icon
+async function openMediaPicker() {
+    document.getElementById('mediaPicker').classList.add('open');
+    selectedMediaUrl = null;
+    try {
+        const r = await fetch('/api/media'); const media = await r.json();
+        document.getElementById('mediaGrid').innerHTML = media.filter(m => m.mime_type && m.mime_type.startsWith('image/')).map(m =>
+            '<div class="mp-item" onclick="pickMediaItem(this,\'' + m.url + '\')"><img src="' + m.url + '"></div>'
+        ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images found. Upload logos via Media Library first.</div>';
+    } catch(e) { console.error(e); }
+}
+function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('open'); }
+function pickMediaItem(el, url) {
+    document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedMediaUrl = url;
+}
+function selectIcon() {
+    if (!selectedMediaUrl) { alert('Please select an image'); return; }
+    document.getElementById('fIcon').value = selectedMediaUrl;
+    const src = selectedMediaUrl.startsWith('http') ? selectedMediaUrl : 'https://enter.ginger.healthcare' + selectedMediaUrl;
+    document.getElementById('iconImg').innerHTML = '<img src="' + src + '">';
+    document.getElementById('removeIconBtn').style.display = '';
+    closeMediaPicker();
+}
+function removeIcon() {
+    document.getElementById('fIcon').value = '';
+    document.getElementById('iconImg').innerHTML = '<span style="font-size:1.8rem">🏅</span>';
+    document.getElementById('removeIconBtn').style.display = 'none';
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+init();
+</script>
+</body>
+</html>

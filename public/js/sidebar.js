@@ -68,6 +68,7 @@ window.gingerUser = (async function() {
         { section: 'Management', roles: ['super_admin', 'editor'] },
         { href: '/costs', icon: '💰', label: 'Cost Manager', roles: ['super_admin', 'editor'] },
         { href: '/airports', icon: '✈️', label: 'Airports', roles: ['super_admin', 'editor'] },
+        { href: '/accreditations-mgmt', icon: '🏅', label: 'Accreditations', roles: ['super_admin', 'editor'] },
         { href: '/submissions', icon: '📋', label: 'Submissions', roles: ['super_admin'] },
         { href: '/static-pages', icon: '📄', label: 'Static Pages', roles: ['super_admin', 'editor'] },
         { href: '/page-content', icon: '🔧', label: 'Page Content', roles: ['super_admin'] },

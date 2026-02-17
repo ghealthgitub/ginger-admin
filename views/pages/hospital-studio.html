@@ -242,10 +242,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="sb-box">
         <div class="sb-box__title">🏆 Accreditations</div>
         <div class="chip-wrap" id="accredChips"></div>
-        <div style="display:flex;gap:4px;margin-top:6px">
-            <input class="sb-input" id="accredInput" placeholder="e.g. JCI, NABH, ISO" style="flex:1" onkeydown="if(event.key==='Enter'){addChip('accred');event.preventDefault()}">
-            <button class="sb-btn sb-btn--outline" style="width:auto;padding:4px 10px" onclick="addChip('accred')">+</button>
-        </div>
+        <select class="sb-select" id="accredDropdown" onchange="addAccredFromDropdown()" style="margin-top:6px">
+            <option value="">+ Add accreditation...</option>
+        </select>
+        <div class="sb-hint">Select from <a href="/accreditations-mgmt" target="_blank" style="color:var(--teal)">Accreditations Manager</a></div>
     </div>
     <div class="sb-box">
         <div class="sb-box__title">🩺 Specialties</div>
@@ -314,7 +314,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], selectedSpecIds = [], allSpecialties = [], galleryImages = [], galleryPeople = [], locationImage = '', currentTone = 'professional';
+let hospData = null, allDestinations = [], allAirports = [], accreditations = [], selectedAccredIds = [], allAccreditations = [], specialtiesList = [], selectedSpecIds = [], allSpecialties = [], galleryImages = [], galleryPeople = [], locationImage = '', currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
@@ -332,7 +332,7 @@ quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); })
 
 async function init() {
     try {
-        const [dr, ar, sr] = await Promise.all([fetch('/api/destinations'), fetch('/api/airports'), fetch('/api/specialties')]);
+        const [dr, ar, sr, acr] = await Promise.all([fetch('/api/destinations'), fetch('/api/airports'), fetch('/api/specialties'), fetch('/api/accreditations')]);
         allDestinations = await dr.json();
         const dd = document.getElementById('destinationId');
         allDestinations.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
@@ -342,6 +342,9 @@ async function init() {
 
         allSpecialties = await sr.json();
         renderSpecDropdown();
+
+        allAccreditations = await acr.json();
+        renderAccredDropdown();
     } catch(e) { console.error('Init error:', e); }
     if (editId) await loadHospital();
     startAutoSave();
@@ -378,9 +381,18 @@ async function loadHospital() {
         // City (after dest change populates dropdown)
         setTimeout(() => { if (hospData.city) document.getElementById('hospitalCity').value = hospData.city; }, 100);
 
-        // Accreditations
+        // Accreditations — load from junction table, fall back to text array
         accreditations = hospData.accreditations || [];
-        renderChips('accred');
+        try {
+            const accR = await fetch('/api/hospitals/' + editId + '/accreditations');
+            const hospAccreds = await accR.json();
+            if (hospAccreds.length > 0) {
+                selectedAccredIds = hospAccreds.map(a => a.id);
+                accreditations = hospAccreds.map(a => a.short_name || a.name);
+            }
+        } catch(e) { console.error('Load accreds error:', e); }
+        renderAccredChips();
+        renderAccredDropdown();
 
         // Specialties — load from junction table
         specialtiesList = hospData.specialties || [];
@@ -494,6 +506,14 @@ async function saveHospital(isAuto, statusOverride) {
                 } catch(e) { console.error('Spec junction save error:', e); }
             }
 
+            // Save accreditations junction table
+            try {
+                await fetch('/api/hospitals/' + hospId + '/accreditations', {
+                    method: 'PUT', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ accreditation_ids: selectedAccredIds })
+                });
+            } catch(e) { console.error('Accred junction save error:', e); }
+
             if (!editId) { window.location.href = '/hospitals/edit/' + result.id; return; }
             hasUnsaved = false;
 
@@ -528,25 +548,38 @@ async function saveHospital(isAuto, statusOverride) {
 }
 
 // ============== CHIPS (Accreditations + Specialties) ==============
-function renderChips(type) {
-    if (type === 'accred') {
-        const wrap = document.getElementById('accredChips');
-        wrap.innerHTML = accreditations.map((v, i) => '<span class="chip">' + v + '<button onclick="removeChip(\'accred\',' + i + ')">×</button></span>').join('');
-    }
+// Accreditations multi-select (from accreditations table)
+function renderAccredDropdown() {
+    const dd = document.getElementById('accredDropdown');
+    dd.innerHTML = '<option value="">+ Add accreditation...</option>';
+    allAccreditations.filter(a => a.status === 'published' && !selectedAccredIds.includes(a.id)).forEach(a => {
+        dd.innerHTML += '<option value="' + a.id + '">' + (a.short_name || a.name) + ' — ' + (a.full_name || a.name) + '</option>';
+    });
 }
-function addChip(type) {
-    if (type === 'accred') {
-        const input = document.getElementById('accredInput');
-        const val = input.value.trim();
-        if (!val) return;
-        if (!accreditations.includes(val)) { accreditations.push(val); renderChips('accred'); resetAutoSave(); }
-        input.value = '';
-    }
+function renderAccredChips() {
+    const wrap = document.getElementById('accredChips');
+    wrap.innerHTML = selectedAccredIds.map((id, i) => {
+        const ac = allAccreditations.find(a => a.id === id);
+        const label = ac ? (ac.short_name || ac.name) : accreditations[i] || 'Unknown';
+        return '<span class="chip">' + label + '<button onclick="removeAccred(' + i + ')">×</button></span>';
+    }).join('');
 }
-function removeChip(type, idx) {
-    if (type === 'accred') {
-        accreditations.splice(idx, 1); renderChips('accred'); resetAutoSave();
+function addAccredFromDropdown() {
+    const dd = document.getElementById('accredDropdown');
+    const id = parseInt(dd.value);
+    if (!id) return;
+    const ac = allAccreditations.find(a => a.id === id);
+    if (ac && !selectedAccredIds.includes(id)) {
+        selectedAccredIds.push(id);
+        accreditations.push(ac.short_name || ac.name);
+        renderAccredChips(); renderAccredDropdown(); resetAutoSave();
     }
+    dd.value = '';
+}
+function removeAccred(idx) {
+    selectedAccredIds.splice(idx, 1);
+    accreditations.splice(idx, 1);
+    renderAccredChips(); renderAccredDropdown(); resetAutoSave();
 }
 
 // Specialties multi-select (from specialties table)
