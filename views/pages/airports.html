@@ -96,8 +96,6 @@ async function init() {
         const [ar, dr] = await Promise.all([fetch('/api/airports'), fetch('/api/destinations')]);
         airports = await ar.json();
         destinations = await dr.json();
-        const dd = document.getElementById('fCountry');
-        destinations.forEach(d => { const o = document.createElement('option'); o.value = d.name; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
         render();
     } catch(e) { console.error('Load error:', e); }
 }

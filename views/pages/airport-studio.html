@@ -7,73 +7,89 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <style>
-        :root{--navy:#0B2545;--ginger:#F26522;--ginger-dark:#d9551a;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:12px;--shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.1)}
+        :root{--navy:#0B2545;--ginger:#F26522;--ginger-dark:#d9551a;--teal:#0EA5A0;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--radius:12px;--shadow-sm:0 1px 3px rgba(0,0,0,.08)}
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);display:flex;min-height:100vh}
         .main{flex:1;overflow-y:auto}
 
         /* Top bar */
-        .studio-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:#fff;border-bottom:1.5px solid var(--gray-200);position:sticky;top:0;z-index:100}
-        .studio-bar__left{display:flex;align-items:center;gap:12px}
-        .studio-bar__back{font-size:.85rem;color:var(--gray-500);text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .2s}
+        .studio-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:#fff;border-bottom:1.5px solid var(--gray-200);position:sticky;top:0;z-index:100}
+        .studio-bar__left{display:flex;align-items:center;gap:14px}
+        .studio-bar__back{font-size:.82rem;color:var(--gray-500);text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .2s}
         .studio-bar__back:hover{color:var(--teal)}
-        .studio-bar__title{font-weight:700;font-size:1rem;color:var(--navy)}
         .studio-bar__right{display:flex;align-items:center;gap:10px}
-        .studio-bar__status{font-size:.75rem;color:var(--gray-400)}
-        .btn{padding:8px 18px;border:none;border-radius:8px;font-weight:600;font-size:.84rem;cursor:pointer;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+        .studio-bar__status{font-size:.75rem;color:var(--gray-400);min-width:80px;text-align:right}
+        .btn{padding:8px 18px;border:none;border-radius:8px;font-weight:600;font-size:.84rem;cursor:pointer;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
         .btn--primary{background:var(--teal);color:#fff}.btn--primary:hover{background:#0c918c}
         .btn--outline{background:#fff;border:1.5px solid var(--gray-200);color:var(--gray-600)}.btn--outline:hover{border-color:var(--teal);color:var(--teal)}
         .btn--ginger{background:var(--ginger);color:#fff}.btn--ginger:hover{background:var(--ginger-dark)}
+        .btn--sm{padding:5px 12px;font-size:.78rem}
 
         /* Layout */
-        .studio-body{display:flex;gap:0;min-height:calc(100vh - 57px)}
-        .studio-editor{flex:1;padding:28px 32px;overflow-y:auto}
-        .studio-sidebar{width:360px;background:#fff;border-left:1.5px solid var(--gray-200);padding:20px;overflow-y:auto;flex-shrink:0}
+        .studio-body{display:flex;gap:0;min-height:calc(100vh - 49px)}
+        .studio-editor{flex:1;padding:24px 32px;overflow-y:auto;max-width:820px}
+        .studio-sidebar{width:340px;background:#fff;border-left:1.5px solid var(--gray-200);padding:16px;overflow-y:auto;flex-shrink:0}
 
-        /* Form fields */
-        .sb-label{font-size:.76rem;font-weight:600;color:var(--gray-500);margin-bottom:4px;margin-top:14px;display:block}
-        .sb-label:first-child{margin-top:0}
-        .sb-input,.sb-select{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;transition:border .2s}
-        .sb-input:focus,.sb-select:focus{border-color:var(--teal)}
-        .sb-textarea{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;resize:vertical;min-height:60px;transition:border .2s}
-        .sb-textarea:focus{border-color:var(--teal)}
-        .sb-hint{font-size:.7rem;color:var(--gray-400);margin-top:3px}
-        .sb-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .sb-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-top:16px}
-        .sb-box__title{font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:10px}
+        /* Title input */
+        .title-input{width:100%;font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;font-weight:700;color:var(--navy);border:none;border-bottom:2px solid var(--gray-200);padding:12px 0;outline:none;background:transparent;transition:border-color .2s;margin-bottom:20px}
+        .title-input:focus{border-color:var(--teal)}
+        .title-input::placeholder{color:var(--gray-300)}
 
-        /* Editor section */
-        .editor-section{margin-bottom:28px}
-        .editor-section__title{font-size:.78rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-        .editor-section__title::after{content:'';flex:1;height:1px;background:var(--gray-200)}
-        #quillEditor{min-height:350px;background:#fff;border-radius:0 0 8px 8px;font-size:.92rem}
+        /* Sections */
+        .section-label{font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;margin-top:24px;display:flex;align-items:center;gap:8px}
+        .section-label:first-child{margin-top:0}
+        .section-label::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+        .section-desc{font-size:.82rem;color:var(--gray-500);margin-bottom:12px}
+
+        /* Quill */
+        #quillEditor{min-height:300px;background:#fff;border-radius:0 0 8px 8px;font-size:.92rem}
         .ql-toolbar.ql-snow{border-radius:8px 8px 0 0;border-color:var(--gray-200);background:#fff}
         .ql-container.ql-snow{border-color:var(--gray-200)}
 
+        /* Sidebar fields */
+        .sb-label{font-size:.73rem;font-weight:600;color:var(--gray-500);margin-bottom:4px;margin-top:12px;display:block}
+        .sb-label:first-child{margin-top:0}
+        .sb-input,.sb-select{width:100%;padding:8px 11px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:.85rem;font-family:inherit;outline:none;transition:border .2s}
+        .sb-input:focus,.sb-select:focus{border-color:var(--teal)}
+        .sb-hint{font-size:.68rem;color:var(--gray-400);margin-top:2px}
+        .sb-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .sb-box{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:12px;margin-top:14px}
+        .sb-box:first-child{margin-top:0}
+        .sb-box__title{font-size:.8rem;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+        .sb-divider{height:1px;background:var(--gray-200);margin:14px 0}
+
+        /* Status badge */
+        .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+        .status-badge--draft{background:#FEF3C7;color:#92400E}
+        .status-badge--published{background:#D1FAE5;color:#065F46}
+
         /* Gallery */
-        .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:8px}
+        .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:8px}
         .gallery-item{position:relative;border-radius:8px;overflow:hidden;border:1.5px solid var(--gray-200);aspect-ratio:4/3}
         .gallery-item img{width:100%;height:100%;object-fit:cover}
-        .gallery-item__remove{position:absolute;top:-2px;right:-2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .gallery-item__rm{position:absolute;top:2px;right:2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
         /* Media Picker */
         .mp-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
         .mp-bg.open{display:flex}
         .mp-modal{background:#fff;border-radius:16px;width:700px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column}
-        .mp-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:.95rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center}
+        .mp-header{padding:14px 20px;border-bottom:1px solid var(--gray-200);font-weight:700;font-size:.92rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center}
         .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;padding:16px;overflow-y:auto;flex:1}
         .mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1}
-        .mp-item:hover{border-color:var(--teal)}
-        .mp-item.selected{border-color:var(--ginger)}
+        .mp-item:hover{border-color:var(--teal)}.mp-item.selected{border-color:var(--ginger)}
         .mp-item img{width:100%;height:100%;object-fit:cover}
         .mp-footer{padding:10px 16px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px;align-items:center}
         .mp-count{font-size:.82rem;color:var(--teal);font-weight:600;margin-right:auto}
+
+        /* Permalink */
+        .permalink{font-size:.72rem;color:var(--gray-400);margin-bottom:16px;word-break:break-all}
+        .permalink a{color:var(--teal);font-weight:500}
 
         /* Toast */
         .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:var(--navy);color:#fff;border-radius:8px;font-size:.85rem;font-weight:500;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s}
         .toast.show{transform:translateY(0);opacity:1}
 
-        @media(max-width:1024px){.studio-body{flex-direction:column}.studio-sidebar{width:100%;border-left:none;border-top:1.5px solid var(--gray-200)}}
+        @media(max-width:1024px){.studio-body{flex-direction:column}.studio-sidebar{width:100%;border-left:none;border-top:1.5px solid var(--gray-200)}.studio-editor{max-width:100%}}
     </style>
 </head>
 <body>
@@ -81,57 +97,70 @@
     <main class="main">
         <div class="studio-bar">
             <div class="studio-bar__left">
-                <a href="/airports" class="studio-bar__back">← Back to Airports</a>
-                <div class="studio-bar__title" id="pageTitle">New Airport</div>
+                <a href="/airports" class="studio-bar__back">← Airports</a>
+                <span id="statusBadge" class="status-badge status-badge--draft">Draft</span>
             </div>
             <div class="studio-bar__right">
                 <span class="studio-bar__status" id="saveStatus"></span>
+                <a href="#" class="btn btn--outline btn--sm" id="viewLink" style="display:none" target="_blank">👁 View</a>
                 <button class="btn btn--outline" onclick="window.location='/airports'">Cancel</button>
                 <button class="btn btn--ginger" id="saveBtn" onclick="saveAirport()">💾 Save Airport</button>
             </div>
         </div>
 
         <div class="studio-body">
+            <!-- EDITOR AREA -->
             <div class="studio-editor">
-                <div class="editor-section">
-                    <div class="editor-section__title">Arrival Instructions for Patients</div>
-                    <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:12px">Help international patients navigate this airport. Include gate directions, immigration tips, visa info, taxi guidance, and anything useful on arrival.</p>
-                    <div id="quillEditor"></div>
-                </div>
+                <input class="title-input" id="fName" placeholder="Airport Name..." autofocus>
+                <div class="permalink" id="permalinkWrap" style="display:none">Linked to hospitals via airport dropdown</div>
 
-                <div class="editor-section">
-                    <div class="editor-section__title">Airport Photos</div>
-                    <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:8px">Add photos of the airport, terminals, exit gates, taxi stands, etc.</p>
-                    <div class="gallery-grid" id="galleryPreview"></div>
-                    <button class="btn btn--outline" style="margin-top:10px" onclick="openMediaPicker()">📷 Add Photos</button>
-                </div>
+                <div class="section-label">Arrival Instructions for Patients</div>
+                <p class="section-desc">Help international patients navigate this airport — gate directions, immigration, visa, transport, and anything useful on arrival.</p>
+                <div id="quillEditor"></div>
+
+                <div class="section-label" style="margin-top:28px">Airport Photos</div>
+                <p class="section-desc">Terminal interiors, exit gates, taxi stands, signage — anything that helps patients find their way.</p>
+                <div class="gallery-grid" id="galleryPreview"></div>
+                <button class="btn btn--outline btn--sm" style="margin-top:10px" onclick="openMediaPicker()">📷 Add Photos</button>
             </div>
 
+            <!-- SIDEBAR -->
             <div class="studio-sidebar">
-                <div class="sb-box" style="margin-top:0">
-                    <div class="sb-box__title">✈️ Airport Details</div>
-                    <div class="sb-label">Airport Name *</div>
-                    <input class="sb-input" id="fName" placeholder="e.g. Indira Gandhi International Airport">
+                <div class="sb-box">
+                    <div class="sb-box__title">📋 Publish</div>
+                    <div class="sb-label">Status</div>
+                    <select class="sb-select" id="fStatus">
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                    </select>
+                    <div class="sb-hint">Only published airports show in hospital dropdown</div>
+                </div>
 
-                    <div class="sb-row" style="margin-top:10px">
-                        <div><div class="sb-label" style="margin-top:0">IATA Code</div><input class="sb-input" id="fCode" placeholder="DEL" maxlength="5" style="text-transform:uppercase"></div>
-                        <div><div class="sb-label" style="margin-top:0">Country *</div>
+                <div class="sb-box">
+                    <div class="sb-box__title">✈️ Airport Info</div>
+                    <div class="sb-row">
+                        <div><div class="sb-label">IATA Code</div><input class="sb-input" id="fCode" placeholder="DEL" maxlength="5" style="text-transform:uppercase"></div>
+                        <div><div class="sb-label">Country *</div>
                             <select class="sb-select" id="fCountry" onchange="onCountryChange()"><option value="">Select...</option></select>
                         </div>
                     </div>
-
                     <div class="sb-label">City *</div>
                     <select class="sb-select" id="fCity"><option value="">Select city...</option></select>
-                    <div class="sb-hint">Cities auto-populate based on country</div>
+                    <div class="sb-hint">Auto-populates from country</div>
                 </div>
 
                 <div class="sb-box">
                     <div class="sb-box__title">📍 Coordinates</div>
                     <div class="sb-row">
-                        <div><div class="sb-label" style="margin-top:0">Latitude</div><input class="sb-input" id="fLat" type="number" step="any" placeholder="28.5562"></div>
-                        <div><div class="sb-label" style="margin-top:0">Longitude</div><input class="sb-input" id="fLng" type="number" step="any" placeholder="77.1000"></div>
+                        <div><div class="sb-label">Latitude</div><input class="sb-input" id="fLat" type="number" step="any" placeholder="28.5562"></div>
+                        <div><div class="sb-label">Longitude</div><input class="sb-input" id="fLng" type="number" step="any" placeholder="77.1000"></div>
                     </div>
-                    <div class="sb-hint">Enables driving route maps from airport to hospital</div>
+                    <div class="sb-hint">Enables airport → hospital route map</div>
+                </div>
+
+                <div class="sb-box" id="linkedHospitalsBox" style="display:none">
+                    <div class="sb-box__title">🏥 Linked Hospitals</div>
+                    <div id="linkedHospitalsList" style="font-size:.82rem;color:var(--gray-600)"></div>
                 </div>
             </div>
         </div>
@@ -144,8 +173,8 @@
             <div class="mp-grid" id="mediaGrid"></div>
             <div class="mp-footer">
                 <span class="mp-count" id="mpCount"></span>
-                <button class="btn btn--outline" onclick="closeMediaPicker()">Cancel</button>
-                <button class="btn btn--primary" onclick="selectPhotos()">Add Selected</button>
+                <button class="btn btn--outline btn--sm" onclick="closeMediaPicker()">Cancel</button>
+                <button class="btn btn--primary btn--sm" onclick="selectPhotos()">Add Selected</button>
             </div>
         </div>
     </div>
@@ -166,19 +195,10 @@ const CITY_MAP = {
 const editId = window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null;
 let destinations = [], galleryImages = [], selectedMediaUrls = new Set(), quill = null;
 
-// Init Quill
 quill = new Quill('#quillEditor', {
     theme: 'snow',
-    placeholder: 'Write detailed arrival instructions...\n\nFor example:\n• Terminal & gate information\n• Immigration & customs process\n• Visa on arrival instructions\n• Where to find the Ginger Healthcare coordinator\n• Taxi and transport options\n• SIM card and currency exchange\n• Vaccination requirements',
-    modules: {
-        toolbar: [
-            [{ header: [2, 3, false] }],
-            ['bold', 'italic', 'underline'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-        ]
-    }
+    placeholder: 'Write arrival instructions here...',
+    modules: { toolbar: [[{header:[2,3,false]}],['bold','italic','underline'],[{list:'ordered'},{list:'bullet'}],['link','image'],['clean']] }
 });
 
 async function init() {
@@ -189,6 +209,7 @@ async function init() {
         destinations.forEach(d => { const o = document.createElement('option'); o.value = d.name; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
     } catch(e) { console.error('Init error:', e); }
     if (editId) await loadAirport();
+    document.getElementById('fStatus').addEventListener('change', updateStatusBadge);
 }
 
 async function loadAirport() {
@@ -197,7 +218,7 @@ async function loadAirport() {
         const all = await r.json();
         const ap = all.find(a => a.id == editId);
         if (!ap) { alert('Airport not found'); return; }
-        document.getElementById('pageTitle').textContent = (ap.code || '') + ' — ' + ap.name;
+
         document.getElementById('fName').value = ap.name || '';
         document.getElementById('fCode').value = ap.code || '';
         document.getElementById('fCountry').value = ap.country || '';
@@ -205,10 +226,38 @@ async function loadAirport() {
         document.getElementById('fCity').value = ap.city || '';
         document.getElementById('fLat').value = ap.latitude || '';
         document.getElementById('fLng').value = ap.longitude || '';
+        document.getElementById('fStatus').value = ap.status || 'draft';
+        updateStatusBadge();
+
         if (ap.arrival_instructions) quill.root.innerHTML = ap.arrival_instructions;
         galleryImages = ap.photos || [];
         renderGallery();
+
+        // Show permalink info
+        document.getElementById('permalinkWrap').style.display = '';
+        document.getElementById('permalinkWrap').innerHTML = '<strong>' + (ap.code||'') + '</strong> · ' + (ap.city||'') + ', ' + (ap.country||'') + (ap.latitude ? ' · 📍 ' + parseFloat(ap.latitude).toFixed(4) + ', ' + parseFloat(ap.longitude).toFixed(4) : '');
+
+        // Load linked hospitals
+        try {
+            const hr = await fetch('/api/hospitals');
+            const hospitals = await hr.json();
+            const linked = hospitals.filter(h => h.airport_id == editId);
+            if (linked.length > 0) {
+                document.getElementById('linkedHospitalsBox').style.display = '';
+                document.getElementById('linkedHospitalsList').innerHTML = linked.map(h =>
+                    '<div style="padding:4px 0;border-bottom:1px solid var(--gray-100)">' + h.name + ' <span style="color:var(--gray-400)">(' + (h.city||'') + ')</span></div>'
+                ).join('');
+            }
+        } catch(e) {}
+
     } catch(e) { console.error('Load error:', e); }
+}
+
+function updateStatusBadge() {
+    const s = document.getElementById('fStatus').value;
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = s === 'published' ? 'Published' : 'Draft';
+    badge.className = 'status-badge status-badge--' + s;
 }
 
 function onCountryChange() {
@@ -217,16 +266,14 @@ function onCountryChange() {
     const citySelect = document.getElementById('fCity');
     const current = citySelect.value;
     citySelect.innerHTML = '<option value="">Select city...</option>' + cities.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-    // Allow custom entry
-    citySelect.innerHTML += '<option value="__custom">Other (type manually)...</option>';
     if (current && cities.includes(current)) citySelect.value = current;
 }
 
 async function saveAirport() {
     const name = document.getElementById('fName').value.trim();
     const city = document.getElementById('fCity').value;
-    if (!name) { alert('Airport name is required'); return; }
-    if (!city || city === '__custom') { alert('City is required'); return; }
+    if (!name) { alert('Airport name is required'); document.getElementById('fName').focus(); return; }
+    if (!city) { alert('City is required'); return; }
 
     const data = {
         name,
@@ -236,7 +283,8 @@ async function saveAirport() {
         latitude: parseFloat(document.getElementById('fLat').value) || null,
         longitude: parseFloat(document.getElementById('fLng').value) || null,
         arrival_instructions: quill.root.innerHTML === '<p><br></p>' ? null : quill.root.innerHTML,
-        photos: galleryImages
+        photos: galleryImages,
+        status: document.getElementById('fStatus').value
     };
 
     document.getElementById('saveBtn').textContent = '⏳ Saving...';
@@ -248,18 +296,17 @@ async function saveAirport() {
         const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
         if (r.ok) {
             const saved = await r.json();
-            document.getElementById('saveStatus').textContent = 'Saved ✓';
+            const now = new Date();
+            document.getElementById('saveStatus').textContent = 'Saved at ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             document.getElementById('saveBtn').textContent = '💾 Save Airport';
             showToast(editId ? '✅ Airport updated!' : '✅ Airport created!');
-            if (!editId) {
-                // Redirect to edit mode
-                window.location.href = '/airports/edit/' + saved.id;
-            }
+            updateStatusBadge();
+            if (!editId) window.location.href = '/airports/edit/' + saved.id;
         } else {
             const e = await r.json();
             alert('Error: ' + (e.error || 'Save failed'));
             document.getElementById('saveBtn').textContent = '💾 Save Airport';
-            document.getElementById('saveStatus').textContent = 'Error saving';
+            document.getElementById('saveStatus').textContent = '';
         }
     } catch(e) {
         alert('Network error: ' + e.message);
@@ -269,10 +316,9 @@ async function saveAirport() {
 
 // Gallery
 function renderGallery() {
-    const wrap = document.getElementById('galleryPreview');
-    wrap.innerHTML = galleryImages.map((img, i) => {
+    document.getElementById('galleryPreview').innerHTML = galleryImages.map((img, i) => {
         const src = img.startsWith('http') ? img : 'https://enter.ginger.healthcare' + img;
-        return '<div class="gallery-item"><img src="' + src + '"><button class="gallery-item__remove" onclick="removePhoto(' + i + ')">✕</button></div>';
+        return '<div class="gallery-item"><img src="' + src + '"><button class="gallery-item__rm" onclick="removePhoto(' + i + ')">✕</button></div>';
     }).join('');
 }
 function removePhoto(idx) { galleryImages.splice(idx, 1); renderGallery(); }
@@ -280,13 +326,11 @@ function removePhoto(idx) { galleryImages.splice(idx, 1); renderGallery(); }
 // Media Picker
 async function openMediaPicker() {
     document.getElementById('mediaPicker').classList.add('open');
-    selectedMediaUrls.clear();
-    document.getElementById('mpCount').textContent = '';
+    selectedMediaUrls.clear(); document.getElementById('mpCount').textContent = '';
     try {
-        const r = await fetch('/api/media');
-        const media = await r.json();
+        const r = await fetch('/api/media'); const media = await r.json();
         document.getElementById('mediaGrid').innerHTML = media.filter(m => m.mime_type && m.mime_type.startsWith('image/')).map(m =>
-            '<div class="mp-item" onclick="toggleMedia(this,\'' + m.url + '\')" data-url="' + m.url + '"><img src="' + m.url + '"></div>'
+            '<div class="mp-item" onclick="toggleMedia(this,\'' + m.url + '\')"><img src="' + m.url + '"></div>'
         ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images found</div>';
     } catch(e) { console.error(e); }
 }
@@ -302,6 +346,9 @@ function selectPhotos() {
 }
 
 function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveAirport(); } });
 
 init();
 </script>
