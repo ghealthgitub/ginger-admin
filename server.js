@@ -488,6 +488,27 @@ app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (re
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Hospital Studio pages
+app.get('/hospitals/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'hospital-studio.html'));
+});
+app.get('/hospitals/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'hospital-studio.html'));
+});
+
+// Single hospital GET (for studio editor)
+app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT h.*, d.name as destination_name, d.slug as destination_slug
+             FROM hospitals h LEFT JOIN destinations d ON h.destination_id = d.id
+             WHERE h.id = $1`, [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 // ============== DOCTORS CRUD ==============
 app.get('/doctors', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'doctors.html'));

@@ -1,0 +1,703 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Hospital Studio | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+:root{--navy:#0B2545;--navy-light:#13315C;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:var(--white);font-size:.82rem;text-decoration:none;padding:6px 12px;border:none;border-radius:6px;transition:all .2s;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal)}
+.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+.topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
+.topbar__btn--publish{background:var(--teal);color:#fff}
+.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200);text-decoration:none}
+.topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
+.topbar__btn--undo{background:var(--gray-50);color:var(--gray-500);border:1px solid var(--gray-200);font-size:.78rem}
+.topbar__btn--undo:hover{background:#FEF3C7;color:#D97706;border-color:#FCD34D}
+.studio{display:flex;height:calc(100vh - 48px)}
+.panel--ai{width:220px;min-width:180px;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;overflow:hidden}
+.ai-header{padding:12px;border-bottom:1px solid var(--gray-100)}
+.ai-header__title{font-weight:700;font-size:.85rem;color:var(--navy)}
+.ai-header__sub{font-size:.68rem;color:var(--gray-400);margin-top:2px}
+.tone-row{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--gray-100);flex-shrink:0;flex-wrap:wrap}
+.tone-btn{padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-400);font-family:inherit;transition:all .2s}
+.tone-btn:hover{color:var(--navy);border-color:var(--gray-300)}
+.tone-btn.active{background:rgba(14,165,160,.08);color:var(--teal);border-color:var(--teal)}
+.ai-ready{text-align:center;padding:8px 0;font-size:.72rem;font-weight:700;color:var(--teal);background:rgba(14,165,160,.04);border-bottom:1px solid var(--gray-100)}
+.ai-chat{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+.ai-msg{padding:8px 10px;border-radius:10px;font-size:.78rem;line-height:1.45;max-width:95%;word-wrap:break-word}
+.ai-msg--bot{background:var(--gray-50);border:1px solid var(--gray-100);align-self:flex-start;color:var(--gray-600)}
+.ai-msg--user{background:rgba(14,165,160,.08);border:1px solid rgba(14,165,160,.15);align-self:flex-end;color:var(--navy)}
+.ai-msg__actions{display:flex;gap:4px;margin-top:6px}
+.ai-msg__btn{padding:3px 8px;border-radius:5px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);font-family:inherit}
+.ai-msg__btn--insert{color:var(--teal)}
+.ai-msg__btn--insert:hover{background:rgba(14,165,160,.08);border-color:var(--teal)}
+.ai-msg__btn--append{color:var(--ginger)}
+.ai-msg__btn--append:hover{background:rgba(242,101,34,.08);border-color:var(--ginger)}
+.ai-typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gray-300);margin:0 2px;animation:dotBounce .6s infinite alternate}
+.ai-typing span:nth-child(2){animation-delay:.2s}
+.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%{opacity:.3;transform:translateY(0)}100%{opacity:1;transform:translateY(-4px)}}
+.ai-qbtns{padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--gray-100)}
+.ai-qbtn{padding:4px 8px;border-radius:6px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .2s}
+.ai-qbtn:hover{color:var(--teal);border-color:var(--teal);background:rgba(14,165,160,.04)}
+.ai-input-row{padding:8px;border-top:1px solid var(--gray-100);display:flex;gap:4px;align-items:flex-end;background:var(--white)}
+.ai-input{flex:1;border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;font-size:.78rem;font-family:inherit;resize:none;max-height:80px;outline:none}
+.ai-input:focus{border-color:var(--teal)}
+.ai-send{width:34px;height:34px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-send:hover{background:#0c918c}
+.panel--editor{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--white);border-right:1px solid var(--gray-200)}
+.editor-header{padding:12px 20px;border-bottom:1px solid var(--gray-100)}
+.editor-header__name{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:600;color:var(--navy);outline:none;border:none;width:100%;padding:4px 0}
+.editor-header__name:focus{border-bottom:2px solid var(--teal)}
+.editor-header__permalink{font-size:.72rem;color:var(--gray-400);margin-top:4px;display:flex;align-items:center;gap:6px}
+.editor-header__permalink a{color:var(--teal);font-weight:600;text-decoration:none}
+.editor-tabs{display:flex;gap:0;padding:0 16px;border-bottom:1px solid var(--gray-100)}
+.editor-tab{padding:8px 16px;font-size:.78rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.editor-tab:hover{color:var(--navy)}
+.editor-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.editor-info{display:flex;gap:16px;padding:4px 20px;font-size:.72rem;color:var(--gray-400);border-bottom:1px solid var(--gray-100)}
+.quill-wrap{flex:1;overflow-y:auto;padding:0}
+.quill-wrap .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;background:var(--gray-50);position:sticky;top:0;z-index:5}
+.quill-wrap .ql-container{border:none!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
+.quill-wrap .ql-editor{padding:20px 24px;min-height:300px;line-height:1.8}
+.panel--sidebar{width:320px;min-width:280px;background:var(--white);overflow-y:auto;padding:0}
+.sb-box{border-bottom:1px solid var(--gray-100);padding:12px 16px}
+.sb-box__title{font-weight:700;font-size:.82rem;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sb-label{font-size:.72rem;font-weight:600;color:var(--gray-500);margin-bottom:3px;margin-top:8px}
+.sb-select{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;background:var(--white);color:var(--gray-700)}
+.sb-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;color:var(--gray-700)}
+.sb-textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;color:var(--gray-700);resize:vertical;min-height:50px}
+.sb-hint{font-size:.68rem;color:var(--gray-400);margin-top:2px}
+.sb-btn{padding:7px 14px;border-radius:6px;font-weight:600;font-size:.78rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s;width:100%;text-align:center}
+.sb-btn--primary{background:var(--teal);color:#fff}
+.sb-btn--primary:hover{background:#0c918c}
+.sb-btn--ginger{background:var(--ginger);color:#fff}
+.sb-btn--ginger:hover{background:var(--ginger-dark)}
+.sb-btn--outline{background:var(--white);color:var(--gray-500);border:1px solid var(--gray-200)}
+.sb-btn--outline:hover{color:var(--navy);border-color:var(--gray-300)}
+.sb-score{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-weight:800;font-size:.82rem}
+.seo-good{background:#D1FAE5;color:#059669;border:2px solid #6EE7B7}
+.seo-ok{background:#FEF3C7;color:#D97706;border:2px solid #FCD34D}
+.seo-bad{background:#FEE2E2;color:#EF4444;border:2px solid #FCA5A5}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:50px;font-size:.72rem;color:var(--gray-600)}
+.chip button{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.8rem;padding:0 2px}
+.chip button:hover{color:var(--ginger)}
+.feat-img-preview{width:100%;border-radius:8px;max-height:180px;object-fit:cover;display:none;margin-top:6px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.mp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.mp-overlay.open{display:flex}
+.mp-modal{background:var(--white);border-radius:12px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column}
+.mp-header{padding:12px 16px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+.mp-header h3{font-size:.95rem;color:var(--navy)}
+.mp-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)}
+.mp-body{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:1}
+.mp-item:hover{border-color:var(--teal)}
+.mp-item.selected{border-color:var(--ginger)}
+.mp-item img{width:100%;height:100%;object-fit:cover}
+.mp-footer{padding:10px 16px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px}
+.preview-frame{padding:24px;max-width:800px;margin:0 auto;font-family:'DM Sans',sans-serif}
+.preview-frame h1,.preview-frame h2,.preview-frame h3{font-family:'Playfair Display',serif;color:var(--navy)}
+.preview-frame img{max-width:100%;border-radius:8px}
+</style>
+</head><body>
+<div class="topbar">
+    <a href="/hospitals" class="topbar__back">← Hospitals</a>
+    <h1 class="topbar__title" id="topbarTitle">New Hospital</h1>
+    <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
+    <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
+    <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()" id="undoBtn" style="display:none">↩ Undo</button>
+        <a class="topbar__btn topbar__btn--preview" id="viewBtn" href="#" target="_blank" style="display:none">● View Profile ↗</a>
+        <button class="topbar__btn topbar__btn--save" onclick="saveHospital(false,'draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" id="publishBtn" onclick="saveHospital(false,'published')">🚀 Update</button>
+    </div>
+</div>
+<div class="studio">
+
+<!-- LEFT: AI ASSISTANT -->
+<div class="panel--ai">
+    <div class="ai-header"><div class="ai-header__title">🤖 AI Writing Assistant</div><div class="ai-header__sub">Write, edit, optimize — powered by Claude</div></div>
+    <div class="tone-row">
+        <button class="tone-btn active" data-tone="professional" onclick="setTone(this)">Professional</button>
+        <button class="tone-btn" data-tone="friendly" onclick="setTone(this)">Friendly</button>
+        <button class="tone-btn" data-tone="medical" onclick="setTone(this)">Medical</button>
+        <button class="tone-btn" data-tone="patient-friendly" onclick="setTone(this)">Patient-friendly</button>
+        <button class="tone-btn" data-tone="seo-focused" onclick="setTone(this)">SEO-focused</button>
+    </div>
+    <div class="ai-ready">✨ AI Ready</div>
+    <div class="ai-chat" id="aiMessages">
+        <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize this hospital profile. What would you like to do?</div>
+    </div>
+    <div class="ai-qbtns">
+        <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px">✍ WRITE</div>
+        <button class="ai-qbtn" onclick="aiCmd('Write a full professional hospital profile based on the name, city, beds, specialties, accreditations, and established year')">✨ Full Profile</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write a compelling introduction paragraph for this hospital')">📝 Intro</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write about the hospital infrastructure, technology, and patient facilities')">🏥 Facilities</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write about the international patient experience — travel, accommodation, language support')">🌍 Intl Patients</button>
+        <button class="ai-qbtn" onclick="aiCmd('Add CTAs with links to /get-quote/ and /book-consultation/')">🔗 Add CTAs</button>
+        <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px;margin-top:6px">✏ OPTIMIZE</div>
+        <button class="ai-qbtn" onclick="aiCmd('Generate SEO meta title and meta description for this hospital profile')">🎯 Auto SEO</button>
+        <button class="ai-qbtn" onclick="aiCmd('Improve the writing — make it more professional and compelling')">💎 Improve</button>
+        <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">— Grammar</button>
+        <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+    </div>
+    <div class="ai-input-row">
+        <textarea class="ai-input" id="aiInput" placeholder="Ask AI to write, edit, improve..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"></textarea>
+        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">▶</button>
+    </div>
+</div>
+
+<!-- MIDDLE: EDITOR -->
+<div class="panel--editor">
+    <div class="editor-header">
+        <input type="text" class="editor-header__name" id="hospitalName" placeholder="Hospital Name" oninput="autoSlug();updateTopTitle();resetAutoSave()">
+        <div class="editor-header__permalink">
+            Permalink: <span id="permalinkDisplay">ginger.healthcare/destinations/<span id="permalinkCountry">india</span>/hospitals/<a href="#" id="permalinkSlug" onclick="document.getElementById('slug').focus();return false"></a>/</span>
+        </div>
+    </div>
+    <div class="editor-tabs">
+        <div class="editor-tab active" onclick="showTab('write')">✏ Write</div>
+        <div class="editor-tab" onclick="showTab('preview')">👁 Preview</div>
+    </div>
+    <div class="editor-info"><span id="wordCount">0 words</span><span id="readTime">0 min read</span></div>
+    <div class="quill-wrap" id="writePanel"><div id="editor"></div></div>
+    <div id="previewPanel" style="display:none;flex:1;overflow-y:auto"><div class="preview-frame" id="previewContent"></div></div>
+</div>
+
+<!-- RIGHT: SIDEBAR -->
+<div class="panel--sidebar">
+    <div class="sb-box">
+        <div class="sb-box__title">🚀 Publish</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:.78rem;color:var(--gray-500)">Status:</span><span style="font-size:.78rem;font-weight:600" id="sidebarStatus">Draft</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:.72rem;color:var(--gray-500)">SEO:</span><span class="sb-score seo-bad" id="seoScore">0</span></div>
+        <div class="sb-label">Status</div>
+        <select class="sb-select" id="status" onchange="resetAutoSave()"><option value="draft">Draft</option><option value="published">✅ Published</option></select>
+        <div style="display:flex;gap:6px;margin-top:10px">
+            <button class="sb-btn sb-btn--outline" style="flex:1" onclick="saveHospital(false,'draft')">Save Draft</button>
+            <button class="sb-btn sb-btn--ginger" style="flex:1" onclick="saveHospital(false,'published')">🚀 Update</button>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:12px;font-size:.72rem">
+            <a href="#" id="viewArticle" style="display:none;color:var(--teal)" target="_blank">● View Profile ↗</a>
+            <a href="#" style="color:var(--gray-400)" onclick="if(confirm('Move to trash?')){saveHospital(false,'archived')};return false">↗ Move to Trash</a>
+        </div>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🏥 Hospital Info</div>
+        <div class="sb-label">Slug</div>
+        <input class="sb-input" id="slug" oninput="updatePermalink();resetAutoSave()">
+        <div class="sb-label">Destination (Country)</div>
+        <select class="sb-select" id="destinationId" onchange="onDestChange();resetAutoSave()"><option value="">Select destination...</option></select>
+        <div class="sb-label">City</div>
+        <select class="sb-select" id="hospitalCity" onchange="resetAutoSave()"><option value="">Select city...</option></select>
+        <div class="sb-label">Address</div>
+        <textarea class="sb-textarea" id="address" rows="2" onchange="resetAutoSave()"></textarea>
+        <div class="sb-label">Short Description</div>
+        <textarea class="sb-textarea" id="description" rows="2" onchange="resetAutoSave()"></textarea>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">📊 Stats</div>
+        <div style="display:flex;gap:8px">
+            <div style="flex:1"><div class="sb-label">Beds</div><input class="sb-input" id="beds" type="number" onchange="resetAutoSave()"></div>
+            <div style="flex:1"><div class="sb-label">Established</div><input class="sb-input" id="established" type="number" onchange="resetAutoSave()"></div>
+        </div>
+        <div class="sb-label">Rating (0–5)</div>
+        <input class="sb-input" id="rating" type="number" step="0.1" min="0" max="5" onchange="resetAutoSave()">
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🏆 Accreditations</div>
+        <div class="chip-wrap" id="accredChips"></div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+            <input class="sb-input" id="accredInput" placeholder="e.g. JCI, NABH, ISO" style="flex:1" onkeydown="if(event.key==='Enter'){addChip('accred');event.preventDefault()}">
+            <button class="sb-btn sb-btn--outline" style="width:auto;padding:4px 10px" onclick="addChip('accred')">+</button>
+        </div>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🩺 Specialties</div>
+        <div class="chip-wrap" id="specChips"></div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+            <input class="sb-input" id="specInput" placeholder="Add specialty..." style="flex:1" onkeydown="if(event.key==='Enter'){addChip('spec');event.preventDefault()}">
+            <button class="sb-btn sb-btn--outline" style="width:auto;padding:4px 10px" onclick="addChip('spec')">+</button>
+        </div>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🖼 Hospital Image</div>
+        <div id="featImgEmpty"><button class="sb-btn sb-btn--outline" onclick="openMediaPicker()">Choose Image</button></div>
+        <img class="feat-img-preview" id="featImgPreview">
+        <div id="featImgActions" style="display:none;margin-top:6px">
+            <span style="font-size:.72rem;color:var(--gray-500)" id="featImgName"></span><br>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem" onclick="openMediaPicker()">Change</button>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem;color:var(--ginger)" onclick="removeFeatImage()">Remove</button>
+        </div>
+        <input type="hidden" id="image">
+        <div class="sb-label" style="margin-top:8px">Featured</div>
+        <select class="sb-select" id="isFeatured" onchange="resetAutoSave()"><option value="false">No</option><option value="true">⭐ Yes — Featured Hospital</option></select>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🔍 SEO Settings</div>
+        <div class="sb-label">Meta Title <span style="float:right;color:var(--gray-400)" id="metaTitleCount">0/60</span></div>
+        <input class="sb-input" id="metaTitle" placeholder="SEO title" oninput="document.getElementById('metaTitleCount').textContent=this.value.length+'/60';analyzeSEO();resetAutoSave()">
+        <div class="sb-label">Meta Description <span style="float:right;color:var(--gray-400)" id="metaDescCount">0/160</span></div>
+        <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description" oninput="document.getElementById('metaDescCount').textContent=this.value.length+'/160';analyzeSEO();resetAutoSave()"></textarea>
+    </div>
+</div>
+</div>
+
+<!-- Media Picker Modal -->
+<div class="mp-overlay" id="mediaPicker">
+    <div class="mp-modal">
+        <div class="mp-header"><h3>Media Library</h3><button class="mp-close" onclick="closeMediaPicker()">✕</button></div>
+        <div class="mp-body" id="mediaGrid"></div>
+        <div class="mp-footer">
+            <button class="sb-btn sb-btn--outline" style="width:auto" onclick="closeMediaPicker()">Cancel</button>
+            <button class="sb-btn sb-btn--primary" style="width:auto" onclick="selectMedia()">Select Image</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+// ============== STATE ==============
+const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
+let hospData = null, allDestinations = [], accreditations = [], specialtiesList = [], currentTone = 'professional';
+let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, aiGenerating = false;
+
+const CITY_MAP = {
+    'india': ['Delhi NCR','Mumbai','Bengaluru','Chennai','Hyderabad','Kolkata','Pune','Ahmedabad','Guwahati','Gurugram','Noida','Jaipur','Lucknow','Chandigarh','Kochi','Thiruvananthapuram','Coimbatore','Nagpur','Visakhapatnam','Bhubaneswar','Indore','Mangalore'],
+    'turkey': ['Istanbul','Ankara','Antalya','Izmir'],
+    'thailand': ['Bangkok','Phuket','Chiang Mai','Pattaya'],
+    'uae': ['Dubai','Abu Dhabi','Sharjah'],
+    'singapore': ['Singapore']
+};
+
+// ============== INIT ==============
+const quillToolbar = [['bold','italic','underline','strike'],['blockquote'],[{'header':1},{'header':2},{'header':3}],[{'list':'ordered'},{'list':'bullet'}],[{'indent':'-1'},{'indent':'+1'}],['link','image','video'],['clean']];
+quill = new Quill('#editor', {theme:'snow', placeholder:'Write detailed hospital description...', modules:{toolbar:quillToolbar}});
+quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
+
+async function init() {
+    try {
+        const dr = await fetch('/api/destinations');
+        allDestinations = await dr.json();
+        const dd = document.getElementById('destinationId');
+        allDestinations.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
+    } catch(e) { console.error('Init error:', e); }
+    if (editId) await loadHospital();
+    startAutoSave();
+}
+
+async function loadHospital() {
+    if (!editId) return;
+    try {
+        const r = await fetch('/api/hospitals/' + editId);
+        if (!r.ok) return;
+        hospData = await r.json();
+
+        document.getElementById('hospitalName').value = hospData.name || '';
+        document.getElementById('slug').value = hospData.slug || '';
+        document.getElementById('description').value = hospData.description || '';
+        document.getElementById('address').value = hospData.address || '';
+        document.getElementById('beds').value = hospData.beds || '';
+        document.getElementById('established').value = hospData.established || '';
+        document.getElementById('rating').value = hospData.rating || '';
+        document.getElementById('status').value = hospData.status || 'draft';
+        document.getElementById('isFeatured').value = hospData.is_featured ? 'true' : 'false';
+        document.getElementById('metaTitle').value = hospData.meta_title || '';
+        document.getElementById('metaDesc').value = hospData.meta_description || '';
+
+        // Destination
+        if (hospData.destination_id) {
+            document.getElementById('destinationId').value = hospData.destination_id;
+            onDestChange();
+        }
+        // City (after dest change populates dropdown)
+        setTimeout(() => { if (hospData.city) document.getElementById('hospitalCity').value = hospData.city; }, 100);
+
+        // Accreditations
+        accreditations = hospData.accreditations || [];
+        renderChips('accred');
+
+        // Specialties text array
+        specialtiesList = hospData.specialties || [];
+        renderChips('spec');
+
+        // Long description
+        if (hospData.long_description) quill.root.innerHTML = hospData.long_description;
+
+        // Image
+        if (hospData.image) {
+            document.getElementById('image').value = hospData.image;
+            const src = hospData.image.startsWith('http') ? hospData.image : 'https://enter.ginger.healthcare' + hospData.image;
+            document.getElementById('featImgPreview').src = src;
+            document.getElementById('featImgPreview').style.display = 'block';
+            document.getElementById('featImgEmpty').style.display = 'none';
+            document.getElementById('featImgActions').style.display = 'block';
+            document.getElementById('featImgName').textContent = hospData.image.split('/').pop();
+        }
+
+        updateTopTitle();
+        updatePermalink();
+        updateStats();
+        analyzeSEO();
+
+        const badge = document.getElementById('statusBadge');
+        badge.textContent = hospData.status;
+        badge.className = 'topbar__status topbar__status--' + hospData.status;
+        document.getElementById('sidebarStatus').textContent = hospData.status === 'published' ? '✅ Published' : 'Draft';
+
+        // View link
+        const destSlug = getDestSlug();
+        if (destSlug && hospData.slug) {
+            const url = 'https://ginger.healthcare/destinations/' + destSlug + '/hospitals/' + hospData.slug + '/';
+            document.getElementById('viewBtn').href = url;
+            document.getElementById('viewBtn').style.display = 'inline-flex';
+            const va = document.getElementById('viewArticle');
+            va.href = url; va.style.display = 'inline';
+        }
+    } catch(e) { console.error('Load error:', e); }
+}
+
+// ============== SAVE ==============
+async function saveHospital(isAuto, statusOverride) {
+    const destId = parseInt(document.getElementById('destinationId').value) || null;
+    const destObj = allDestinations.find(d => d.id == destId);
+
+    const data = {
+        name: document.getElementById('hospitalName').value,
+        slug: document.getElementById('slug').value,
+        destination_id: destId,
+        country: destObj ? destObj.name : '',
+        city: document.getElementById('hospitalCity').value || null,
+        address: document.getElementById('address').value,
+        description: document.getElementById('description').value,
+        long_description: quill.root.innerHTML,
+        accreditations: accreditations,
+        specialties: specialtiesList,
+        beds: parseInt(document.getElementById('beds').value) || null,
+        established: parseInt(document.getElementById('established').value) || null,
+        image: document.getElementById('image').value,
+        rating: parseFloat(document.getElementById('rating').value) || null,
+        is_featured: document.getElementById('isFeatured').value === 'true',
+        status: isAuto ? document.getElementById('status').value : (statusOverride || document.getElementById('status').value),
+        meta_title: document.getElementById('metaTitle').value,
+        meta_description: document.getElementById('metaDesc').value
+    };
+
+    if (!data.name) { if (!isAuto) alert('Hospital name is required'); return; }
+    if (!data.slug) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!data.destination_id) { if (!isAuto) alert('Please select a destination'); return; }
+
+    try {
+        const url = editId ? '/api/hospitals/' + editId : '/api/hospitals';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        if (r.ok) {
+            const result = await r.json();
+            if (!editId) { window.location.href = '/hospitals/edit/' + result.id; return; }
+            hasUnsaved = false;
+
+            if (isAuto) { showToast('💾 Auto-saved'); }
+            else {
+                const saved = document.getElementById('savedIndicator');
+                saved.style.display = 'inline';
+                setTimeout(() => saved.style.display = 'none', 2000);
+
+                const badge = document.getElementById('statusBadge');
+                badge.textContent = data.status;
+                badge.className = 'topbar__status topbar__status--' + data.status;
+                document.getElementById('sidebarStatus').textContent = data.status === 'published' ? '✅ Published' : 'Draft';
+                document.getElementById('status').value = data.status;
+
+                showToast(data.status === 'published' ? '🚀 Published!' : '💾 Saved!');
+
+                const destSlug = getDestSlug();
+                if (destSlug && data.slug) {
+                    const viewUrl = 'https://ginger.healthcare/destinations/' + destSlug + '/hospitals/' + data.slug + '/';
+                    document.getElementById('viewBtn').href = viewUrl;
+                    document.getElementById('viewBtn').style.display = 'inline-flex';
+                    const va = document.getElementById('viewArticle');
+                    va.href = viewUrl; va.style.display = 'inline';
+                }
+            }
+        } else {
+            const e = await r.json();
+            if (!isAuto) alert('Error: ' + (e.error || 'Save failed'));
+        }
+    } catch(e) { if (!isAuto) alert('Network error: ' + e.message); }
+}
+
+// ============== CHIPS (Accreditations + Specialties) ==============
+function renderChips(type) {
+    const arr = type === 'accred' ? accreditations : specialtiesList;
+    const wrap = document.getElementById(type + 'Chips');
+    wrap.innerHTML = arr.map((v, i) => '<span class="chip">' + v + '<button onclick="removeChip(\'' + type + '\',' + i + ')">×</button></span>').join('');
+}
+function addChip(type) {
+    const input = document.getElementById(type + 'Input');
+    const val = input.value.trim();
+    if (!val) return;
+    const arr = type === 'accred' ? accreditations : specialtiesList;
+    if (!arr.includes(val)) { arr.push(val); renderChips(type); resetAutoSave(); }
+    input.value = '';
+}
+function removeChip(type, idx) {
+    const arr = type === 'accred' ? accreditations : specialtiesList;
+    arr.splice(idx, 1); renderChips(type); resetAutoSave();
+}
+
+// ============== HELPERS ==============
+function getDestSlug() {
+    const destId = document.getElementById('destinationId').value;
+    const dest = allDestinations.find(d => d.id == destId);
+    return dest ? dest.slug : '';
+}
+
+function onDestChange() {
+    updatePermalink();
+    const destId = document.getElementById('destinationId').value;
+    const dest = allDestinations.find(d => d.id == destId);
+    const slug = dest ? dest.slug : '';
+    const cities = CITY_MAP[slug] || [];
+    const citySelect = document.getElementById('hospitalCity');
+    const current = citySelect.value;
+    citySelect.innerHTML = '<option value="">Select city...</option>' + cities.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+    if (current && cities.includes(current)) citySelect.value = current;
+}
+
+function autoSlug() {
+    const name = document.getElementById('hospitalName').value;
+    document.getElementById('slug').value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    updatePermalink();
+}
+
+function updatePermalink() {
+    const slug = document.getElementById('slug').value;
+    const destSlug = getDestSlug() || '___';
+    document.getElementById('permalinkCountry').textContent = destSlug;
+    document.getElementById('permalinkSlug').textContent = slug || '___';
+}
+
+function updateTopTitle() {
+    const name = document.getElementById('hospitalName').value;
+    document.getElementById('topbarTitle').textContent = name || 'New Hospital';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'write') {
+        document.getElementById('writePanel').style.display = '';
+        document.getElementById('previewPanel').style.display = 'none';
+        document.querySelectorAll('.editor-tab')[0].classList.add('active');
+    } else {
+        document.getElementById('writePanel').style.display = 'none';
+        document.getElementById('previewPanel').style.display = '';
+        document.getElementById('previewContent').innerHTML = '<h1>' + document.getElementById('hospitalName').value + '</h1>' + quill.root.innerHTML;
+        document.querySelectorAll('.editor-tab')[1].classList.add('active');
+    }
+}
+
+function updateStats() {
+    const text = quill.getText().trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    document.getElementById('wordCount').textContent = words + ' words';
+    document.getElementById('readTime').textContent = Math.max(1, Math.ceil(words / 200)) + ' min read';
+}
+
+function analyzeSEO() {
+    let score = 0;
+    const name = document.getElementById('hospitalName').value;
+    const desc = document.getElementById('description').value;
+    const content = quill.getText().trim();
+    const metaT = document.getElementById('metaTitle').value;
+    const metaD = document.getElementById('metaDesc').value;
+    const img = document.getElementById('image').value;
+
+    if (name.length > 10) score += 15;
+    if (desc.length > 30) score += 10;
+    if (content.split(/\s+/).length > 100) score += 20;
+    if (metaT.length >= 30 && metaT.length <= 60) score += 20; else if (metaT.length > 0) score += 8;
+    if (metaD.length >= 80 && metaD.length <= 160) score += 20; else if (metaD.length > 0) score += 8;
+    if (img) score += 15;
+
+    const el = document.getElementById('seoScore');
+    el.textContent = score;
+    el.className = 'sb-score ' + (score >= 70 ? 'seo-good' : score >= 40 ? 'seo-ok' : 'seo-bad');
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============== AUTO-SAVE ==============
+function resetAutoSave() {
+    hasUnsaved = true;
+    document.getElementById('undoBtn').style.display = 'inline-flex';
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => { if (editId && hasUnsaved) saveHospital(true); }, 30000);
+}
+function startAutoSave() { setInterval(() => { if (editId && hasUnsaved) saveHospital(true); }, 60000); }
+
+// ============== UNDO ==============
+let undoStack = [];
+function saveUndoSnapshot() { undoStack.push({name:document.getElementById('hospitalName').value,content:quill.root.innerHTML,slug:document.getElementById('slug').value}); if(undoStack.length>20)undoStack.shift(); }
+function undoChanges() { if(!undoStack.length){alert('Nothing to undo');return} const s=undoStack.pop(); document.getElementById('hospitalName').value=s.name; quill.root.innerHTML=s.content; document.getElementById('slug').value=s.slug; updateTopTitle(); updateStats(); analyzeSEO(); showToast('↩ Undo applied'); }
+
+// ============== MEDIA PICKER ==============
+let allMedia = [];
+async function openMediaPicker() {
+    document.getElementById('mediaPicker').classList.add('open');
+    try {
+        const r = await fetch('/api/media'); allMedia = await r.json();
+        const grid = document.getElementById('mediaGrid');
+        grid.innerHTML = allMedia.filter(m => m.mime_type && m.mime_type.startsWith('image/')).map(m =>
+            '<div class="mp-item" onclick="selectMediaItem(this,\'' + m.url + '\')" data-url="' + m.url + '"><img src="' + m.url + '" alt="' + (m.alt_text||m.original_name||'') + '"></div>'
+        ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images found. Upload images via Media Library first.</div>';
+        selectedMediaUrl = null;
+    } catch(e) { console.error('Media load error:', e); }
+}
+function selectMediaItem(el, url) {
+    document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected'); selectedMediaUrl = url;
+}
+function selectMedia() {
+    if (!selectedMediaUrl) { alert('Please select an image'); return; }
+    document.getElementById('image').value = selectedMediaUrl;
+    const src = selectedMediaUrl.startsWith('http') ? selectedMediaUrl : 'https://enter.ginger.healthcare' + selectedMediaUrl;
+    document.getElementById('featImgPreview').src = src;
+    document.getElementById('featImgPreview').style.display = 'block';
+    document.getElementById('featImgEmpty').style.display = 'none';
+    document.getElementById('featImgActions').style.display = 'block';
+    document.getElementById('featImgName').textContent = selectedMediaUrl.split('/').pop();
+    closeMediaPicker(); resetAutoSave();
+}
+function removeFeatImage() {
+    document.getElementById('image').value = '';
+    document.getElementById('featImgPreview').style.display = 'none';
+    document.getElementById('featImgEmpty').style.display = '';
+    document.getElementById('featImgActions').style.display = 'none';
+    resetAutoSave();
+}
+function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('open'); }
+
+// ============== AI ASSISTANT ==============
+let currentToneVal = 'professional';
+function setTone(btn) {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTone = btn.dataset.tone;
+}
+
+function sendAI() { const input = document.getElementById('aiInput'); const msg = input.value.trim(); if (msg) aiCmd(msg); }
+
+async function aiCmd(customMsg) {
+    const input = document.getElementById('aiInput');
+    const msg = customMsg || input.value.trim();
+    if (!msg || aiGenerating) return;
+    input.value = '';
+    aiGenerating = true;
+    document.getElementById('aiSendBtn').disabled = true;
+
+    const messages = document.getElementById('aiMessages');
+    const userDiv = document.createElement('div');
+    userDiv.className = 'ai-msg ai-msg--user';
+    userDiv.textContent = msg;
+    messages.appendChild(userDiv);
+
+    const loadDiv = document.createElement('div');
+    loadDiv.className = 'ai-msg ai-msg--bot';
+    loadDiv.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+    messages.appendChild(loadDiv);
+    messages.scrollTop = messages.scrollHeight;
+
+    saveUndoSnapshot();
+
+    try {
+        const content = quill.root.innerHTML;
+        const name = document.getElementById('hospitalName').value;
+        const city = document.getElementById('hospitalCity').value;
+        const bedsVal = document.getElementById('beds').value;
+        const estVal = document.getElementById('established').value;
+
+        const prompt = `You are an AI writing assistant for a medical tourism website hospital profile. Tone: ${currentTone}.
+Hospital: ${name}
+City: ${city}
+Beds: ${bedsVal}
+Established: ${estVal}
+Accreditations: ${accreditations.join(', ')}
+Specialties: ${specialtiesList.join(', ')}
+Current content: ${content.replace(/<[^>]*>/g, '').substring(0, 2000)}
+
+User request: ${msg}
+
+If the request is for SEO (meta title/description), respond with JSON: {"meta_title":"...","meta_description":"..."}
+Otherwise respond with formatted HTML content suitable for a hospital profile page. Use h2, h3, p, ul, li tags.`;
+
+        const r = await fetch('/api/ai/generate', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({prompt, type:'hospital', context:name})
+        });
+        const data = await r.json();
+
+        if (r.ok) {
+            let result = data.content || '';
+            let seoData = null;
+            try {
+                const clean = result.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+                if (clean.startsWith('{')) seoData = JSON.parse(clean);
+            } catch(e) {}
+
+            if (seoData && seoData.meta_title) {
+                document.getElementById('metaTitle').value = seoData.meta_title;
+                document.getElementById('metaDesc').value = seoData.meta_description || '';
+                analyzeSEO();
+                loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Title:</strong> ' + seoData.meta_title + '<br><strong>Desc:</strong> ' + (seoData.meta_description||'').substring(0,100) + '...';
+            } else {
+                const cid = 'ai_' + Date.now();
+                window[cid] = result;
+                const preview = result.replace(/<[^>]*>/g, '').substring(0, 180);
+                loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') +
+                    '<div class="ai-msg__actions">' +
+                    '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\'' + cid + '\')">📋 Replace</button>' +
+                    '<button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\'' + cid + '\')">➕ Append</button></div>';
+            }
+        } else {
+            loadDiv.innerHTML = '❌ AI error: ' + (data.error || 'Unknown error');
+        }
+    } catch(e) {
+        loadDiv.innerHTML = '❌ Network error: ' + e.message;
+    }
+
+    aiGenerating = false;
+    document.getElementById('aiSendBtn').disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function insertAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML=h;updateStats();analyzeSEO();resetAutoSave()} }
+function appendAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML+=h;updateStats();analyzeSEO();resetAutoSave()} }
+
+// ============== KEYBOARD SHORTCUTS ==============
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveHospital(false); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); undoChanges(); }
+});
+
+// ============== INIT ==============
+init();
+</script>
+</body></html>
