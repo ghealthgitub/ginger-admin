@@ -250,10 +250,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="sb-box">
         <div class="sb-box__title">🩺 Specialties</div>
         <div class="chip-wrap" id="specChips"></div>
-        <div style="display:flex;gap:4px;margin-top:6px">
-            <input class="sb-input" id="specInput" placeholder="Add specialty..." style="flex:1" onkeydown="if(event.key==='Enter'){addChip('spec');event.preventDefault()}">
-            <button class="sb-btn sb-btn--outline" style="width:auto;padding:4px 10px" onclick="addChip('spec')">+</button>
-        </div>
+        <select class="sb-select" id="specDropdown" onchange="addSpecFromDropdown()" style="margin-top:6px">
+            <option value="">+ Add specialty...</option>
+        </select>
+        <div class="sb-hint">Select from published specialties (Page B)</div>
     </div>
     <div class="sb-box">
         <div class="sb-box__title">🖼 Hospital Image</div>
@@ -314,7 +314,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], galleryPeople = [], locationImage = '', currentTone = 'professional';
+let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], selectedSpecIds = [], allSpecialties = [], galleryImages = [], galleryPeople = [], locationImage = '', currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
@@ -332,13 +332,16 @@ quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); })
 
 async function init() {
     try {
-        const [dr, ar] = await Promise.all([fetch('/api/destinations'), fetch('/api/airports')]);
+        const [dr, ar, sr] = await Promise.all([fetch('/api/destinations'), fetch('/api/airports'), fetch('/api/specialties')]);
         allDestinations = await dr.json();
         const dd = document.getElementById('destinationId');
         allDestinations.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
 
         allAirports = await ar.json();
         renderAirportDropdown();
+
+        allSpecialties = await sr.json();
+        renderSpecDropdown();
     } catch(e) { console.error('Init error:', e); }
     if (editId) await loadHospital();
     startAutoSave();
@@ -379,9 +382,18 @@ async function loadHospital() {
         accreditations = hospData.accreditations || [];
         renderChips('accred');
 
-        // Specialties text array
+        // Specialties — load from junction table
         specialtiesList = hospData.specialties || [];
-        renderChips('spec');
+        try {
+            const specR = await fetch('/api/hospitals/' + editId + '/specialties');
+            const hospSpecs = await specR.json();
+            if (hospSpecs.length > 0) {
+                selectedSpecIds = hospSpecs.map(s => s.id);
+                specialtiesList = hospSpecs.map(s => s.name);
+            }
+        } catch(e) { console.error('Load specs error:', e); }
+        renderSpecChips();
+        renderSpecDropdown();
 
         // Gallery
         galleryImages = hospData.gallery || [];
@@ -470,6 +482,18 @@ async function saveHospital(isAuto, statusOverride) {
         const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
         if (r.ok) {
             const result = await r.json();
+            const hospId = editId || result.id;
+
+            // Save specialties junction table
+            if (selectedSpecIds.length > 0) {
+                try {
+                    await fetch('/api/hospitals/' + hospId + '/specialties', {
+                        method: 'PUT', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ specialty_ids: selectedSpecIds })
+                    });
+                } catch(e) { console.error('Spec junction save error:', e); }
+            }
+
             if (!editId) { window.location.href = '/hospitals/edit/' + result.id; return; }
             hasUnsaved = false;
 
@@ -505,21 +529,59 @@ async function saveHospital(isAuto, statusOverride) {
 
 // ============== CHIPS (Accreditations + Specialties) ==============
 function renderChips(type) {
-    const arr = type === 'accred' ? accreditations : specialtiesList;
-    const wrap = document.getElementById(type + 'Chips');
-    wrap.innerHTML = arr.map((v, i) => '<span class="chip">' + v + '<button onclick="removeChip(\'' + type + '\',' + i + ')">×</button></span>').join('');
+    if (type === 'accred') {
+        const wrap = document.getElementById('accredChips');
+        wrap.innerHTML = accreditations.map((v, i) => '<span class="chip">' + v + '<button onclick="removeChip(\'accred\',' + i + ')">×</button></span>').join('');
+    }
 }
 function addChip(type) {
-    const input = document.getElementById(type + 'Input');
-    const val = input.value.trim();
-    if (!val) return;
-    const arr = type === 'accred' ? accreditations : specialtiesList;
-    if (!arr.includes(val)) { arr.push(val); renderChips(type); resetAutoSave(); }
-    input.value = '';
+    if (type === 'accred') {
+        const input = document.getElementById('accredInput');
+        const val = input.value.trim();
+        if (!val) return;
+        if (!accreditations.includes(val)) { accreditations.push(val); renderChips('accred'); resetAutoSave(); }
+        input.value = '';
+    }
 }
 function removeChip(type, idx) {
-    const arr = type === 'accred' ? accreditations : specialtiesList;
-    arr.splice(idx, 1); renderChips(type); resetAutoSave();
+    if (type === 'accred') {
+        accreditations.splice(idx, 1); renderChips('accred'); resetAutoSave();
+    }
+}
+
+// Specialties multi-select (from specialties table)
+function renderSpecDropdown() {
+    const dd = document.getElementById('specDropdown');
+    const current = dd.value;
+    dd.innerHTML = '<option value="">+ Add specialty...</option>';
+    allSpecialties.filter(s => s.status === 'published' && !selectedSpecIds.includes(s.id)).forEach(s => {
+        dd.innerHTML += '<option value="' + s.id + '">' + s.name + '</option>';
+    });
+}
+function renderSpecChips() {
+    const wrap = document.getElementById('specChips');
+    wrap.innerHTML = selectedSpecIds.map((id, i) => {
+        const spec = allSpecialties.find(s => s.id === id);
+        const name = spec ? spec.name : specialtiesList[i] || 'Unknown';
+        return '<span class="chip">' + name + '<button onclick="removeSpec(' + i + ')">×</button></span>';
+    }).join('');
+}
+function addSpecFromDropdown() {
+    const dd = document.getElementById('specDropdown');
+    const id = parseInt(dd.value);
+    if (!id) return;
+    const spec = allSpecialties.find(s => s.id === id);
+    if (spec && !selectedSpecIds.includes(id)) {
+        selectedSpecIds.push(id);
+        specialtiesList.push(spec.name);
+        renderSpecChips(); renderSpecDropdown(); resetAutoSave();
+    }
+    dd.value = '';
+}
+function removeSpec(idx) {
+    selectedSpecIds.splice(idx, 1);
+    specialtiesList.splice(idx, 1);
+    renderSpecChips(); renderSpecDropdown(); resetAutoSave();
 }
 
 // ============== HELPERS ==============
