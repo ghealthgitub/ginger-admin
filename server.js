@@ -516,6 +516,12 @@ app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
 app.get('/airports', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'airports.html'));
 });
+app.get('/airports/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'airport-studio.html'));
+});
+app.get('/airports/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'airport-studio.html'));
+});
 
 app.get('/api/airports', apiAuth, async (req, res) => {
     try {
@@ -526,11 +532,11 @@ app.get('/api/airports', apiAuth, async (req, res) => {
 
 app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, code, city, country, latitude, longitude, arrival_instructions } = req.body;
+        const { name, code, city, country, latitude, longitude, arrival_instructions, photos } = req.body;
         if (!name || !city) return res.status(400).json({ error: 'Name and city are required' });
         const result = await pool.query(
-            'INSERT INTO airports (name, code, city, country, latitude, longitude, arrival_instructions) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null]
+            'INSERT INTO airports (name, code, city, country, latitude, longitude, arrival_instructions, photos) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, photos||[]]
         );
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -538,10 +544,10 @@ app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async 
 
 app.put('/api/airports/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, code, city, country, latitude, longitude, arrival_instructions } = req.body;
+        const { name, code, city, country, latitude, longitude, arrival_instructions, photos } = req.body;
         const result = await pool.query(
-            'UPDATE airports SET name=$1, code=$2, city=$3, country=$4, latitude=$5, longitude=$6, arrival_instructions=$7 WHERE id=$8 RETURNING *',
-            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, req.params.id]
+            'UPDATE airports SET name=$1, code=$2, city=$3, country=$4, latitude=$5, longitude=$6, arrival_instructions=$7, photos=$8 WHERE id=$9 RETURNING *',
+            [name, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, photos||[], req.params.id]
         );
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }

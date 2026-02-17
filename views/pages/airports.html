@@ -72,7 +72,7 @@
                 <h1>✈️ Airports <span id="airportCount"></span></h1>
                 <div class="header-actions">
                     <input type="text" class="search-box" id="searchBox" placeholder="Search airports..." oninput="filterAirports()">
-                    <button class="btn btn--primary" onclick="openModal()">+ Add Airport</button>
+                    <a href="/airports/new" class="btn btn--primary">+ Add Airport</a>
                 </div>
             </div>
             <div id="airportGrid" class="airport-grid"></div>
@@ -80,60 +80,10 @@
                 <div class="empty__icon">✈️</div>
                 <div class="empty__title">No airports yet</div>
                 <div class="empty__desc">Add airports that serve your hospital cities. Each airport can be linked to multiple hospitals.</div>
-                <button class="btn btn--primary" onclick="openModal()">+ Add First Airport</button>
+                <a href="/airports/new" class="btn btn--primary">+ Add First Airport</a>
             </div>
         </div>
     </main>
-
-    <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
-        <div class="modal">
-            <div class="modal__header">
-                <h2 id="modalTitle">Add Airport</h2>
-                <button class="modal__close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="modal__body">
-                <input type="hidden" id="editId">
-                <div class="form-group">
-                    <label class="form-label">Airport Name *</label>
-                    <input class="form-input" id="fName" placeholder="e.g. Indira Gandhi International Airport">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">IATA Code</label>
-                        <input class="form-input" id="fCode" placeholder="DEL" maxlength="5" style="text-transform:uppercase">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Country</label>
-                        <select class="form-select" id="fCountry"><option value="">Select country...</option></select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">City *</label>
-                    <input class="form-input" id="fCity" placeholder="e.g. New Delhi">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Latitude</label>
-                        <input class="form-input" id="fLat" type="number" step="any" placeholder="e.g. 28.5562">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Longitude</label>
-                        <input class="form-input" id="fLng" type="number" step="any" placeholder="e.g. 77.1000">
-                    </div>
-                </div>
-                <div class="form-hint" style="margin-bottom:16px">Coordinates enable driving route maps on hospital pages</div>
-                <div class="form-group">
-                    <label class="form-label">Arrival Instructions for Patients</label>
-                    <textarea class="form-textarea" id="fInstructions" rows="4" placeholder="Gate to exit from, immigration tips, visa on arrival info, vaccination requirements, recommended taxi services, things patients should know on arrival..."></textarea>
-                    <div class="form-hint">This will appear on hospital pages to help international patients navigate the airport</div>
-                </div>
-            </div>
-            <div class="modal__footer">
-                <button class="btn btn--outline" onclick="closeModal()">Cancel</button>
-                <button class="btn btn--primary" id="saveBtn" onclick="saveAirport()">Save Airport</button>
-            </div>
-        </div>
-    </div>
 
     <div class="toast" id="toast"></div>
 
@@ -187,7 +137,7 @@ function render() {
                     <div><div class="ap-card__label">Instructions</div><div class="ap-card__value">${a.arrival_instructions ? '✅ Added' : '—'}</div></div>
                 </div>
                 <div class="ap-card__actions">
-                    <button class="btn btn--outline btn--sm" onclick="editAirport(${a.id})">✏️ Edit</button>
+                    <button class="btn btn--outline btn--sm" onclick="window.open('/airports/edit/${a.id}','_blank')">✏️ Edit</button>
                     <button class="btn btn--danger btn--sm" onclick="deleteAirport(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">🗑️ Delete</button>
                 </div>
             </div>`;
@@ -197,62 +147,6 @@ function render() {
 }
 
 function filterAirports() { render(); }
-
-function openModal() {
-    document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = 'Add Airport';
-    document.getElementById('saveBtn').textContent = 'Save Airport';
-    ['fName','fCode','fCity','fLat','fLng','fInstructions'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('fCountry').value = '';
-    document.getElementById('modalBg').classList.add('open');
-    setTimeout(() => document.getElementById('fName').focus(), 100);
-}
-
-function editAirport(id) {
-    const a = airports.find(x => x.id === id);
-    if (!a) return;
-    document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = 'Edit Airport';
-    document.getElementById('saveBtn').textContent = 'Update Airport';
-    document.getElementById('fName').value = a.name || '';
-    document.getElementById('fCode').value = a.code || '';
-    document.getElementById('fCity').value = a.city || '';
-    document.getElementById('fCountry').value = a.country || '';
-    document.getElementById('fLat').value = a.latitude || '';
-    document.getElementById('fLng').value = a.longitude || '';
-    document.getElementById('fInstructions').value = a.arrival_instructions || '';
-    document.getElementById('modalBg').classList.add('open');
-}
-
-function closeModal() { document.getElementById('modalBg').classList.remove('open'); }
-
-async function saveAirport() {
-    const id = document.getElementById('editId').value;
-    const data = {
-        name: document.getElementById('fName').value.trim(),
-        code: document.getElementById('fCode').value.trim().toUpperCase(),
-        city: document.getElementById('fCity').value.trim(),
-        country: document.getElementById('fCountry').value,
-        latitude: parseFloat(document.getElementById('fLat').value) || null,
-        longitude: parseFloat(document.getElementById('fLng').value) || null,
-        arrival_instructions: document.getElementById('fInstructions').value.trim() || null
-    };
-    if (!data.name || !data.city) { alert('Airport name and city are required'); return; }
-    document.getElementById('saveBtn').textContent = 'Saving...';
-    try {
-        const r = await fetch(id ? '/api/airports/' + id : '/api/airports', {
-            method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
-        });
-        if (r.ok) {
-            const saved = await r.json();
-            if (id) { const idx = airports.findIndex(x => x.id == id); if (idx >= 0) airports[idx] = saved; }
-            else airports.push(saved);
-            closeModal(); render();
-            showToast(id ? '✅ Airport updated!' : '✅ Airport added!');
-        } else { const e = await r.json(); alert('Error: ' + (e.error || 'Save failed')); }
-    } catch(e) { alert('Network error: ' + e.message); }
-    document.getElementById('saveBtn').textContent = id ? 'Update Airport' : 'Save Airport';
-}
 
 async function deleteAirport(id, name) {
     if (!confirm('Delete "' + name + '"?\n\nHospitals linked to this airport will lose their airport assignment.')) return;

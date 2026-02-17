@@ -105,6 +105,7 @@ async function initDB() {
                 latitude DECIMAL(10,7),
                 longitude DECIMAL(10,7),
                 arrival_instructions TEXT,
+                photos TEXT[],
                 created_at TIMESTAMP DEFAULT NOW()
             );
 
@@ -387,6 +388,10 @@ async function initDB() {
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_id INTEGER REFERENCES airports(id)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_distance VARCHAR(100)`);
+
+        // Airports — arrival instructions
+        await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS arrival_instructions TEXT`);
+        await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS photos TEXT[]`);
 
         // Doctors — FK columns + extra fields
         await client.query(`ALTER TABLE doctors ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);
