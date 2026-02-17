@@ -390,6 +390,7 @@ async function initDB() {
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_id INTEGER REFERENCES airports(id)`);
         await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS airport_distance VARCHAR(100)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS location_image VARCHAR(500)`);
 
         // Airports — arrival instructions
         await client.query(`ALTER TABLE airports ADD COLUMN IF NOT EXISTS arrival_instructions TEXT`);

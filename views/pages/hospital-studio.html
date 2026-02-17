@@ -275,6 +275,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="sb-hint">Select multiple photos from the media library</div>
     </div>
     <div class="sb-box">
+        <div class="sb-box__title">📍 Location Image</div>
+        <div id="locationImagePreview" style="margin-bottom:8px"></div>
+        <button class="sb-btn sb-btn--outline" style="width:100%" onclick="pickLocationImage()">Choose Image</button>
+        <div class="sb-hint">Shown next to address on hospital page. Uses featured image if not set.</div>
+    </div>
+    <div class="sb-box">
         <div class="sb-box__title">🔍 SEO Settings</div>
         <div class="sb-label">Meta Title <span style="float:right;color:var(--gray-400)" id="metaTitleCount">0/60</span></div>
         <input class="sb-input" id="metaTitle" placeholder="SEO title" oninput="document.getElementById('metaTitleCount').textContent=this.value.length+'/60';analyzeSEO();resetAutoSave()">
@@ -302,7 +308,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
-let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], currentTone = 'professional';
+let hospData = null, allDestinations = [], allAirports = [], accreditations = [], specialtiesList = [], galleryImages = [], locationImage = '', currentTone = 'professional';
 let autoSaveTimer = null, hasUnsaved = false, quill = null, selectedMediaUrl = null, selectedMediaUrls = new Set(), aiGenerating = false;
 
 const CITY_MAP = {
@@ -374,6 +380,8 @@ async function loadHospital() {
         // Gallery
         galleryImages = hospData.gallery || [];
         renderGallery();
+        locationImage = hospData.location_image || '';
+        renderLocationImage();
 
         // Long description
         if (hospData.long_description) quill.root.innerHTML = hospData.long_description;
@@ -432,6 +440,7 @@ async function saveHospital(isAuto, statusOverride) {
         accreditations: accreditations,
         specialties: specialtiesList,
         gallery: galleryImages,
+        location_image: locationImage || null,
         beds: parseInt(document.getElementById('beds').value) || null,
         established: parseInt(document.getElementById('established').value) || null,
         image: document.getElementById('image').value,
@@ -637,6 +646,11 @@ function selectMedia() {
         galleryPickerMode = false; closeMediaPicker(); return;
     }
     if (!selectedMediaUrl) { alert('Please select an image'); return; }
+    if (locationImagePickerMode) {
+        locationImage = selectedMediaUrl;
+        renderLocationImage(); resetAutoSave();
+        locationImagePickerMode = false; closeMediaPicker(); return;
+    }
     document.getElementById('image').value = selectedMediaUrl;
     const src = selectedMediaUrl.startsWith('http') ? selectedMediaUrl : 'https://enter.ginger.healthcare' + selectedMediaUrl;
     document.getElementById('featImgPreview').src = src;
@@ -692,6 +706,19 @@ async function saveNewAirport() {
             resetAutoSave();
         } else { const e = await r.json(); alert('Error: ' + (e.error || 'Save failed')); }
     } catch(e) { alert('Network error: ' + e.message); }
+}
+
+// ============== LOCATION IMAGE ==============
+let locationImagePickerMode = false;
+function renderLocationImage() {
+    const wrap = document.getElementById('locationImagePreview');
+    if (!locationImage) { wrap.innerHTML = '<div style="color:var(--gray-400);font-size:.8rem">No image selected</div>'; return; }
+    const src = locationImage.startsWith('http') ? locationImage : 'https://enter.ginger.healthcare' + locationImage;
+    wrap.innerHTML = '<div style="position:relative;border-radius:8px;overflow:hidden;border:1.5px solid var(--gray-200)"><img src="' + src + '" style="width:100%;height:120px;object-fit:cover"><button onclick="locationImage=\'\';renderLocationImage();resetAutoSave()" style="position:absolute;top:4px;right:4px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:.65rem;display:flex;align-items:center;justify-content:center">✕</button></div>';
+}
+function pickLocationImage() {
+    locationImagePickerMode = true;
+    openMediaPicker();
 }
 
 // ============== GALLERY ==============
