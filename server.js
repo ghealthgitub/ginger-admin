@@ -1280,6 +1280,14 @@ app.get('/specialties-mgmt', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'specialties.html'));
 });
 
+app.get('/specialties/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
+});
+
+app.get('/specialties/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
+});
+
 app.get('/api/specialties', apiAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM specialties ORDER BY display_order ASC, name ASC');
@@ -1873,6 +1881,7 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
             testimonial: "You are helping create realistic patient testimonial templates for Ginger Healthcare. Make them sound authentic, emotional, and specific about the medical tourism experience. Include details about savings, hospital quality, and care.",
             hospital: "You are writing hospital descriptions for Ginger Healthcare. Focus on accreditations, specialties, facilities, and what makes each hospital stand out for international patients.",
             doctor: "You are writing doctor profiles for Ginger Healthcare. Highlight qualifications, experience, specialties, and patient care philosophy.",
+            specialty: "You are a medical content writer for Ginger Healthcare, a medical tourism platform. Write comprehensive, educational content about medical specialties. Cover: what the specialty involves, common conditions treated, procedures available, when patients should seek this specialty, and why international patients choose this specialty abroad. Use HTML formatting with h2, h3, p, ul, li tags. Be medically accurate but accessible to patients.",
             page: "You are a copywriter for Ginger Healthcare's website. Write compelling, conversion-focused copy for medical tourism pages.",
             general: "You are an AI assistant for Ginger Healthcare's admin team. Help with content creation, editing, SEO optimization, and medical tourism industry knowledge."
         };
