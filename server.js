@@ -890,8 +890,9 @@ const sharp = require('sharp');
 // Image sizes (like WordPress registered sizes)
 const IMAGE_SIZES = {
     thumbnail: { width: 150, height: 150, crop: true },
-    medium:    { width: 300, height: 300, crop: false },
-    large:     { width: 1024, height: 1024, crop: false }
+    medium:    { width: 400, height: 400, crop: false },
+    medium_large: { width: 768, height: 768, crop: false },
+    large:     { width: 1200, height: 1200, crop: false }
 };
 
 // Get year/month upload directory (like WordPress /uploads/2026/02/)
@@ -929,28 +930,62 @@ function uniqueFilename(dir, base, ext) {
     return finalName;
 }
 
-// Generate image subsizes (like wp_create_image_subsizes)
+// Generate image subsizes + WebP versions (like wp_create_image_subsizes)
 async function createImageSubsizes(filePath, dir, base, ext) {
     const sizes = {};
     try {
         const image = sharp(filePath);
         const metadata = await image.metadata();
 
+        // 1. Compress original (if JPEG/PNG, reduce quality)
+        if (/\.(jpg|jpeg)$/i.test(ext)) {
+            try {
+                await sharp(filePath).jpeg({ quality: 82, progressive: true }).toFile(filePath + '.tmp');
+                fs.renameSync(filePath + '.tmp', filePath);
+            } catch(e) { /* keep original if compression fails */ }
+        } else if (/\.png$/i.test(ext)) {
+            try {
+                await sharp(filePath).png({ quality: 85, compressionLevel: 8 }).toFile(filePath + '.tmp');
+                fs.renameSync(filePath + '.tmp', filePath);
+            } catch(e) { /* keep original */ }
+        }
+
+        // 2. Generate WebP of original (full size)
+        try {
+            const webpName = `${base}.webp`;
+            const webpPath = path.join(dir, webpName);
+            const webpInfo = await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
+            sizes['full_webp'] = { file: webpName, width: webpInfo.width, height: webpInfo.height, size: webpInfo.size };
+        } catch(e) { console.error('WebP full error:', e.message); }
+
+        // 3. Generate each size in original format + WebP
         for (const [sizeName, sizeConfig] of Object.entries(IMAGE_SIZES)) {
             if (metadata.width <= sizeConfig.width && metadata.height <= sizeConfig.height) continue;
+
+            const resizeOpts = sizeConfig.crop
+                ? { width: sizeConfig.width, height: sizeConfig.height, fit: 'cover', position: 'centre' }
+                : { width: sizeConfig.width, height: sizeConfig.height, fit: 'inside', withoutEnlargement: true };
+
+            // Original format
             const sizeFilename = `${base}-${sizeConfig.width}x${sizeConfig.height}${ext}`;
             const sizePath = path.join(dir, sizeFilename);
             try {
-                let resizer = sharp(filePath);
-                if (sizeConfig.crop) {
-                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'cover', position: 'centre' });
-                } else {
-                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'inside', withoutEnlargement: true });
-                }
+                let resizer = sharp(filePath).resize(resizeOpts);
+                if (/\.(jpg|jpeg)$/i.test(ext)) resizer = resizer.jpeg({ quality: 82, progressive: true });
+                else if (/\.png$/i.test(ext)) resizer = resizer.png({ quality: 85, compressionLevel: 8 });
                 const info = await resizer.toFile(sizePath);
                 sizes[sizeName] = { file: sizeFilename, width: info.width, height: info.height, size: info.size };
             } catch(e) { console.error(`Failed to create ${sizeName}:`, e.message); }
+
+            // WebP version
+            const webpSizeName = `${base}-${sizeConfig.width}x${sizeConfig.height}.webp`;
+            const webpSizePath = path.join(dir, webpSizeName);
+            try {
+                const webpInfo = await sharp(filePath).resize(resizeOpts).webp({ quality: 78 }).toFile(webpSizePath);
+                sizes[`${sizeName}_webp`] = { file: webpSizeName, width: webpInfo.width, height: webpInfo.height, size: webpInfo.size };
+            } catch(e) { console.error(`Failed to create ${sizeName} WebP:`, e.message); }
         }
+
         return { width: metadata.width, height: metadata.height, sizes };
     } catch(e) {
         console.error('Image processing error:', e.message);
@@ -1035,6 +1070,82 @@ app.put('/api/media/:id', apiAuth, roleRequired('super_admin', 'editor'), async 
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/media/:id/optimize — Reprocess a single image (generate missing sizes + WebP)
+app.post('/api/media/:id/optimize', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM media WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        const media = result.rows[0];
+        if (!media.mime_type || !media.mime_type.startsWith('image/') || /svg/i.test(media.mime_type)) {
+            return res.json({ skipped: true, reason: 'Not a raster image' });
+        }
+        const filePath = path.join(__dirname, media.url);
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on disk' });
+
+        const dir = path.dirname(filePath);
+        const ext = path.extname(media.filename);
+        const base = path.basename(media.filename, ext);
+        const imgData = await createImageSubsizes(filePath, dir, base, ext);
+
+        const subdir = path.dirname(media.url);
+        const sizes = {};
+        for (const [key, val] of Object.entries(imgData.sizes)) {
+            sizes[key] = { ...val, url: `${subdir}/${val.file}` };
+        }
+        await pool.query('UPDATE media SET sizes = $1, width = $2, height = $3 WHERE id = $4',
+            [JSON.stringify(sizes), imgData.width, imgData.height, media.id]);
+
+        const originalSize = fs.statSync(filePath).size;
+        const webpSize = sizes.full_webp ? sizes.full_webp.size : null;
+        const savings = webpSize ? Math.round((1 - webpSize / originalSize) * 100) : 0;
+
+        res.json({ success: true, id: media.id, sizes: Object.keys(sizes).length, savings: savings + '% WebP savings' });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/media/optimize-all — Bulk optimize all images (super_admin only)
+app.post('/api/media/optimize-all', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM media WHERE mime_type LIKE 'image/%' AND mime_type != 'image/svg+xml' ORDER BY id");
+        const images = result.rows;
+        let processed = 0, skipped = 0, errors = 0, totalSaved = 0;
+
+        for (const media of images) {
+            const filePath = path.join(__dirname, media.url);
+            if (!fs.existsSync(filePath)) { skipped++; continue; }
+
+            // Skip if already has WebP sizes
+            const existingSizes = typeof media.sizes === 'string' ? JSON.parse(media.sizes || '{}') : (media.sizes || {});
+            if (existingSizes.full_webp) { skipped++; continue; }
+
+            const dir = path.dirname(filePath);
+            const ext = path.extname(media.filename);
+            const base = path.basename(media.filename, ext);
+
+            try {
+                const originalSize = fs.statSync(filePath).size;
+                const imgData = await createImageSubsizes(filePath, dir, base, ext);
+                const subdir = path.dirname(media.url);
+                const sizes = {};
+                for (const [key, val] of Object.entries(imgData.sizes)) {
+                    sizes[key] = { ...val, url: `${subdir}/${val.file}` };
+                }
+                await pool.query('UPDATE media SET sizes = $1, width = $2, height = $3 WHERE id = $4',
+                    [JSON.stringify(sizes), imgData.width, imgData.height, media.id]);
+
+                const newSize = fs.statSync(filePath).size;
+                totalSaved += (originalSize - newSize);
+                processed++;
+            } catch(e) { errors++; console.error(`Optimize ${media.id} error:`, e.message); }
+        }
+
+        res.json({
+            success: true, total: images.length, processed, skipped, errors,
+            totalSavedMB: (totalSaved / 1024 / 1024).toFixed(2) + ' MB'
+        });
+    } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // DELETE /api/media/:id — Delete file + all subsizes

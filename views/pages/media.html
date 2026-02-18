@@ -107,7 +107,9 @@
         <select id="filterDate" onchange="applyFilters()"><option value="all">All dates</option></select>
         <button class="btn btn--outline btn--sm" onclick="applyFilters()">Filter</button>
         <input type="text" class="ml-search" id="searchInput" placeholder="Search media..." oninput="applyFilters()">
+        <button class="btn btn--outline btn--sm" onclick="optimizeAll()" id="optimizeBtn" title="Generate WebP + compressed versions for all images">🖼️ Optimize All</button>
         <span class="ml-count" id="mediaCount"></span>
+        <span id="optimizeStatus" style="font-size:.78rem;color:var(--teal);font-weight:600;display:none"></span>
         <div class="ml-views">
             <button class="ml-view-btn active" id="btnGrid" onclick="setView('grid')" title="Grid view">▦</button>
             <button class="ml-view-btn" id="btnList" onclick="setView('list')" title="List view">☰</button>
@@ -329,6 +331,26 @@ async function uploadFiles(input){
 })();
 
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+
+async function optimizeAll() {
+    if (!confirm('This will generate WebP + compressed versions for all images.\nExisting optimized images will be skipped.\n\nThis may take a few minutes. Continue?')) return;
+    var btn = document.getElementById('optimizeBtn');
+    var status = document.getElementById('optimizeStatus');
+    btn.disabled = true; btn.textContent = '⏳ Optimizing...';
+    status.style.display = ''; status.textContent = 'Processing...';
+    try {
+        var r = await fetch('/api/media/optimize-all', { method: 'POST' });
+        var data = await r.json();
+        if (data.success) {
+            status.textContent = '✅ Done! ' + data.processed + ' processed, ' + data.skipped + ' skipped' + (data.errors > 0 ? ', ' + data.errors + ' errors' : '') + ' — saved ' + data.totalSavedMB;
+            showToast('🖼️ Optimization complete! ' + data.processed + ' images processed');
+        } else {
+            status.textContent = '❌ Error: ' + (data.error || 'Unknown');
+        }
+    } catch(e) { status.textContent = '❌ Network error'; }
+    btn.disabled = false; btn.textContent = '🖼️ Optimize All';
+}
+
 init();
 </script>
 </body></html>

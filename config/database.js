@@ -432,7 +432,7 @@ async function initDB() {
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS treatment_id INTEGER REFERENCES treatments(id)`);
 
-        console.log('✅ Database tables initialized (19 tables)');
+        console.log('✅ Database tables initialized (22 tables)');
     } catch (err) {
         console.error('❌ Database init error:', err.message);
         throw err;
