@@ -1,5 +1,69 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Destination Treatments | Ginger Admin</title><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/admin.css"><link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-<style>.ql-editor{min-height:150px;font-size:.92rem;line-height:1.7;font-family:"DM Sans",sans-serif}.ql-toolbar{border-color:var(--gray-200)!important;background:var(--gray-50);border-radius:8px 8px 0 0}.ql-container{border-color:var(--gray-200)!important;border-radius:0 0 8px 8px}.combo-label{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:600;background:rgba(14,165,160,.1);color:var(--teal)}.mp-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center}.mp-bg.open{display:flex}
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Destination Treatments | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>
+:root{--navy:#0B2545;--teal:#0EA5A0;--ginger:#F26522;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563}
+.status-tabs{display:flex;gap:4px;margin-bottom:16px;font-size:.85rem}
+.status-tab{padding:4px 0;color:var(--gray-500);cursor:pointer;border:none;background:none;font-family:inherit;font-size:.85rem;transition:color .2s}
+.status-tab:hover{color:var(--navy)}.status-tab.active{color:var(--navy);font-weight:700}
+.status-tab .count{color:var(--gray-400);font-weight:400}.status-tab.active .count{color:var(--teal)}.tab-sep{color:var(--gray-300);padding:0 6px;user-select:none}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.bulk-bar{display:flex;gap:8px;align-items:center}
+.bulk-bar select,.filter-group select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
+.bulk-bar .btn-apply{padding:5px 14px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;cursor:pointer;background:var(--gray-50);font-family:inherit;font-weight:600;color:var(--gray-600);transition:all .2s}
+.bulk-bar .btn-apply:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.search-wrap{flex:1;max-width:260px;position:relative}
+.search-wrap input{width:100%;padding:6px 10px 6px 30px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit}
+.search-wrap input:focus{outline:none;border-color:var(--teal)}.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.75rem}
+.pagination-info{margin-left:auto;font-size:.82rem;color:var(--gray-500);display:flex;align-items:center;gap:8px}
+.pagination-info select{padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:.78rem;font-family:inherit}
+.pag-btn{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;background:#fff;font-size:.78rem;font-family:inherit;color:var(--gray-500)}
+.pag-btn:hover:not(:disabled){background:var(--teal);color:#fff;border-color:var(--teal)}.pag-btn:disabled{opacity:.4;cursor:not-allowed}
+.selected-bar{background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:8px 14px;margin-bottom:10px;display:none;align-items:center;gap:12px;font-size:.82rem;color:var(--teal);font-weight:600}
+.selected-bar .btn-clear{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.78rem;font-family:inherit;text-decoration:underline}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-500);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--gray-200);text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+.data-table th:hover{color:var(--navy)}.data-table th .sort-icon{font-size:.6rem;margin-left:3px;opacity:.4}.data-table th.sorted .sort-icon{opacity:1;color:var(--teal)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--gray-100);font-size:.85rem;vertical-align:middle}
+.data-table tr:hover td{background:var(--gray-50)}.data-table tr.selected td{background:rgba(14,165,160,.04)}
+.cb-cell{width:36px;text-align:center}.cb-cell input{width:15px;height:15px;cursor:pointer;accent-color:var(--teal)}
+.post-title-cell{min-width:200px}
+.post-title-cell strong{display:block;color:var(--navy);font-size:.88rem;line-height:1.3}
+.post-title-cell strong a{color:inherit;text-decoration:none}.post-title-cell strong a:hover{color:var(--teal)}
+.post-title-cell .post-slug{font-size:.7rem;color:var(--gray-400);font-family:'DM Sans',monospace;margin-top:1px}
+.row-actions{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity .15s}
+tr:hover .row-actions{opacity:1}
+.row-actions a,.row-actions button{font-size:.72rem;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:inherit;text-decoration:none;border:none;background:none;color:var(--gray-500)}
+.row-actions a:hover,.row-actions button:hover{color:var(--teal)}.row-actions .act-del{color:#EF4444}.row-actions .act-del:hover{color:#DC2626;text-decoration:underline}.row-actions .sep{color:var(--gray-300)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
+.badge--published{background:#D1FAE5;color:#059669}.badge--draft{background:#FEF3C7;color:#D97706}
+.dest-flag{font-size:1rem;margin-right:4px}
+.cost-cell{font-size:.8rem;color:var(--gray-600);white-space:nowrap}.cost-cell strong{color:var(--navy)}
+.date-cell{font-size:.78rem;color:var(--gray-500);white-space:nowrap}
+.quick-edit-row td{background:#F0F5FF!important;border-top:2px solid var(--teal)!important;border-bottom:2px solid var(--teal)!important}
+.quick-edit{padding:16px 20px}
+.quick-edit__title{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--teal)}
+.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.quick-edit .form-group{margin-bottom:0}
+.quick-edit .form-label{font-size:.75rem;font-weight:700;margin-bottom:3px;color:var(--navy);display:block}
+.quick-edit .form-input,.quick-edit .form-select,.quick-edit .form-textarea{font-size:.82rem;padding:6px 10px;background:#fff;border:1.5px solid var(--gray-300);border-radius:5px;width:100%;font-family:inherit;box-sizing:border-box}
+.quick-edit .form-input:focus,.quick-edit .form-select:focus{border-color:var(--teal);outline:none}
+.quick-edit__actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(14,165,160,.2)}
+.empty-state{text-align:center;padding:40px;color:var(--gray-400);font-size:.92rem}
+.btn-new{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--ginger);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;transition:background .2s}.btn-new:hover{background:#D9531E}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center}.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:720px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal__header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--gray-200)}
+.modal__header h3{font-size:1rem;font-weight:700;color:var(--navy)}.modal__close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)}
+.modal__body{padding:20px 24px}.modal__body .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.modal__body .form-group{margin-bottom:14px}.modal__body .form-label{font-size:.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:4px}
+.modal__body .form-input,.modal__body .form-select,.modal__body .form-textarea{width:100%;padding:8px 12px;border:1.5px solid var(--gray-300);border-radius:6px;font-size:.85rem;font-family:inherit}
+.modal__body .form-input:focus,.modal__body .form-select:focus{border-color:var(--teal);outline:none}
+.modal__footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--gray-200)}
+.modal__footer .btn{padding:8px 20px;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;border:none}
+.modal__footer .btn--outline{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-300)}.modal__footer .btn--outline:hover{background:var(--gray-100)}
+.modal__footer .btn--primary{background:var(--ginger);color:#fff}.modal__footer .btn--primary:hover{background:#D9531E}
+.mp-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;align-items:center;justify-content:center}.mp-bg.open{display:flex}
 .mp-modal{background:#fff;border-radius:12px;width:720px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
 .mp-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:.95rem;color:var(--navy)}
 .mp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:16px;overflow-y:auto;max-height:50vh;min-height:200px}
@@ -10,187 +74,273 @@
 .img-pick__preview{width:48px;height:48px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--gray-100);display:flex;align-items:center;justify-content:center;font-size:1.5rem}
 .img-pick__preview img{width:100%;height:100%;object-fit:cover}
 .img-pick__actions{display:flex;gap:6px;flex-wrap:wrap}
+.ql-container{min-height:120px;font-family:'DM Sans',sans-serif;font-size:.9rem}
 </style>
-</head><body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title">🌐 Destination Treatments <span class="combo-label">Page A</span></h1><div class="topbar__actions"><button class="btn btn--primary" onclick="openModal()">+ Add D. Treatment</button></div></header><div class="content"><div class="toolbar"><input type="text" class="search-input" placeholder="Search..." id="searchInput" oninput="filter()"><select class="form-select" style="width:auto" id="destFilter" onchange="filter()"><option value="">All Destinations</option></select><select class="form-select" style="width:auto" id="specFilter" onchange="filter()"><option value="">All Specialties</option></select></div><div class="card"><div class="card__body"><table class="data-table"><thead><tr><th>Name</th><th>Destination</th><th>Treatment</th><th>Cost (USD)</th><th>Status</th><th>Actions</th></tr></thead><tbody id="list"><tr><td colspan="6" class="loading">Loading...</td></tr></tbody></table></div></div></div>
-<div class="modal-overlay" id="modal"><div class="modal" style="max-width:720px"><div class="modal__header"><h3 id="modalTitle">Add Destination Treatment</h3><button class="modal__close" onclick="closeModal()">✕</button></div><div class="modal__body">
-<div class="form-row"><div class="form-group"><label class="form-label">Destination</label><select class="form-select" id="f_destination" onchange="autoName()"></select></div><div class="form-group"><label class="form-label">Specialty (for grouping)</label><select class="form-select" id="f_specialty" onchange="filterTreatments()"></select></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Treatment</label><select class="form-select" id="f_treatment" onchange="autoName()"></select></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_status"><option value="draft">Draft</option><option value="published">Published</option></select></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Page Title (auto-generated)</label><input type="text" class="form-input" id="f_name" placeholder="e.g. CABG Surgery in India"></div><div class="form-group"><label class="form-label">Slug</label><input type="text" class="form-input" id="f_slug" placeholder="e.g. cabg"></div></div>
-<div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc" rows="2" placeholder="Brief description for this treatment in this country"></textarea></div>
-<div class="form-group"><label class="form-label">Long Description (Rich Text)</label><div id="f_longdesc_editor"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Cost Min (USD)</label><input type="number" class="form-input" id="f_cost_min" placeholder="e.g. 3500"></div><div class="form-group"><label class="form-label">Cost Max (USD)</label><input type="number" class="form-input" id="f_cost_max" placeholder="e.g. 7000"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Cost Includes</label><input type="text" class="form-input" id="f_cost_includes" placeholder="e.g. Hospital stay, surgeon fees, pre-op tests"></div><div class="form-group"><label class="form-label">Hospital Stay</label><input type="text" class="form-input" id="f_hospital_stay" placeholder="e.g. 5-7 days"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Image</label>
-<div class="img-pick" id="imgPick"><div class="img-pick__preview" id="imgPreview">🖼️</div><div class="img-pick__actions"><button type="button" class="btn btn--outline btn--sm" onclick="openMediaPicker('f_image','imgPreview')">Choose Image</button><button type="button" class="btn btn--outline btn--sm" id="imgRemove" style="display:none" onclick="clearImage('f_image','imgPreview','imgRemove')">✕</button></div></div>
-<input type="hidden" id="f_image"></div><div class="form-group"><label class="form-label">Hero Background</label>
-<div class="img-pick" id="heroPick"><div class="img-pick__preview" id="heroPreview">🌄</div><div class="img-pick__actions"><button type="button" class="btn btn--outline btn--sm" onclick="openMediaPicker('f_hero_bg','heroPreview')">Choose Image</button><button type="button" class="btn btn--outline btn--sm" id="heroRemove" style="display:none" onclick="clearImage('f_hero_bg','heroPreview','heroRemove')">✕</button></div></div>
-<input type="hidden" id="f_hero_bg"></div></div>
-<div class="form-row"><div class="form-group"><label class="form-label">Meta Title</label><input type="text" class="form-input" id="f_meta_title" placeholder="SEO title"></div><div class="form-group"><label class="form-label">Meta Description</label><input type="text" class="form-input" id="f_meta_desc" placeholder="SEO description"></div></div>
-</div><div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">Save</button></div></div></div>
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="/js/sidebar.js" defer></script>
+</head>
+<body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
+
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">D. Treatments</h1><div class="topbar__actions"><button class="btn-new" onclick="openAddModal()">+ Add D. Treatment</button></div></header>
+<div class="content">
+    <div class="status-tabs">
+        <button class="status-tab active" onclick="setStatusTab('')" data-status="">All <span class="count" id="countAll"></span></button><span class="tab-sep">|</span>
+        <button class="status-tab" onclick="setStatusTab('published')" data-status="published">Published <span class="count" id="countPub"></span></button><span class="tab-sep">|</span>
+        <button class="status-tab" onclick="setStatusTab('draft')" data-status="draft">Drafts <span class="count" id="countDraft"></span></button>
+    </div>
+    <div class="selected-bar" id="selectedBar"><span id="selectedCount">0 selected</span><button class="btn-clear" onclick="clearSelection()">Clear</button></div>
+    <div class="toolbar">
+        <div class="bulk-bar">
+            <select id="bulkAction"><option value="">Bulk Actions</option><option value="publish">Set Published</option><option value="draft">Set Draft</option><option value="delete">Move to Trash</option></select>
+            <button class="btn-apply" onclick="applyBulk()">Apply</button>
+        </div>
+        <div class="filter-group"><select id="destFilter" onchange="doFilter()"><option value="">All Destinations</option></select></div>
+        <div class="filter-group"><select id="specFilter" onchange="doFilter()"><option value="">All Specialties</option></select></div>
+        <div class="search-wrap"><input type="text" placeholder="Search..." id="searchInput" oninput="doFilter()"></div>
+        <div class="pagination-info"><span id="pageInfo"></span><button class="pag-btn" id="prevBtn" onclick="changePage(-1)" disabled>‹</button><button class="pag-btn" id="nextBtn" onclick="changePage(1)" disabled>›</button><select id="perPage" onchange="perPage=parseInt(this.value);curPage=1;doFilter()"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></div>
+    </div>
+    <div class="card"><div class="card__body" style="padding:0;overflow-x:auto">
+        <table class="data-table"><thead><tr>
+            <th class="cb-cell"><input type="checkbox" id="selectAll" onchange="toggleAllCB(this.checked)"></th>
+            <th onclick="sortBy('name')">Name <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('destination')">Destination <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('specialty')">Specialty <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('cost')">Cost (USD) <span class="sort-icon">↕</span></th>
+            <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
+            <th>View</th>
+            <th onclick="sortBy('date')">Date <span class="sort-icon">↕</span></th>
+        </tr></thead>
+        <tbody id="list"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody>
+        </table>
+    </div></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="modal"><div class="modal__header"><h3 id="modalTitle">Add D. Treatment</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
+<div class="modal__body">
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Destination *</label><select class="form-select" id="f_destination_id" onchange="autoName()"></select></div>
+        <div class="form-group"><label class="form-label">Treatment *</label><select class="form-select" id="f_treatment_id" onchange="autoName()"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Specialty</label><select class="form-select" id="f_specialty_id"></select></div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="f_name" placeholder="Auto: CABG in India"></div>
+        <div class="form-group"><label class="form-label">Slug</label><input class="form-input" id="f_slug" placeholder="Auto: cabg"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_description" rows="2" placeholder="Brief overview"></textarea></div>
+    <div class="form-group"><label class="form-label">Long Description</label><div id="quillLong"></div></div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Cost Min (USD)</label><input class="form-input" type="number" id="f_cost_min_usd" placeholder="e.g. 3500"></div>
+        <div class="form-group"><label class="form-label">Cost Max (USD)</label><input class="form-input" type="number" id="f_cost_max_usd" placeholder="e.g. 7000"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Cost Includes</label><input class="form-input" id="f_cost_includes" placeholder="Hospital stay, surgeon fees, pre-op tests..."></div>
+        <div class="form-group"><label class="form-label">Hospital Stay</label><input class="form-input" id="f_hospital_stay" placeholder="e.g. 5-7 days"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Image</label>
+            <div class="img-pick"><div class="img-pick__preview" id="imgPreview">🖼️</div><div class="img-pick__actions"><button type="button" class="btn btn--outline btn--sm" style="padding:4px 10px;font-size:.78rem" onclick="openMP('f_image','imgPreview')">Choose</button><button type="button" class="btn btn--outline btn--sm" id="imgRemove" style="display:none;padding:4px 10px;font-size:.78rem" onclick="clearImg('f_image','imgPreview','imgRemove')">✕</button></div></div>
+            <input type="hidden" id="f_image"></div>
+        <div class="form-group"><label class="form-label">Hero Background</label>
+            <div class="img-pick"><div class="img-pick__preview" id="heroPreview">🌄</div><div class="img-pick__actions"><button type="button" class="btn btn--outline btn--sm" style="padding:4px 10px;font-size:.78rem" onclick="openMP('f_hero_bg','heroPreview')">Choose</button><button type="button" class="btn btn--outline btn--sm" id="heroRemove" style="display:none;padding:4px 10px;font-size:.78rem" onclick="clearImg('f_hero_bg','heroPreview','heroRemove')">✕</button></div></div>
+            <input type="hidden" id="f_hero_bg"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Meta Title</label><input class="form-input" id="f_meta_title" placeholder="SEO title"></div>
+        <div class="form-group"><label class="form-label">Meta Description</label><input class="form-input" id="f_meta_description" placeholder="SEO description"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
+        <div class="form-group"><label class="form-label">Display Order</label><input class="form-input" type="number" id="f_display_order" value="0"></div>
+    </div>
+</div>
+<div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">💾 Save</button></div>
+</div></div>
+
 <!-- Media Picker -->
-<div class="mp-bg" id="mediaPicker" onclick="if(event.target===this)closeMediaPicker()">
-<div class="mp-modal"><div class="mp-header"><span>Select Image</span><div style="display:flex;align-items:center;gap:8px"><label class="btn btn--outline btn--sm" style="cursor:pointer">📤 Upload<input type="file" accept="image/*" onchange="uploadFile(this)" style="display:none"></label><button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMediaPicker()">✕</button></div></div>
+<div class="mp-bg" id="mediaPicker" onclick="if(event.target===this)closeMP()">
+<div class="mp-modal"><div class="mp-header"><span>Select Image</span><div style="display:flex;align-items:center;gap:8px"><label class="btn btn--outline btn--sm" style="cursor:pointer;padding:4px 10px;font-size:.78rem">📤 Upload<input type="file" accept="image/*" onchange="uploadFile(this)" style="display:none"></label><button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMP()">✕</button></div></div>
 <div id="uploadStatus" style="display:none;padding:8px 20px;font-size:.82rem;color:var(--teal);background:var(--gray-50);border-bottom:1px solid var(--gray-200)"></div>
 <div class="mp-grid" id="mediaGrid"></div>
-<div class="mp-footer"><button class="btn btn--outline btn--sm" onclick="closeMediaPicker()">Cancel</button><button class="btn btn--primary btn--sm" onclick="confirmMedia()">Use This Image</button></div></div></div>
+<div class="mp-footer"><button class="btn btn--outline btn--sm" style="padding:4px 12px;font-size:.78rem" onclick="closeMP()">Cancel</button><button class="btn btn--primary btn--sm" style="padding:4px 12px;font-size:.78rem" onclick="confirmMP()">Use Image</button></div></div></div>
+
 </main></div>
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
 <script>
-let items=[],dests=[],specs=[],treats=[],editId=null,quillLong=null;
+const API='/api/d-treatments';
+let items=[],allDests=[],allSpecs=[],allTreats=[],selectedIds=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quillLong=null;
+let mpTarget=null,mpPreview=null,selectedMediaUrl=null;
 
-function autoName(){
-    const d=dests.find(x=>x.id==document.getElementById('f_destination').value);
-    const t=treats.find(x=>x.id==document.getElementById('f_treatment').value);
-    if(d&&t){
-        document.getElementById('f_name').value=t.name+' in '+d.name;
-        document.getElementById('f_slug').value=t.slug;
-    }
+async function sf(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue}return r}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000))}}}
+
+async function loadDropdowns(){
+    try{
+        const[dr,sr,tr]=await Promise.all([sf('/api/destinations'),sf('/api/specialties'),sf('/api/treatments')]);
+        allDests=await dr.json();allSpecs=await sr.json();allTreats=await tr.json();
+        document.getElementById('f_destination_id').innerHTML='<option value="">— Select —</option>'+allDests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
+        document.getElementById('f_specialty_id').innerHTML='<option value="">— Auto from treatment —</option>'+allSpecs.map(s=>'<option value="'+s.id+'">'+(s.icon||'')+' '+s.name+'</option>').join('');
+        document.getElementById('f_treatment_id').innerHTML='<option value="">— Select —</option>'+allTreats.map(t=>'<option value="'+t.id+'">'+t.name+(t.specialty_name?' ('+t.specialty_name+')':'')+'</option>').join('');
+        document.getElementById('destFilter').innerHTML='<option value="">All Destinations</option>'+allDests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
+        document.getElementById('specFilter').innerHTML='<option value="">All Specialties</option>'+allSpecs.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
+    }catch(e){console.error(e)}
 }
 
-function filterTreatments(){
-    const sid=document.getElementById('f_specialty').value;
-    const ft=document.getElementById('f_treatment');
-    const filtered=sid?treats.filter(t=>t.specialty_id==sid):treats;
-    ft.innerHTML='<option value="">Select treatment</option>'+filtered.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
-}
+function initQuill(){if(quillLong)return;quillLong=new Quill('#quillLong',{theme:'snow',placeholder:'Rich content...',modules:{toolbar:[['bold','italic','underline'],['link','blockquote'],[{header:[2,3,false]},{list:'ordered'},{list:'bullet'}],['clean']]}})}
 
 async function load(){
-    const[r1,r2,r3,r4]=await Promise.all([fetch('/api/d-treatments'),fetch('/api/destinations'),fetch('/api/specialties'),fetch('/api/treatments')]);
-    items=await r1.json();dests=await r2.json();specs=await r3.json();treats=await r4.json();
-    const df=document.getElementById('destFilter'),sf=document.getElementById('specFilter');
-    const fd=document.getElementById('f_destination'),fs=document.getElementById('f_specialty'),ft=document.getElementById('f_treatment');
-    df.innerHTML='<option value="">All Destinations</option>'+dests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
-    sf.innerHTML='<option value="">All Specialties</option>'+specs.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
-    fd.innerHTML='<option value="">Select destination</option>'+dests.map(d=>'<option value="'+d.id+'">'+(d.flag||'')+' '+d.name+'</option>').join('');
-    fs.innerHTML='<option value="">Select specialty</option>'+specs.map(s=>'<option value="'+s.id+'">'+s.name+'</option>').join('');
-    ft.innerHTML='<option value="">Select treatment</option>'+treats.map(t=>'<option value="'+t.id+'">'+t.name+'</option>').join('');
-    filter();
+    try{const r=await sf(API);if(!r||!r.ok)return;items=await r.json();updateCounts();doFilter()}
+    catch(e){document.getElementById('list').innerHTML='<tr><td colspan="8" class="empty-state">Error loading.</td></tr>'}
 }
 
-function filter(){
-    const q=document.getElementById('searchInput').value.toLowerCase();
-    const did=document.getElementById('destFilter').value;
-    const sid=document.getElementById('specFilter').value;
-    const f=items.filter(i=>{
-        const matchQ=!q||(i.name||'').toLowerCase().includes(q)||(i.destination_name||'').toLowerCase().includes(q)||(i.treatment_name||'').toLowerCase().includes(q);
-        const matchD=!did||i.destination_id==did;
-        const matchS=!sid||i.specialty_id==sid;
-        return matchQ&&matchD&&matchS;
-    });
+function updateCounts(){
+    const pub=items.filter(i=>i.status==='published').length,dra=items.filter(i=>i.status==='draft').length;
+    document.getElementById('countAll').textContent='('+items.length+')';
+    document.getElementById('countPub').textContent='('+pub+')';
+    document.getElementById('countDraft').textContent='('+dra+')';
+    document.getElementById('pageTitle').textContent='D. Treatments ('+items.length+')';
+}
+
+function setStatusTab(s){activeTab=s;curPage=1;document.querySelectorAll('.status-tab').forEach(t=>t.classList.toggle('active',t.dataset.status===s));doFilter()}
+
+function doFilter(){
+    const q=document.getElementById('searchInput').value.toLowerCase(),destId=document.getElementById('destFilter').value,specId=document.getElementById('specFilter').value;
+    let f=items.filter(i=>(!activeTab||i.status===activeTab)&&(!q||i.name.toLowerCase().includes(q)||(i.destination_name||'').toLowerCase().includes(q)||(i.treatment_name||'').toLowerCase().includes(q))&&(!destId||i.destination_id==destId)&&(!specId||i.specialty_id==specId));
+    f.sort((a,b)=>{let va,vb;if(sortField==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase()}else if(sortField==='destination'){va=(a.destination_name||'').toLowerCase();vb=(b.destination_name||'').toLowerCase()}else if(sortField==='specialty'){va=(a.specialty_name||'').toLowerCase();vb=(b.specialty_name||'').toLowerCase()}else if(sortField==='cost'){va=a.cost_min_usd||0;vb=b.cost_min_usd||0}else if(sortField==='status'){va=a.status;vb=b.status}else{va=a.created_at||'';vb=b.created_at||''}if(va<vb)return sortDir==='asc'?-1:1;if(va>vb)return sortDir==='asc'?1:-1;return 0});
+    const total=f.length,tp=Math.max(1,Math.ceil(total/perPage));if(curPage>tp)curPage=tp;
+    const start=(curPage-1)*perPage,page=f.slice(start,start+perPage);
+    document.getElementById('pageInfo').textContent=total+' items · page '+curPage+' of '+tp;
+    document.getElementById('prevBtn').disabled=curPage<=1;document.getElementById('nextBtn').disabled=curPage>=tp;
+    renderTable(page);
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function fmtCost(min,max){if(!min&&!max)return'—';if(min&&max)return'$'+Number(min).toLocaleString()+' – $'+Number(max).toLocaleString();return'$'+Number(min||max).toLocaleString()}
+
+function renderTable(f){
     const tb=document.getElementById('list');
-    if(!f.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No destination treatments found. Click "+ Add D. Treatment" to create one.</td></tr>';return}
+    if(!f.length){tb.innerHTML='<tr><td colspan="8" class="empty-state">No items found</td></tr>';return}
     tb.innerHTML=f.map(i=>{
-        const cost=i.cost_min_usd?'$'+Number(i.cost_min_usd).toLocaleString()+(i.cost_max_usd?' – $'+Number(i.cost_max_usd).toLocaleString():''):'-';
-        var viewUrl='https://ginger.healthcare/destinations/'+(i.destination_slug||'')+'/'+(i.specialty_slug||'')+'/'+(i.treatment_slug||i.slug)+'/';
-        return '<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.treatment_name||'-')+'</td><td>'+cost+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><a href="'+viewUrl+'" target="_blank" class="btn btn--outline btn--sm" title="View on site">👁</a> <button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>'
-    }).join('');
+        const chk=selectedIds.has(i.id)?'checked':'',sel=selectedIds.has(i.id)?' selected':'';
+        const dt=new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const viewUrl='https://ginger.healthcare/destinations/'+(i.destination_slug||'india')+'/'+(i.specialty_slug||'specialty')+'/'+(i.treatment_slug||i.slug)+'/';
+        return`<tr id="row-${i.id}" class="${sel}">
+            <td class="cb-cell"><input type="checkbox" ${chk} onchange="toggleSel(${i.id},this.checked)"></td>
+            <td class="post-title-cell">
+                <strong><a href="#" onclick="openEditModal(${i.id});return false">${esc(i.name)}</a></strong>
+                <span class="post-slug">/destinations/${esc(i.destination_slug||'')}/${esc(i.specialty_slug||'')}/${esc(i.treatment_slug||i.slug)}/</span>
+                <div class="row-actions">
+                    <a href="#" onclick="openEditModal(${i.id});return false">Edit</a><span class="sep">|</span>
+                    <button onclick="toggleQE(${i.id})">Quick Edit</button><span class="sep">|</span>
+                    ${i.status==='published'?'<a href="'+viewUrl+'" target="_blank">View</a><span class="sep">|</span>':''}
+                    <button class="act-del" onclick="deleteItem(${i.id})">Trash</button>
+                </div>
+            </td>
+            <td><span class="dest-flag">${esc(i.destination_flag||'')}</span>${esc(i.destination_name||'—')}</td>
+            <td>${esc(i.specialty_name||'—')}</td>
+            <td class="cost-cell"><strong>${fmtCost(i.cost_min_usd,i.cost_max_usd)}</strong>${i.hospital_stay?'<br><span style="font-size:.7rem;color:var(--gray-400)">'+esc(i.hospital_stay)+'</span>':''}</td>
+            <td><span class="badge badge--${i.status}">${i.status}</span></td>
+            <td>${i.status==='published'?'<a href="'+viewUrl+'" target="_blank" style="font-size:.75rem;color:var(--teal)">👁</a>':''}</td>
+            <td class="date-cell">${dt}</td>
+        </tr>
+        <tr class="quick-edit-row" id="qe-${i.id}" style="display:none"><td colspan="8" style="padding:0;border:none"><div class="quick-edit"><div class="quick-edit__title">QUICK EDIT — ${esc(i.name)}</div>
+            <div class="quick-edit__grid">
+                <div><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="qn-${i.id}" value="${esc(i.name)}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qs-${i.id}" value="${esc(i.slug)}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Status</label><select class="form-select" id="qt-${i.id}"><option value="draft" ${i.status==='draft'?'selected':''}>Draft</option><option value="published" ${i.status==='published'?'selected':''}>Published</option></select></div></div>
+                <div><div class="form-group"><label class="form-label">Cost Min ($)</label><input class="form-input" type="number" id="qcmin-${i.id}" value="${i.cost_min_usd||''}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Cost Max ($)</label><input class="form-input" type="number" id="qcmax-${i.id}" value="${i.cost_max_usd||''}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Hospital Stay</label><input class="form-input" id="qhs-${i.id}" value="${esc(i.hospital_stay||'')}"></div></div>
+                <div><div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="qd-${i.id}" rows="4" style="font-size:.82rem">${esc(i.description||'')}</textarea></div><div class="form-group" style="margin-top:10px"><label class="form-label">Order</label><input class="form-input" type="number" id="qo-${i.id}" value="${i.display_order||0}"></div></div>
+            </div>
+            <div class="quick-edit__actions"><button class="btn btn--primary btn--sm" onclick="quickSave(${i.id})" style="padding:6px 16px;font-size:.82rem">💾 Update</button><button class="btn btn--outline btn--sm" onclick="toggleQE(${i.id})" style="padding:6px 16px;font-size:.82rem">Cancel</button></div>
+        </div></td></tr>`}).join('');
+    document.getElementById('selectAll').checked=false;
 }
 
-function initQuill(){
-    if(!quillLong){quillLong=new Quill('#f_longdesc_editor',{theme:'snow',placeholder:'Detailed content about this treatment in this country — hospitals, doctors, process, costs...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link','image'],['clean']]}})}
+function toggleSel(id,c){if(c)selectedIds.add(id);else selectedIds.delete(id);updateSelUI();const r=document.getElementById('row-'+id);if(r)r.classList.toggle('selected',c)}
+function toggleAllCB(c){document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=c;const tr=cb.closest('tr');if(!tr||!tr.id.startsWith('row-'))return;const id=parseInt(tr.id.replace('row-',''));if(id){if(c)selectedIds.add(id);else selectedIds.delete(id);tr.classList.toggle('selected',c)}});updateSelUI()}
+function updateSelUI(){const bar=document.getElementById('selectedBar');if(selectedIds.size){bar.style.display='flex';document.getElementById('selectedCount').textContent=selectedIds.size+' selected'}else{bar.style.display='none'}}
+function clearSelection(){selectedIds.clear();document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=false;const tr=cb.closest('tr');if(tr)tr.classList.remove('selected')});document.getElementById('selectAll').checked=false;updateSelUI()}
+
+async function applyBulk(){
+    const action=document.getElementById('bulkAction').value;if(!action)return alert('Select a bulk action');if(!selectedIds.size)return alert('Select at least one item');
+    if(!confirm('Are you sure? '+selectedIds.size+' item(s)'))return;
+    let ok=0;for(const id of selectedIds){try{
+        if(action==='delete'){await fetch(API+'/'+id,{method:'DELETE'});ok++}
+        else{const v=items.find(x=>x.id===id);if(v){const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...v,status:action==='publish'?'published':'draft'})});if(r.ok)ok++}}
+    }catch(e){}}
+    alert('✅ '+ok+' item(s) updated');selectedIds.clear();document.getElementById('bulkAction').value='';load();
 }
 
-function openModal(){
-    editId=null;document.getElementById('modalTitle').textContent='Add Destination Treatment';
+function sortBy(field){if(sortField===field)sortDir=sortDir==='asc'?'desc':'asc';else{sortField=field;sortDir=field==='date'?'desc':'asc'}doFilter()}
+function changePage(d){curPage+=d;doFilter();window.scrollTo({top:0,behavior:'smooth'})}
+function toggleQE(id){const r=document.getElementById('qe-'+id);r.style.display=r.style.display==='none'?'':'none'}
+
+async function quickSave(id){
+    const v=items.find(x=>x.id===id);if(!v)return;
+    const data={...v,name:document.getElementById('qn-'+id).value,slug:document.getElementById('qs-'+id).value,status:document.getElementById('qt-'+id).value,cost_min_usd:parseInt(document.getElementById('qcmin-'+id).value)||null,cost_max_usd:parseInt(document.getElementById('qcmax-'+id).value)||null,hospital_stay:document.getElementById('qhs-'+id).value,description:document.getElementById('qd-'+id).value,display_order:parseInt(document.getElementById('qo-'+id).value)||0};
+    try{const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok)load();else alert('Save failed')}catch(e){alert('Save failed')}
+}
+
+async function deleteItem(id){if(!confirm('Delete permanently?'))return;try{await fetch(API+'/'+id,{method:'DELETE'});selectedIds.delete(id);load()}catch(e){alert('Failed')}}
+
+function autoName(){
+    if(editId)return;
+    const dSel=document.getElementById('f_destination_id'),tSel=document.getElementById('f_treatment_id');
+    const dName=dSel.options[dSel.selectedIndex]?.text.replace(/^[\p{So}\p{Cn}\s]+/u,'').trim()||'';
+    const tName=tSel.options[tSel.selectedIndex]?.text.replace(/\s*\(.*\)$/,'').trim()||'';
+    if(dName&&tName){document.getElementById('f_name').value=tName+' in '+dName;document.getElementById('f_slug').value=tName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+    // Auto-select specialty from treatment
+    const tId=tSel.value;if(tId){const t=allTreats.find(x=>x.id==tId);if(t&&t.specialty_id)document.getElementById('f_specialty_id').value=t.specialty_id}
+}
+
+function openAddModal(){
+    editId=null;document.getElementById('modalTitle').textContent='Add D. Treatment';
+    ['f_name','f_slug','f_description','f_image','f_hero_bg','f_meta_title','f_meta_description','f_cost_includes','f_hospital_stay'].forEach(id=>document.getElementById(id).value='');
+    ['f_destination_id','f_treatment_id','f_specialty_id'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f_cost_min_usd').value='';document.getElementById('f_cost_max_usd').value='';
+    document.getElementById('f_status').value='draft';document.getElementById('f_display_order').value='0';
+    clearImg('f_image','imgPreview','imgRemove');clearImg('f_hero_bg','heroPreview','heroRemove');
+    initQuill();quillLong.root.innerHTML='';
     document.getElementById('modal').classList.add('open');
-    ['f_name','f_slug','f_desc','f_image','f_hero_bg','f_meta_title','f_meta_desc','f_cost_min','f_cost_max','f_cost_includes','f_hospital_stay'].forEach(f=>document.getElementById(f).value='');
-    document.getElementById('f_destination').value='';document.getElementById('f_specialty').value='';document.getElementById('f_treatment').value='';document.getElementById('f_status').value='draft';clearImage('f_image','imgPreview','imgRemove');clearImage('f_hero_bg','heroPreview','heroRemove');
-    setTimeout(()=>{initQuill();quillLong.root.innerHTML=''},100);
 }
 
-function editItem(id){
+function openEditModal(id){
     const i=items.find(x=>x.id===id);if(!i)return;editId=id;
     document.getElementById('modalTitle').textContent='Edit: '+i.name;
+    document.getElementById('f_destination_id').value=i.destination_id||'';
+    document.getElementById('f_treatment_id').value=i.treatment_id||'';
+    document.getElementById('f_specialty_id').value=i.specialty_id||'';
+    document.getElementById('f_name').value=i.name||'';document.getElementById('f_slug').value=i.slug||'';
+    document.getElementById('f_description').value=i.description||'';
+    document.getElementById('f_cost_min_usd').value=i.cost_min_usd||'';document.getElementById('f_cost_max_usd').value=i.cost_max_usd||'';
+    document.getElementById('f_cost_includes').value=i.cost_includes||'';document.getElementById('f_hospital_stay').value=i.hospital_stay||'';
+    document.getElementById('f_image').value=i.image||'';document.getElementById('f_hero_bg').value=i.hero_bg||'';
+    document.getElementById('f_meta_title').value=i.meta_title||'';document.getElementById('f_meta_description').value=i.meta_description||'';
+    document.getElementById('f_status').value=i.status||'draft';document.getElementById('f_display_order').value=i.display_order||0;
+    initQuill();setTimeout(()=>{quillLong.root.innerHTML=i.long_description||''},100);
+    showImgPrev('f_image','imgPreview','imgRemove');showImgPrev('f_hero_bg','heroPreview','heroRemove');
     document.getElementById('modal').classList.add('open');
-    document.getElementById('f_destination').value=i.destination_id||'';
-    document.getElementById('f_specialty').value=i.specialty_id||'';
-    filterTreatments();
-    setTimeout(()=>{document.getElementById('f_treatment').value=i.treatment_id||''},50);
-    document.getElementById('f_name').value=i.name||'';
-    document.getElementById('f_slug').value=i.slug||'';
-    document.getElementById('f_desc').value=i.description||'';
-    document.getElementById('f_cost_min').value=i.cost_min_usd||'';
-    document.getElementById('f_cost_max').value=i.cost_max_usd||'';
-    document.getElementById('f_cost_includes').value=i.cost_includes||'';
-    document.getElementById('f_hospital_stay').value=i.hospital_stay||'';
-    document.getElementById('f_image').value=i.image||'';
-    document.getElementById('f_hero_bg').value=i.hero_bg||'';
-    document.getElementById('f_meta_title').value=i.meta_title||'';
-    document.getElementById('f_meta_desc').value=i.meta_description||'';
-    document.getElementById('f_status').value=i.status||'draft';
-    setTimeout(()=>{initQuill();quillLong.root.innerHTML=i.long_description||''},150);
-    showImagePreview('f_image','imgPreview','imgRemove');showImagePreview('f_hero_bg','heroPreview','heroRemove');
 }
-
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 
 async function saveItem(){
-    const data={
-        destination_id:parseInt(document.getElementById('f_destination').value)||null,
-        treatment_id:parseInt(document.getElementById('f_treatment').value)||null,
-        specialty_id:parseInt(document.getElementById('f_specialty').value)||null,
-        name:document.getElementById('f_name').value,
-        slug:document.getElementById('f_slug').value,
-        description:document.getElementById('f_desc').value,
-        long_description:quillLong?quillLong.root.innerHTML:'',
-        cost_min_usd:parseInt(document.getElementById('f_cost_min').value)||null,
-        cost_max_usd:parseInt(document.getElementById('f_cost_max').value)||null,
-        cost_includes:document.getElementById('f_cost_includes').value,
-        hospital_stay:document.getElementById('f_hospital_stay').value,
-        image:document.getElementById('f_image').value,
-        hero_bg:document.getElementById('f_hero_bg').value,
-        meta_title:document.getElementById('f_meta_title').value,
-        meta_description:document.getElementById('f_meta_desc').value,
-        status:document.getElementById('f_status').value
-    };
-    if(!data.destination_id||!data.treatment_id){alert('Please select both destination and treatment');return}
-    if(!data.name){alert('Name is required');return}
-    const url=editId?'/api/d-treatments/'+editId:'/api/d-treatments';
-    const method=editId?'PUT':'POST';
-    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-    if(r.ok){closeModal();load()}else{const e=await r.json();alert(e.error||'Error saving')}
+    const data={destination_id:document.getElementById('f_destination_id').value,treatment_id:document.getElementById('f_treatment_id').value,specialty_id:document.getElementById('f_specialty_id').value||null,name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,description:document.getElementById('f_description').value,long_description:quillLong?quillLong.root.innerHTML.replace(/^<p><br><\/p>$/,''):'',image:document.getElementById('f_image').value,hero_bg:document.getElementById('f_hero_bg').value,cost_min_usd:parseInt(document.getElementById('f_cost_min_usd').value)||null,cost_max_usd:parseInt(document.getElementById('f_cost_max_usd').value)||null,cost_includes:document.getElementById('f_cost_includes').value,hospital_stay:document.getElementById('f_hospital_stay').value,meta_title:document.getElementById('f_meta_title').value,meta_description:document.getElementById('f_meta_description').value,status:document.getElementById('f_status').value,display_order:parseInt(document.getElementById('f_display_order').value)||0};
+    if(!data.destination_id||!data.treatment_id)return alert('Destination and Treatment are required');
+    if(!data.name){const d=allDests.find(x=>x.id==data.destination_id),t=allTreats.find(x=>x.id==data.treatment_id);data.name=(t?t.name:'')+' in '+(d?d.name:'');data.slug=(t?t.name:'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
+    if(!data.specialty_id){const t=allTreats.find(x=>x.id==data.treatment_id);if(t&&t.specialty_id)data.specialty_id=t.specialty_id}
+    try{const url=editId?API+'/'+editId:API;const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok){closeModal();load()}else{const e=await r.json();alert(e.error||'Save failed')}}catch(e){alert('Save failed')}
 }
 
-async function deleteItem(id){if(!confirm('Delete this destination treatment?'))return;await fetch('/api/d-treatments/'+id,{method:'DELETE'});load()}
-let mpTargetInput=null,mpTargetPreview=null,selectedMediaUrl=null;
-async function openMediaPicker(inputId,previewId){
-    mpTargetInput=inputId;mpTargetPreview=previewId;selectedMediaUrl=null;
-    document.getElementById('mediaPicker').classList.add('open');
-    try{
-        const r=await fetch('/api/media');const media=await r.json();
-        document.getElementById('mediaGrid').innerHTML=media.filter(m=>m.mime_type&&m.mime_type.startsWith('image/')).map(m=>'<div class="mp-item" onclick="pickMedia(this,\''+m.url+'\')"><img src="'+m.url+'"></div>').join('')||'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images. Upload one first.</div>';
-    }catch(e){console.error(e)}
-}
-function closeMediaPicker(){document.getElementById('mediaPicker').classList.remove('open')}
-function pickMedia(el,url){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');selectedMediaUrl=url}
-function confirmMedia(){
-    if(!selectedMediaUrl){alert('Select an image');return}
-    document.getElementById(mpTargetInput).value=selectedMediaUrl;
-    var src=selectedMediaUrl.startsWith('http')?selectedMediaUrl:'https://enter.ginger.healthcare'+selectedMediaUrl;
-    document.getElementById(mpTargetPreview).innerHTML='<img src="'+src+'">';
-    var rmBtn=mpTargetInput==='f_image'?'imgRemove':'heroRemove';
-    document.getElementById(rmBtn).style.display='';
-    closeMediaPicker();
-}
-function clearImage(inputId,previewId,rmBtnId){
-    document.getElementById(inputId).value='';
-    document.getElementById(previewId).innerHTML=inputId==='f_image'?'🖼️':'🌄';
-    document.getElementById(rmBtnId).style.display='none';
-}
-async function uploadFile(input){
-    var file=input.files[0];if(!file)return;
-    var status=document.getElementById('uploadStatus');status.style.display='';status.textContent='⏳ Uploading '+file.name+'...';
-    try{var fd=new FormData();fd.append('file',file);var r=await fetch('/api/media/upload',{method:'POST',body:fd});
-    if(r.ok){status.textContent='✅ Uploaded! Refreshing...';input.value='';setTimeout(()=>{status.style.display='none';openMediaPicker(mpTargetInput,mpTargetPreview)},500)}
-    else{var e=await r.json();status.textContent='❌ '+(e.error||'Failed')}}catch(e){status.textContent='❌ '+e.message}
-}
-function showImagePreview(inputId,previewId,rmBtnId){
-    var v=document.getElementById(inputId).value;
-    if(v){var src=v.startsWith('http')?v:'https://enter.ginger.healthcare'+v;document.getElementById(previewId).innerHTML='<img src="'+src+'">';document.getElementById(rmBtnId).style.display=''}
-    else{document.getElementById(previewId).innerHTML=inputId==='f_image'?'🖼️':'🌄';document.getElementById(rmBtnId).style.display='none'}
-}
-load();
+// Media picker
+async function openMP(inputId,previewId){mpTarget=inputId;mpPreview=previewId;selectedMediaUrl=null;document.getElementById('mediaPicker').classList.add('open');
+    try{const r=await fetch('/api/media');const m=await r.json();document.getElementById('mediaGrid').innerHTML=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/')).map(x=>'<div class="mp-item" onclick="pickM(this,\''+x.url+'\')"><img src="'+x.url+'"></div>').join('')||'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images.</div>'}catch(e){console.error(e)}}
+function closeMP(){document.getElementById('mediaPicker').classList.remove('open')}
+function pickM(el,url){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');selectedMediaUrl=url}
+function confirmMP(){if(!selectedMediaUrl){alert('Select an image');return}document.getElementById(mpTarget).value=selectedMediaUrl;const src=selectedMediaUrl.startsWith('http')?selectedMediaUrl:'https://enter.ginger.healthcare'+selectedMediaUrl;document.getElementById(mpPreview).innerHTML='<img src="'+src+'">';const rmId=mpTarget==='f_image'?'imgRemove':'heroRemove';document.getElementById(rmId).style.display='';closeMP()}
+function clearImg(iId,pId,rId){document.getElementById(iId).value='';document.getElementById(pId).innerHTML=iId==='f_image'?'🖼️':'🌄';document.getElementById(rId).style.display='none'}
+function showImgPrev(iId,pId,rId){const v=document.getElementById(iId).value;if(v){const src=v.startsWith('http')?v:'https://enter.ginger.healthcare'+v;document.getElementById(pId).innerHTML='<img src="'+src+'">';document.getElementById(rId).style.display=''}else{document.getElementById(pId).innerHTML=iId==='f_image'?'🖼️':'🌄';document.getElementById(rId).style.display='none'}}
+async function uploadFile(input){const file=input.files[0];if(!file)return;const s=document.getElementById('uploadStatus');s.style.display='';s.textContent='⏳ Uploading...';try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.style.display='none';openMP(mpTarget,mpPreview)},500)}else{const e=await r.json();s.textContent='❌ '+(e.error||'Failed')}}catch(e){s.textContent='❌ '+e.message}}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMP();clearSelection()}});
+loadDropdowns();load();
 </script>
-<script src="/js/sidebar.js"></script>
 </body></html>
