@@ -60,7 +60,8 @@ function filter(){
     if(!f.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No destination treatments found. Click "+ Add D. Treatment" to create one.</td></tr>';return}
     tb.innerHTML=f.map(i=>{
         const cost=i.cost_min_usd?'$'+Number(i.cost_min_usd).toLocaleString()+(i.cost_max_usd?' – $'+Number(i.cost_max_usd).toLocaleString():''):'-';
-        return '<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.treatment_name||'-')+'</td><td>'+cost+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>'
+        var viewUrl='https://ginger.healthcare/destinations/'+(i.destination_slug||'')+'/'+(i.specialty_slug||'')+'/'+(i.treatment_slug||i.slug)+'/';
+        return '<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.treatment_name||'-')+'</td><td>'+cost+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><a href="'+viewUrl+'" target="_blank" class="btn btn--outline btn--sm" title="View on site">👁</a> <button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>'
     }).join('');
 }
 

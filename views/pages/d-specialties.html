@@ -49,7 +49,10 @@ function filter(){
     });
     const tb=document.getElementById('list');
     if(!f.length){tb.innerHTML='<tr><td colspan="5" class="empty-state">No destination specialties found. Click "+ Add D. Specialty" to create one.</td></tr>';return}
-    tb.innerHTML=f.map(i=>'<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.specialty_name||'-')+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>').join('');
+    tb.innerHTML=f.map(i=>{
+        var viewUrl='https://ginger.healthcare/destinations/'+(i.destination_slug||'')+'/'+(i.specialty_slug||i.slug)+'/';
+        return '<tr><td><strong>'+i.name+'</strong></td><td>'+(i.destination_flag||'')+' '+(i.destination_name||'-')+'</td><td>'+(i.specialty_name||'-')+'</td><td><span class="badge badge--'+i.status+'">'+i.status+'</span></td><td><a href="'+viewUrl+'" target="_blank" class="btn btn--outline btn--sm" title="View on site">👁</a> <button class="btn btn--outline btn--sm" onclick="editItem('+i.id+')">Edit</button> <button class="btn btn--danger btn--sm" onclick="deleteItem('+i.id+')">🗑</button></td></tr>';
+    }).join('');
 }
 
 function initQuills(){
