@@ -45,6 +45,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-input textarea{flex:1;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;color:var(--navy);font-size:.82rem;font-family:inherit;resize:none;min-height:80px;max-height:200px;line-height:1.5}
 .ai-input textarea::placeholder{color:var(--gray-400)}.ai-input textarea:focus{outline:none;border-color:var(--teal)}
 .ai-send{width:32px;height:32px;background:var(--teal);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}.ai-send:hover{background:#0c918c}.ai-send:disabled{opacity:.4}
+.ai-attach{width:32px;height:28px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}.ai-attach:hover{background:var(--gray-200)}
+.ai-input__attachments{padding:6px 0 0;display:flex;gap:6px}
+.ai-input__file{display:flex;align-items:center;gap:6px;background:rgba(14,165,160,.08);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:4px 8px;font-size:.72rem;color:var(--teal);font-weight:600}
+.ai-input__file button{background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:.85rem;padding:0 2px}.ai-input__file button:hover{color:#EF4444}
+.ai-input__tools{display:flex;gap:6px;padding-top:8px}
+.ai-tool-btn{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-tool-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 .ai-typing{display:flex;gap:4px;padding:6px 10px}.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gray-400);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
 .drag-handle{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;position:relative;transition:background .2s}
@@ -156,7 +163,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="ai-input">
         <div class="ai-input__row">
             <textarea id="aiInput" placeholder="Ask AI to write, edit, improve..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiCmd()}"></textarea>
-            <button class="ai-send" onclick="aiCmd()" id="aiSendBtn" title="Send">▶</button>
+            <div style="display:flex;flex-direction:column;gap:4px">
+                <button class="ai-send" onclick="aiCmd()" id="aiSendBtn" title="Send">▶</button>
+                <label class="ai-attach" title="Attach image or document"><input type="file" id="aiFileInput" style="display:none" accept="image/*,.docx,.doc,.txt,.md,.pdf" onchange="handleFileAttach(this)">📎</label>
+            </div>
+        </div>
+        <div class="ai-input__attachments" id="aiAttachments" style="display:none">
+            <div class="ai-input__file" id="aiAttachedFile">
+                <span id="aiFileName"></span>
+                <button onclick="removeAiAttachment()">×</button>
+            </div>
+        </div>
+        <div class="ai-input__tools">
+            <label class="ai-tool-btn" title="Import Word document into editor"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importFile(this)">📄 Import files & images</label>
         </div>
     </div>
 </div>
@@ -341,7 +360,8 @@ async function aiCmd(preset) {
     document.getElementById('aiMessages').scrollTop=99999;
     try{
         const specName=document.getElementById('name').value||'this specialty';
-        const context='Specialty: '+specName+'\nCategory: '+(document.getElementById('category').value||'general')+'\nTone: '+currentTone+'\nCurrent content length: '+quill.getText().trim().split(/\s+/).length+' words';
+        const attachedText=aiAttachedContent?'\n\nATTACHED DOCUMENT CONTENT:\n'+aiAttachedContent.substring(0,5000):'';
+        const context='Specialty: '+specName+'\nCategory: '+(document.getElementById('category').value||'general')+'\nTone: '+currentTone+'\nCurrent content length: '+quill.getText().trim().split(/\s+/).length+' words'+attachedText;
         const fullPrompt='Specialty name: "'+specName+'"\n\n'+prompt+'\n\nIMPORTANT: Return content as clean HTML (h2, h3, p, ul, li tags). Do NOT wrap in markdown code blocks.';
         const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:fullPrompt,type:'specialty',context})});
         if(!r.ok)throw new Error('AI request failed');
@@ -390,6 +410,43 @@ function mpPick(el,url){document.querySelectorAll('.mp-item').forEach(i=>i.class
 function mpConfirm(){if(!mpSelectedUrl)return;document.getElementById('image').value=mpSelectedUrl;setFeatImage(mpSelectedUrl);closeMP()}
 async function mpUpload(input){const file=input.files[0];if(!file)return;const s=document.getElementById('mpStatus');s.textContent='⏳ Uploading...';
     try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.textContent='';openMP()},500)}else{s.textContent='❌ Failed'}}catch(e){s.textContent='❌ '+e.message}}
+
+// === FILE ATTACH (AI context) ===
+let aiAttachedContent = null;
+function handleFileAttach(input) {
+    const file = input.files[0]; if(!file) return; input.value='';
+    if(file.type.startsWith('image/')){
+        uploadImageToServer(file).then(url=>{if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Image inserted')}});return}
+    if(file.name.endsWith('.txt')||file.name.endsWith('.md')){
+        const reader=new FileReader();reader.onload=e=>{aiAttachedContent=e.target.result;showAiAttachment(file.name)};reader.readAsText(file);return}
+    if(file.name.endsWith('.docx')||file.name.endsWith('.doc')){
+        const fd=new FormData();fd.append('file',file);
+        fetch('/api/import/docx-text',{method:'POST',body:fd}).then(r=>r.json()).then(data=>{aiAttachedContent=data.text||'';showAiAttachment(file.name)}).catch(()=>alert('Could not read file'));return}
+    alert('Supported: images, .docx, .txt, .md');
+}
+function showAiAttachment(name){document.getElementById('aiFileName').textContent='📎 '+name;document.getElementById('aiAttachments').style.display='flex'}
+function removeAiAttachment(){aiAttachedContent=null;document.getElementById('aiAttachments').style.display='none'}
+
+// === IMPORT FILES INTO EDITOR ===
+async function importFile(input) {
+    const file=input.files[0]; if(!file) return; input.value='';
+    if(file.type.startsWith('image/')){
+        showToast('📤 Uploading image...');
+        const url=await uploadImageToServer(file);
+        if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Image inserted')}
+        else showToast('❌ Upload failed');return}
+    if(file.name.endsWith('.docx')||file.name.endsWith('.doc')){
+        showToast('📄 Importing document...');
+        const fd=new FormData();fd.append('file',file);
+        try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const data=await r.json();if(data.html){quill.root.innerHTML=data.html;updateStats();analyzeSEO()}showToast('✅ Imported! '+(data.imageCount||0)+' image(s)')}else showToast('❌ Import failed')}catch(e){showToast('❌ Import failed')}return}
+    if(file.name.endsWith('.txt')||file.name.endsWith('.md')){
+        const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Text imported')};reader.readAsText(file);return}
+    alert('Supported: .docx, .txt, images');
+}
+
+async function uploadImageToServer(file) {
+    const fd=new FormData();fd.append('file',file);
+    try{const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){const data=await r.json();return data.url}}catch(e){}return null}
 
 // === DRAG HANDLES ===
 function initDrag(handleId,panelId,isLeft){
