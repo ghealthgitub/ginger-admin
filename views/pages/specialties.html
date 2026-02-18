@@ -84,7 +84,7 @@ tr:hover .row-actions{opacity:1}
 <script src="/js/sidebar.js" defer></script>
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Specialties</h1><div class="topbar__actions"><button class="btn-new" onclick="openModal()">+ Add Specialty</button></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Specialties</h1><div class="topbar__actions"><a href="/specialties/new" class="btn-new">+ Add Specialty</a></div></header>
 <div class="content">
     <div class="status-tabs">
         <button class="status-tab active" onclick="setTab('')" data-status="">All <span class="count" id="cAll"></span></button><span class="tab-sep">|</span>
@@ -190,10 +190,10 @@ function render(list){
             <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${s.id},this.checked)"></td>
             <td style="font-size:1.3rem;text-align:center">${s.icon||'🏷️'}</td>
             <td class="item-title-cell">
-                <strong><a href="#" onclick="editItem(${s.id});return false">${esc(s.name)}</a></strong>
+                <strong><a href="/specialties/edit/${s.id}">${esc(s.name)}</a></strong>
                 <span class="item-slug">/specialties/${esc(s.slug)}/</span>
                 <div class="row-actions">
-                    <button onclick="editItem(${s.id})">Edit</button><span class="sep">|</span>
+                    <a href="/specialties/edit/${s.id}">Edit</a><span class="sep">|</span>
                     <button onclick="toggleQE(${s.id})">Quick Edit</button><span class="sep">|</span>
                     <a href="https://ginger.healthcare/specialties/${esc(s.slug)}/" target="_blank">View</a><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${s.id})">Trash</button>
