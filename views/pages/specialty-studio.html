@@ -1,520 +1,414 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Specialty Studio | Ginger Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/admin.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <style>
-.editor-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
-.editor-main{display:flex;flex-direction:column;gap:16px}
-.permalink{background:#F0F5FF;border:1.5px solid var(--teal);border-radius:8px;padding:10px 14px;font-size:.82rem;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.permalink__base{color:var(--gray-400)}.permalink__slug{color:var(--navy);font-weight:600;background:#fff;border:1px solid var(--gray-200);border-radius:4px;padding:2px 8px;font-family:monospace;font-size:.82rem;min-width:150px}
-.permalink__slug:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.1)}
-.permalink a{color:var(--teal);font-weight:600;margin-left:auto}
-.ql-editor{min-height:300px;font-size:.95rem;line-height:1.8;font-family:'DM Sans',sans-serif}
-.ql-toolbar{border-radius:8px 8px 0 0;border-color:var(--gray-200)!important;background:#F0F5FF}
-.ql-container{border-radius:0 0 8px 8px;border-color:var(--gray-200)!important}
-.word-count{font-size:.78rem;color:var(--gray-400);text-align:right;margin-top:4px}
-.panel{background:#fff;border:1px solid var(--gray-200);border-radius:10px;margin-bottom:16px;overflow:hidden}
-.panel__head{padding:12px 16px;border-bottom:2px solid var(--teal);font-weight:700;font-size:.88rem;color:var(--navy);display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:#F0F5FF}
-.panel__head::after{content:'▾';font-size:.7rem;color:var(--gray-400)}
-.panel__body{padding:14px 16px}
-.panel.collapsed .panel__body{display:none}.panel.collapsed .panel__head::after{content:'▸'}
-.publish-actions{display:flex;gap:8px;margin-top:12px}
-.status-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:.85rem;border-bottom:1px solid var(--gray-50)}.status-row:last-child{border:none}
-.status-label{color:var(--gray-500)}.status-value{font-weight:600;color:var(--navy)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.field-label{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px;display:block}
-.field-input{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:6px;font-size:.85rem;font-family:inherit}
-.field-input:focus{outline:none;border-color:var(--teal)}
-.field-select{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:6px;font-size:.85rem;font-family:inherit;background:#fff}
-/* Claude AI Panel */
-.claude-panel{background:linear-gradient(135deg,#0B2545,#13315C);border-radius:10px;border:1px solid rgba(255,255,255,.1);overflow:hidden}
-.claude-panel .panel__head{background:rgba(255,255,255,.05);color:#fff;border-color:rgba(255,255,255,.1)}
-.claude-panel .panel__head::after{color:rgba(255,255,255,.4)}
-.claude-panel .panel__body{padding:0;background:linear-gradient(135deg,#0B2545,#13315C)}
-.claude-chat{display:flex;flex-direction:column;height:380px}
-.claude-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.claude-msg{padding:10px 14px;border-radius:10px;font-size:.82rem;line-height:1.5;max-width:90%;animation:fadeIn .3s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.claude-msg--user{background:rgba(242,101,34,.15);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.claude-msg--ai{background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);align-self:flex-start;border-bottom-left-radius:4px}
-.claude-msg--ai code{background:rgba(0,0,0,.2);padding:1px 4px;border-radius:3px;font-size:.78rem}
-.claude-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.15)}
-.claude-input input{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;color:#fff;font-size:.82rem;font-family:inherit}
-.claude-input input::placeholder{color:rgba(255,255,255,.3)}
-.claude-input input:focus{outline:none;border-color:var(--ginger)}
-.claude-input button{background:var(--ginger);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;font-size:.82rem;cursor:pointer;white-space:nowrap}
-.claude-input button:hover{background:#D9531E}.claude-input button:disabled{opacity:.5;cursor:not-allowed}
-.claude-actions{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.1);flex-wrap:wrap}
-.claude-quick{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);border-radius:6px;padding:5px 10px;font-size:.72rem;cursor:pointer;font-family:inherit}
-.claude-quick:hover{background:rgba(255,255,255,.12);color:#fff}
-.preview-panel{background:#fff;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden}
-.preview-panel .panel__head{background:#F0F5FF}
-.preview-frame{padding:20px;max-height:300px;overflow-y:auto;font-size:.9rem;line-height:1.7;font-family:'DM Sans',sans-serif}
-.preview-frame h1,.preview-frame h2,.preview-frame h3{font-family:'Playfair Display',serif;color:var(--navy);margin:12px 0 8px}
-.preview-frame h1{font-size:1.6rem}.preview-frame h2{font-size:1.3rem}.preview-frame h3{font-size:1.1rem}
-.preview-frame p{margin-bottom:10px;color:var(--gray-600)}
-.preview-frame ul,.preview-frame ol{padding-left:20px;margin-bottom:10px}
-.preview-frame img{max-width:100%;border-radius:8px;margin:8px 0}
-.preview-frame a{color:var(--teal)}
-/* Media picker */
-.mp-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center}.mp-bg.open{display:flex}
-.mp-modal{background:#fff;border-radius:12px;width:720px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
-.mp-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:.95rem;color:var(--navy)}
-.mp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:16px;overflow-y:auto;max-height:50vh;min-height:200px}
-.mp-item{border:2px solid var(--gray-200);border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1;transition:all .15s}.mp-item:hover{border-color:var(--teal)}.mp-item.selected{border-color:var(--ginger);box-shadow:0 0 0 2px rgba(242,101,34,.3)}
+:root{--navy:#0B2545;--navy-light:#13315C;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:#fff;font-size:.82rem;text-decoration:none;padding:6px 12px;border:none;border-radius:6px;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal)}.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}.topbar__btn--save:hover{background:var(--gray-200)}
+.topbar__btn--publish{background:var(--teal);color:#fff}.topbar__btn--publish:hover{background:#0c918c}
+.studio{display:flex;height:calc(100vh - 48px)}
+.panel-left{width:300px;min-width:220px;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.ai-header{padding:12px 16px;border-bottom:1px solid var(--gray-200);flex-shrink:0}
+.ai-header__title{color:var(--navy);font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.ai-header__sub{color:var(--gray-400);font-size:.72rem;margin-top:2px}
+.tone-row{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--gray-100);flex-shrink:0;flex-wrap:wrap}
+.tone-btn{padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-400);font-family:inherit;transition:all .2s}
+.tone-btn:hover{color:var(--navy);border-color:var(--gray-300)}
+.tone-btn.active{background:rgba(14,165,160,.08);color:var(--teal);border-color:var(--teal)}
+.ai-messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-height:0;background:var(--gray-50)}
+.ai-messages::-webkit-scrollbar{width:3px}.ai-messages::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.ai-msg{padding:10px 12px;border-radius:10px;font-size:.82rem;line-height:1.6;max-width:95%;animation:fadeMsg .3s}
+@keyframes fadeMsg{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.ai-msg--user{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.ai-msg--bot{background:var(--white);color:var(--gray-700);align-self:flex-start;border:1px solid var(--gray-200);border-bottom-left-radius:3px}
+.ai-msg--bot strong{color:var(--teal)}
+.ai-msg--system{background:rgba(14,165,160,.08);color:var(--teal);align-self:center;font-size:.75rem;font-weight:600;border-radius:20px;padding:4px 14px}
+.ai-msg__actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.ai-msg__btn{padding:4px 10px;border-radius:5px;font-size:.73rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.ai-msg__btn--insert{background:var(--teal);color:#fff}.ai-msg__btn--insert:hover{background:#0c918c}
+.ai-msg__btn--append{background:var(--gray-100);color:var(--gray-600);border:1px solid var(--gray-200)}.ai-msg__btn--append:hover{background:var(--gray-200)}
+.ai-quick{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;border-top:1px solid var(--gray-100);flex-shrink:0;background:var(--white)}
+.ai-qbtn{background:var(--gray-50);border:1px solid var(--gray-200);color:var(--gray-500);border-radius:6px;padding:4px 10px;font-size:.72rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.ai-qbtn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.ai-input{padding:10px 12px;border-top:1px solid var(--gray-200);background:var(--white);flex-shrink:0}
+.ai-input__row{display:flex;gap:6px;align-items:flex-end}
+.ai-input textarea{flex:1;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;color:var(--navy);font-size:.82rem;font-family:inherit;resize:none;min-height:80px;max-height:200px;line-height:1.5}
+.ai-input textarea::placeholder{color:var(--gray-400)}.ai-input textarea:focus{outline:none;border-color:var(--teal)}
+.ai-send{width:32px;height:32px;background:var(--teal);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}.ai-send:hover{background:#0c918c}.ai-send:disabled{opacity:.4}
+.ai-typing{display:flex;gap:4px;padding:6px 10px}.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gray-400);animation:blink 1.4s infinite}.ai-typing span:nth-child(2){animation-delay:.2s}.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.drag-handle{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;position:relative;transition:background .2s}
+.drag-handle:hover,.drag-handle.dragging{background:var(--teal)}
+.drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--gray-400);font-size:12px}.drag-handle:hover::after{color:#fff}
+.panel-middle{flex:1;display:flex;flex-direction:column;min-width:300px;background:var(--white);overflow:hidden}
+.title-area{padding:20px 32px 0;flex-shrink:0}
+.title-input{width:100%;border:none;outline:none;font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:600;color:var(--navy);padding:0;margin-bottom:6px;line-height:1.3}.title-input::placeholder{color:var(--gray-300)}
+.permalink-area{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-400);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}
+.permalink-area input{border:none;outline:none;font-size:.78rem;color:var(--teal);font-weight:500;padding:2px 4px;border-radius:3px;background:transparent;flex:1;min-width:0;font-family:inherit}
+.permalink-area input:focus{background:var(--gray-50);border:1px solid var(--gray-200)}
+.permalink-edit{font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit}.permalink-edit:hover{text-decoration:underline}
+.spec-fields{display:flex;gap:12px;padding:0 32px 12px;flex-shrink:0;border-bottom:1px solid var(--gray-100);align-items:flex-end}
+.spec-field{display:flex;flex-direction:column;gap:2px}
+.spec-field label{font-size:.7rem;font-weight:600;color:var(--gray-400);text-transform:uppercase}
+.spec-field input,.spec-field select{border:1px solid var(--gray-200);border-radius:6px;padding:5px 10px;font-size:.85rem;font-family:inherit}
+.spec-field input:focus,.spec-field select:focus{outline:none;border-color:var(--teal)}
+.editor-toolbar-area{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0}
+.editor-tabs{display:flex;gap:0}
+.editor-tab{padding:6px 14px;font-size:.8rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-radius:6px;transition:all .2s;display:flex;align-items:center;gap:4px}
+.editor-tab.active{color:var(--teal);background:rgba(14,165,160,.08)}.editor-tab:hover:not(.active){color:var(--gray-600)}
+.editor-stats{display:flex;gap:12px;font-size:.75rem;color:var(--gray-400)}
+.editor-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-wrap .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-200)!important;background:var(--white);padding:6px 12px!important}
+.editor-wrap .ql-container{border:none!important;flex:1;overflow-y:auto}
+.editor-wrap .ql-editor{min-height:100%;padding:20px 32px;font-size:.95rem;line-height:1.85;font-family:'DM Sans',sans-serif;color:var(--gray-700)}
+.editor-wrap .ql-editor h1,.editor-wrap .ql-editor h2,.editor-wrap .ql-editor h3{font-family:'Playfair Display',serif;color:var(--navy);margin:14px 0 8px}
+.editor-wrap .ql-editor p{margin-bottom:12px}
+.preview-pane{flex:1;overflow-y:auto;display:none;padding:20px 32px;font-size:.95rem;line-height:1.85;font-family:'DM Sans',sans-serif}
+.preview-pane.active{display:block}
+.preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy)}
+.panel-right{width:320px;min-width:260px;background:var(--white);border-left:1px solid var(--gray-200);overflow-y:auto;flex-shrink:0}
+.panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.sb-box{border:1px solid var(--gray-200);border-radius:8px;margin:12px 12px 0;overflow:hidden}.sb-box:last-child{margin-bottom:12px}
+.sb-box__head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);cursor:pointer;user-select:none}
+.sb-box__title{font-size:.82rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+.sb-box__toggle{font-size:.7rem;color:var(--gray-400);transition:transform .2s}
+.sb-box.collapsed .sb-box__body{display:none}.sb-box.collapsed .sb-box__toggle{transform:rotate(-90deg)}
+.sb-box__body{padding:14px}
+.sb-label{font-size:.75rem;font-weight:600;color:var(--gray-500);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.sb-label .char-count{font-weight:400;color:var(--gray-400)}
+.sb-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;transition:border .2s;margin-bottom:10px}.sb-input:focus{outline:none;border-color:var(--teal)}
+.sb-textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;resize:vertical;min-height:55px;line-height:1.5;margin-bottom:10px}.sb-textarea:focus{outline:none;border-color:var(--teal)}
+.sb-select{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.82rem;background:var(--white);margin-bottom:10px}
+.sb-hint{font-size:.72rem;color:var(--gray-400);margin:-6px 0 10px}
+.publish-box{border-color:var(--teal)}.publish-box .sb-box__head{background:rgba(14,165,160,.04);border-bottom-color:rgba(14,165,160,.15)}
+.publish-row{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--gray-600);margin-bottom:8px}
+.publish-row span:first-child{color:var(--gray-400);width:14px;text-align:center}
+.publish-btns{display:flex;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)}
+.publish-btns .btn-publish{flex:1;padding:8px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}.publish-btns .btn-publish:hover{background:#0c918c}
+.publish-btns .btn-save{padding:8px 14px;background:var(--white);color:var(--gray-600);border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit}.publish-btns .btn-save:hover{background:var(--gray-100)}
+.seo-badge{display:inline-flex;padding:3px 10px;border-radius:4px;font-size:.78rem;font-weight:700}
+.seo-badge--green{background:#D1FAE5;color:#059669}.seo-badge--yellow{background:#FEF3C7;color:#D97706}.seo-badge--red{background:#FEE2E2;color:#DC2626}.seo-badge--gray{background:var(--gray-100);color:var(--gray-400)}
+.feat-img-preview{width:100%;border-radius:6px;object-fit:cover;border:1px solid var(--gray-200);margin-bottom:8px;display:none;max-height:160px;background:var(--gray-50)}
+.feat-img-empty{border:2px dashed var(--gray-200);border-radius:8px;padding:24px;text-align:center;color:var(--gray-400);font-size:.8rem;cursor:pointer;transition:all .2s}.feat-img-empty:hover{border-color:var(--teal);background:rgba(14,165,160,.03)}
+.feat-img-btns{display:flex;gap:6px;margin-top:6px}
+.feat-img-btn{padding:4px 10px;border-radius:5px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-family:inherit}.feat-img-btn:hover{border-color:var(--teal);color:var(--teal)}
+.analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
+.mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}.mp-overlay.active{display:flex}
+.mp-modal{background:#fff;border-radius:14px;width:100%;max-width:760px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.mp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
+.mp-head h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);margin:0}
+.mp-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400)}.mp-close:hover{color:var(--navy)}
+.mp-body{flex:1;overflow-y:auto;padding:16px 20px}
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--gray-100)}.mp-item:hover{border-color:var(--teal)}
+.mp-item.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.3)}
 .mp-item img{width:100%;height:100%;object-fit:cover}
-.mp-footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--gray-200)}
-.autosave-indicator{font-size:.72rem;color:var(--gray-400);padding:2px 8px}
-.autosave-indicator.saving{color:var(--ginger)}.autosave-indicator.saved{color:#059669}
-@media(max-width:1100px){.editor-grid{grid-template-columns:1fr}.claude-chat{height:300px}}
+.mp-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);gap:8px}
+.mp-foot .set-btn{padding:6px 14px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}.mp-foot .set-btn:hover{background:#0c918c}.mp-foot .set-btn:disabled{opacity:.4}
+.autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
 </style></head>
-<body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">New Specialty</h1><div class="topbar__actions"><span class="autosave-indicator" id="autoSave"></span><a href="/specialties-mgmt" class="btn btn--outline" style="font-size:.82rem">← Back</a><button class="btn btn--outline" style="font-size:.82rem" onclick="saveSpec('draft')">💾 Draft</button><button class="btn btn--primary" style="font-size:.82rem" onclick="saveSpec('published')">🚀 Publish</button></div></header>
-<div class="content">
-
-<!-- PERMALINK -->
-<div class="permalink">
-    <span>🔗</span>
-    <span class="permalink__base">ginger.healthcare/specialties/</span>
-    <input type="text" class="permalink__slug" id="slug" placeholder="specialty-slug">
-    <a href="#" id="viewLink" target="_blank">View →</a>
-</div>
-
-<div class="editor-grid">
-<!-- LEFT: EDITOR -->
-<div class="editor-main">
-    <div class="form-group"><input type="text" class="form-input" id="name" placeholder="Specialty name..." oninput="autoSlug()" style="font-size:1.3rem;font-weight:700;padding:14px 16px;font-family:'Playfair Display',serif"></div>
-    
-    <div class="form-row">
-        <div><label class="field-label">Icon (Emoji)</label><input class="field-input" id="icon" placeholder="🫀 🧠 🦴 ..." style="font-size:1.2rem;text-align:center;width:60px"></div>
-        <div><label class="field-label">Category</label><select class="field-select" id="category"><option value="">None</option><option value="surgical">Surgical</option><option value="medical">Medical</option><option value="oncology">Oncology</option><option value="super_specialty">Super Specialty</option></select></div>
-    </div>
-
-    <div class="form-group">
-        <label class="field-label">Short Description</label>
-        <textarea class="field-input" id="description" rows="2" placeholder="Brief overview for listings and cards..." style="resize:vertical"></textarea>
-    </div>
-
-    <div class="form-group">
-        <label class="field-label">Long Description (Rich Content)</label>
-        <div id="editor"></div>
-        <div class="word-count" id="wordCount">0 words</div>
+<body>
+<div class="topbar">
+    <a href="/specialties-mgmt" class="topbar__back">← Back</a>
+    <div class="topbar__title" id="topTitle">New Specialty</div>
+    <span class="topbar__status topbar__status--draft" id="topStatus">DRAFT</span>
+    <span class="topbar__saved" id="topSaved">✓ Saved</span>
+    <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--save" onclick="saveSpec('draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" onclick="saveSpec('published')">🚀 Publish</button>
     </div>
 </div>
-
-<!-- RIGHT: SIDEBAR PANELS -->
-<div class="editor-sidebar">
-
-    <!-- PUBLISH -->
-    <div class="panel">
-        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">📋 Publish</div>
-        <div class="panel__body">
-            <div class="status-row"><span class="status-label">Status</span><select class="form-select" id="status" style="width:auto;padding:4px 8px;font-size:.82rem"><option value="draft">Draft</option><option value="published">Published</option></select></div>
-            <div class="status-row"><span class="status-label">Featured</span><select class="form-select" id="is_featured" style="width:auto;padding:4px 8px;font-size:.82rem"><option value="false">No</option><option value="true">Yes ⭐</option></select></div>
-            <div class="status-row"><span class="status-label">Order</span><input type="number" class="form-input" id="display_order" value="0" style="width:60px;padding:4px 8px;font-size:.82rem"></div>
-            <div class="publish-actions">
-                <button class="btn btn--outline btn--sm" style="flex:1" onclick="saveSpec('draft')">💾 Save Draft</button>
-                <button class="btn btn--primary btn--sm" style="flex:1" onclick="saveSpec('published')">🚀 Publish</button>
-            </div>
+<div class="studio">
+<!-- LEFT: AI -->
+<div class="panel-left" id="panelLeft">
+    <div class="ai-header"><div class="ai-header__title">🤖 AI Writing Assistant</div><div class="ai-header__sub">Write, edit, optimize — powered by Claude</div></div>
+    <div class="tone-row">
+        <button class="tone-btn active" data-tone="professional" onclick="setTone(this)">Professional</button>
+        <button class="tone-btn" data-tone="friendly" onclick="setTone(this)">Friendly</button>
+        <button class="tone-btn" data-tone="medical" onclick="setTone(this)">Medical</button>
+        <button class="tone-btn" data-tone="patient" onclick="setTone(this)">Patient-friendly</button>
+        <button class="tone-btn" data-tone="seo" onclick="setTone(this)">SEO-focused</button>
+    </div>
+    <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg ai-msg--system">✨ AI Ready</div>
+        <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize content for this specialty. What would you like to do?</div>
+    </div>
+    <div class="ai-quick">
+        <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive description covering overview, common conditions, procedures, and why patients choose this specialty abroad. Use H2/H3 headings. 600-800 words.')">✨ Write full post</button>
+        <button class="ai-qbtn" onclick="aiCmd('Generate meta title, meta description, and short description based on the content')">🏷 Auto SEO</button>
+        <button class="ai-qbtn" onclick="aiCmd('Improve the current content - make it more detailed and engaging')">🎯 Improve</button>
+        <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">✏ Fix grammar</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write a compelling introduction paragraph')">📝 Add intro</button>
+        <button class="ai-qbtn" onclick="aiCmd('Add a conclusion with call-to-action for patients')">🎬 Conclusion</button>
+        <button class="ai-qbtn" onclick="aiCmd('List 10 common conditions treated with brief descriptions as HTML ul/li')">🏥 Conditions</button>
+        <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+    </div>
+    <div class="ai-input">
+        <div class="ai-input__row">
+            <textarea id="aiInput" placeholder="Ask AI to write, edit, improve..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiCmd()}"></textarea>
+            <button class="ai-send" onclick="aiCmd()" id="aiSendBtn" title="Send">▶</button>
         </div>
     </div>
-
-    <!-- AI EDITOR -->
-    <div class="claude-panel panel">
-        <div class="panel__head" style="background:linear-gradient(135deg,#0B2545,#13315C);color:#fff;border-color:rgba(255,255,255,.1)">🤖 AI Writer</div>
-        <div class="panel__body">
-            <div class="claude-chat">
-                <div class="claude-messages" id="aiMessages">
-                    <div class="claude-msg claude-msg--ai">Hi! I can help you write content for this specialty. Try the quick actions below or ask me anything.</div>
-                </div>
-                <div class="claude-actions">
-                    <button class="claude-quick" onclick="aiQuick('write')">✍️ Write Full</button>
-                    <button class="claude-quick" onclick="aiQuick('intro')">📝 Intro</button>
-                    <button class="claude-quick" onclick="aiQuick('conditions')">🏥 Conditions</button>
-                    <button class="claude-quick" onclick="aiQuick('procedures')">⚕️ Procedures</button>
-                    <button class="claude-quick" onclick="aiQuick('seo')">🔍 Auto SEO</button>
-                    <button class="claude-quick" onclick="aiQuick('improve')">✨ Improve</button>
-                </div>
-                <div class="claude-input">
-                    <input type="text" id="aiInput" placeholder="Ask AI to help..." onkeydown="if(event.key==='Enter')sendAI()">
-                    <button onclick="sendAI()" id="aiSendBtn">Send</button>
-                </div>
-            </div>
+</div>
+<div class="drag-handle" id="dragLeft"></div>
+<!-- MIDDLE: Editor -->
+<div class="panel-middle" id="panelMiddle">
+    <div class="title-area">
+        <input type="text" class="title-input" id="name" placeholder="Specialty name..." oninput="autoSlug();updateTopTitle()">
+        <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)">ginger.healthcare/specialties/</span><input type="text" id="slug" placeholder="specialty-slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
+    </div>
+    <div class="spec-fields">
+        <div class="spec-field"><label>Icon</label><input type="text" id="icon" placeholder="🫀" style="width:50px;text-align:center;font-size:1.2rem"></div>
+        <div class="spec-field"><label>Category</label><select id="category"><option value="">None</option><option value="surgical">Surgical</option><option value="medical">Medical</option><option value="oncology">Oncology</option><option value="super_specialty">Super Specialty</option></select></div>
+        <div class="spec-field" style="flex:1"><label>Short Description</label><input type="text" id="description" placeholder="Brief overview for listings..." style="width:100%"></div>
+    </div>
+    <div class="editor-toolbar-area">
+        <div class="editor-tabs"><div class="editor-tab active" id="tabWrite" onclick="showTab('write')">✏ Write</div><div class="editor-tab" id="tabPreview" onclick="showTab('preview')">👁 Preview</div></div>
+        <div class="editor-stats"><span id="wordCount">0 words</span></div>
+    </div>
+    <div class="editor-wrap" id="editorWrap"><div id="editor"></div></div>
+    <div class="preview-pane" id="previewPane"></div>
+</div>
+<div class="drag-handle" id="dragRight"></div>
+<!-- RIGHT: Settings -->
+<div class="panel-right" id="panelRight">
+    <div class="sb-box publish-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="publish-row"><span>📌</span><strong>Status:</strong><span id="pubStatus">Draft</span></div>
+            <div class="publish-row"><span>⭐</span><strong>Featured:</strong><span id="pubFeatured">No</span></div>
+            <div class="publish-row"><span>📊</span><strong>SEO:</strong><span class="seo-badge seo-badge--gray" id="seoBadge">0 / 100</span></div>
+            <select class="sb-select" id="status" onchange="updatePublishUI()"><option value="draft">📝 Draft</option><option value="published">✅ Published</option></select>
+            <div style="display:flex;gap:10px;margin-bottom:6px"><div style="flex:1"><div class="sb-label">Featured</div><select class="sb-select" id="is_featured" style="margin-bottom:0"><option value="false">No</option><option value="true">Yes ⭐</option></select></div><div style="flex:1"><div class="sb-label">Order</div><input class="sb-input" type="number" id="display_order" value="0" style="margin-bottom:0"></div></div>
+            <div class="publish-btns"><button class="btn-save" onclick="saveSpec('draft')">Save Draft</button><button class="btn-publish" onclick="saveSpec('published')">🚀 Publish</button></div>
         </div>
     </div>
-
-    <!-- LIVE PREVIEW -->
-    <div class="preview-panel panel">
-        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">👁️ Live Preview</div>
-        <div class="panel__body" style="padding:0">
-            <div class="preview-frame" id="previewFrame"><p style="color:var(--gray-400);text-align:center;padding:20px">Start writing to see preview...</p></div>
-        </div>
-    </div>
-
-    <!-- FEATURED IMAGE -->
-    <div class="panel">
-        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🖼️ Featured Image</div>
-        <div class="panel__body">
-            <div id="imagePreview" style="margin-bottom:8px"></div>
-            <div style="display:flex;gap:6px">
-                <button class="btn btn--outline btn--sm" style="font-size:.78rem" onclick="openMP()">Choose Image</button>
-                <button class="btn btn--outline btn--sm" style="font-size:.78rem;display:none" id="imgRemoveBtn" onclick="clearImage()">✕ Remove</button>
-            </div>
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🖼 Featured Image</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div id="featImgBox" style="cursor:pointer" onclick="openMP()"><img class="feat-img-preview" id="featImgPreview"><div class="feat-img-empty" id="featImgEmpty"><div style="font-size:1.5rem;margin-bottom:4px">🖼</div>Click to set image</div></div>
+            <div id="featImgActions" style="display:none;margin-top:6px"><div class="feat-img-btns"><button class="feat-img-btn" onclick="openMP()">Change</button><button class="feat-img-btn" onclick="removeImage()" style="color:#EF4444">Remove</button></div></div>
             <input type="hidden" id="image">
         </div>
     </div>
-
-    <!-- SEO -->
-    <div class="panel collapsed">
-        <div class="panel__head" onclick="this.parentElement.classList.toggle('collapsed')">🔍 SEO Settings</div>
-        <div class="panel__body">
-            <div class="form-group"><label class="field-label">Meta Title</label><input class="field-input" id="meta_title" placeholder="Leave blank to use specialty name"></div>
-            <div class="form-group" style="margin-top:10px"><label class="field-label">Meta Description</label><textarea class="field-input" id="meta_description" rows="2" placeholder="Leave blank to use description" style="resize:vertical"></textarea></div>
-            <div class="form-group" style="margin-top:10px"><label class="field-label">Treatment Count</label><input class="field-input" type="number" id="treatment_count" value="0" placeholder="Auto-counted"></div>
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🔍 SEO Settings</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label">Meta Title <span class="char-count" id="metaTitleCount">0/60</span></div>
+            <input class="sb-input" id="meta_title" placeholder="SEO title (auto-generated)" oninput="updateCharCount('meta_title','metaTitleCount',60);analyzeSEO()">
+            <div class="sb-label">Meta Description <span class="char-count" id="metaDescCount">0/160</span></div>
+            <textarea class="sb-textarea" id="meta_description" placeholder="SEO description (auto-generated)" oninput="updateCharCount('meta_description','metaDescCount',160);analyzeSEO()"></textarea>
+            <div class="sb-label">Treatment Count</div>
+            <input class="sb-input" type="number" id="treatment_count" value="0">
         </div>
     </div>
-
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
+    </div>
 </div>
 </div>
-</div>
-
 <!-- Media Picker -->
-<div class="mp-bg" id="mediaPicker" onclick="if(event.target===this)closeMP()">
-<div class="mp-modal"><div class="mp-header"><span>Select Image</span><div style="display:flex;align-items:center;gap:8px"><label class="btn btn--outline btn--sm" style="cursor:pointer;padding:4px 10px;font-size:.78rem">📤 Upload<input type="file" accept="image/*" onchange="uploadFile(this)" style="display:none"></label><button style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)" onclick="closeMP()">✕</button></div></div>
-<div id="uploadStatus" style="display:none;padding:8px 20px;font-size:.82rem;color:var(--teal);background:var(--gray-50);border-bottom:1px solid var(--gray-200)"></div>
-<div class="mp-grid" id="mediaGrid"></div>
-<div class="mp-footer"><button class="btn btn--outline btn--sm" style="padding:4px 12px;font-size:.78rem" onclick="closeMP()">Cancel</button><button class="btn btn--primary btn--sm" style="padding:4px 12px;font-size:.78rem" onclick="confirmMP()">Use Image</button></div></div></div>
-
-</main></div>
+<div class="mp-overlay" id="mediaPicker" onclick="if(event.target===this)closeMP()">
+<div class="mp-modal"><div class="mp-head"><h3>Select Image</h3><button class="mp-close" onclick="closeMP()">×</button></div>
+<div class="mp-body"><div class="mp-grid" id="mpGrid"></div></div>
+<div class="mp-foot"><label style="padding:6px 14px;border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--gray-600)">📤 Upload<input type="file" accept="image/*" onchange="mpUpload(this)" style="display:none"></label><div id="mpStatus" style="flex:1;font-size:.78rem;color:var(--gray-400)"></div><button class="set-btn" id="mpSetBtn" disabled onclick="mpConfirm()">Set Image</button></div>
+</div></div>
+<div class="autosave-toast" id="autoToast"></div>
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script src="/js/sidebar.js" defer></script>
 <script>
-// ===== INIT =====
-const editId = window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null;
-let autoSaveTimer = null, hasChanges = false;
+const pathParts = window.location.pathname.split('/');
+const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
+let currentTone = 'professional', autoSaveTimer = null, slugEdited = false, aiGenerating = false, mpSelectedUrl = null;
 
-// ===== QUILL =====
 const quill = new Quill('#editor', {
-    theme: 'snow',
-    placeholder: 'Write detailed content about this specialty...',
-    modules: { toolbar: [
-        [{ header: [2, 3, false] }],
-        ['bold', 'italic', 'underline'],
-        [{ color: [] }, { background: [] }],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'link', 'image'],
-        [{ align: [] }],
-        ['clean']
-    ]}
+    theme: 'snow', placeholder: 'Write detailed content about this specialty...',
+    modules: { toolbar: [[{header:[1,2,3,false]}],['bold','italic','underline','strike'],[{color:[]},{background:[]}],[{list:'ordered'},{list:'bullet'}],['blockquote','code-block'],['link','image'],[{align:[]}],['clean']] }
 });
+quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
 
-quill.on('text-change', () => {
-    const text = quill.getText().trim();
-    document.getElementById('wordCount').textContent = (text ? text.split(/\s+/).length : 0) + ' words';
-    document.getElementById('previewFrame').innerHTML = quill.root.innerHTML;
-    markChanged();
-});
-
-// ===== AUTO-SLUG =====
-function autoSlug() {
-    if (!editId) {
-        const name = document.getElementById('name').value;
-        document.getElementById('slug').value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    }
-    updateViewLink();
-    markChanged();
+function resetAutoSave() { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(() => { if(editId) saveSpec('auto'); }, 15000); }
+function updateTopTitle() { document.getElementById('topTitle').textContent = document.getElementById('name').value || 'New Specialty'; }
+function autoSlug() { if(!slugEdited && !editId){ const n=document.getElementById('name').value; document.getElementById('slug').value=n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); } }
+function showTab(t) {
+    document.getElementById('tabWrite').classList.toggle('active',t==='write');
+    document.getElementById('tabPreview').classList.toggle('active',t==='preview');
+    document.getElementById('editorWrap').style.display = t==='write'?'flex':'none';
+    const pp = document.getElementById('previewPane');
+    pp.style.display = t==='preview'?'block':'none';
+    if(t==='preview') pp.innerHTML = quill.root.innerHTML;
 }
-
-function updateViewLink() {
-    const slug = document.getElementById('slug').value;
-    document.getElementById('viewLink').href = 'https://ginger.healthcare/specialties/' + slug + '/';
+function updateStats() {
+    const text=quill.getText().trim(), words=text?text.split(/\s+/).length:0;
+    document.getElementById('wordCount').textContent=words+' words';
+    const a=[];
+    if(words<300) a.push('<div class="analysis-item">⚠️ Content is short ('+words+' words, aim for 600+)</div>');
+    else if(words>600) a.push('<div class="analysis-item">✅ Good length ('+words+' words)</div>');
+    else a.push('<div class="analysis-item">📝 '+words+' words (aim for 600+)</div>');
+    const h2=(quill.root.innerHTML.match(/<h2/g)||[]).length;
+    a.push(h2?'<div class="analysis-item">✅ '+h2+' heading(s)</div>':'<div class="analysis-item">⚠️ No H2 headings</div>');
+    const links=(quill.root.innerHTML.match(/<a /g)||[]).length;
+    a.push(links?'<div class="analysis-item">✅ '+links+' link(s)</div>':'<div class="analysis-item">⚠️ No links found</div>');
+    document.getElementById('contentAnalysis').innerHTML=a.join('');
 }
-
-// ===== AUTO-SAVE =====
-function markChanged() {
-    hasChanges = true;
-    document.getElementById('autoSave').textContent = '● Unsaved';
-    document.getElementById('autoSave').className = 'autosave-indicator';
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => { if (editId && hasChanges) saveSpec(null, true); }, 30000);
+function analyzeSEO() {
+    let s=0;const title=document.getElementById('name').value,mt=document.getElementById('meta_title').value,md=document.getElementById('meta_description').value,c=quill.getText(),w=c.split(/\s+/).length;
+    if(title)s+=15;if(mt&&mt.length>=30&&mt.length<=60)s+=20;if(md&&md.length>=80&&md.length<=160)s+=20;if(w>=600)s+=15;if(w>=300)s+=10;
+    if((quill.root.innerHTML.match(/<h2/g)||[]).length>0)s+=10;if(document.getElementById('description').value.length>20)s+=10;
+    const b=document.getElementById('seoBadge');b.textContent=s+' / 100';
+    b.className='seo-badge '+(s>=70?'seo-badge--green':s>=40?'seo-badge--yellow':s>0?'seo-badge--red':'seo-badge--gray');
 }
+function updateCharCount(id,cid,max){const l=document.getElementById(id).value.length,e=document.getElementById(cid);e.textContent=l+'/'+max;e.style.color=l>max?'#EF4444':l>max*.8?'#F59E0B':''}
+function updatePublishUI(){const s=document.getElementById('status').value;document.getElementById('pubStatus').textContent=s==='published'?'Published':'Draft';document.getElementById('topStatus').className='topbar__status topbar__status--'+s;document.getElementById('topStatus').textContent=s.toUpperCase()}
+function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTone=btn.dataset.tone}
+function showToast(msg){const t=document.getElementById('autoToast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2000)}
 
-// ===== SAVE =====
-async function saveSpec(status, isAuto) {
+// === SAVE / LOAD ===
+async function saveSpec(status) {
+    const isAuto = status === 'auto';
+    if(isAuto) status = document.getElementById('status').value;
     const data = {
-        name: document.getElementById('name').value,
-        slug: document.getElementById('slug').value,
-        icon: document.getElementById('icon').value,
-        category: document.getElementById('category').value,
-        description: document.getElementById('description').value,
-        long_description: quill.root.innerHTML === '<p><br></p>' ? '' : quill.root.innerHTML,
-        image: document.getElementById('image').value,
-        is_featured: document.getElementById('is_featured').value === 'true',
-        display_order: parseInt(document.getElementById('display_order').value) || 0,
-        treatment_count: parseInt(document.getElementById('treatment_count').value) || 0,
-        meta_title: document.getElementById('meta_title').value,
-        meta_description: document.getElementById('meta_description').value,
+        name:document.getElementById('name').value, slug:document.getElementById('slug').value,
+        icon:document.getElementById('icon').value, category:document.getElementById('category').value,
+        description:document.getElementById('description').value,
+        long_description: quill.root.innerHTML==='<p><br></p>'?'':quill.root.innerHTML,
+        image:document.getElementById('image').value,
+        is_featured:document.getElementById('is_featured').value==='true',
+        display_order:parseInt(document.getElementById('display_order').value)||0,
+        treatment_count:parseInt(document.getElementById('treatment_count').value)||0,
+        meta_title:document.getElementById('meta_title').value,
+        meta_description:document.getElementById('meta_description').value,
         status: status || document.getElementById('status').value
     };
-    if (!data.name) return isAuto ? null : alert('Name is required');
-    if (!data.slug) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-
-    const indicator = document.getElementById('autoSave');
-    indicator.textContent = '⏳ Saving...';
-    indicator.className = 'autosave-indicator saving';
-
-    try {
-        const url = editId ? '/api/specialties/' + editId : '/api/specialties';
-        const r = await fetch(url, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (r.ok) {
-            const result = await r.json();
-            hasChanges = false;
-            indicator.textContent = '✅ Saved';
-            indicator.className = 'autosave-indicator saved';
-            if (!editId && result.id) {
-                window.location.href = '/specialties/edit/' + result.id;
-            } else if (!isAuto) {
-                window.location.href = '/specialties-mgmt';
-            }
-        } else {
-            const e = await r.json();
-            indicator.textContent = '❌ Error';
-            indicator.className = 'autosave-indicator';
-            if (!isAuto) alert('Error: ' + (e.error || 'Save failed'));
-        }
-    } catch(e) {
-        indicator.textContent = '❌ Error';
-        if (!isAuto) alert('Save failed');
-    }
+    if(!data.name){if(!isAuto)alert('Name is required');return}
+    if(!data.slug)data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    try{
+        const url=editId?'/api/specialties/'+editId:'/api/specialties';
+        const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if(r.ok){
+            const result=await r.json();
+            if(isAuto){showToast('✓ Auto-saved');const sv=document.getElementById('topSaved');sv.style.display='inline';setTimeout(()=>sv.style.display='none',2000)}
+            else if(!editId&&result.id){window.location.href='/specialties/edit/'+result.id}
+            else{window.location.href='/specialties-mgmt'}
+        }else{const e=await r.json();if(!isAuto)alert(e.error||'Save failed')}
+    }catch(e){if(!isAuto)alert('Save failed')}
 }
 
-// ===== LOAD =====
 async function loadSpec() {
-    if (!editId) return;
-    try {
-        const r = await fetch('/api/specialties/' + editId);
-        if (!r.ok) return alert('Failed to load specialty');
-        const s = await r.json();
-        document.getElementById('name').value = s.name || '';
-        document.getElementById('slug').value = s.slug || '';
-        document.getElementById('icon').value = s.icon || '';
-        document.getElementById('category').value = s.category || '';
-        document.getElementById('description').value = s.description || '';
-        quill.root.innerHTML = s.long_description || '';
-        document.getElementById('status').value = s.status || 'draft';
-        document.getElementById('is_featured').value = s.is_featured ? 'true' : 'false';
-        document.getElementById('display_order').value = s.display_order || 0;
-        document.getElementById('treatment_count').value = s.treatment_count || 0;
-        document.getElementById('meta_title').value = s.meta_title || '';
-        document.getElementById('meta_description').value = s.meta_description || '';
-        document.getElementById('image').value = s.image || '';
-        document.getElementById('pageTitle').textContent = 'Edit: ' + s.name;
-        if (s.image) showImagePreview(s.image);
-        if (s.long_description) document.getElementById('previewFrame').innerHTML = s.long_description;
-        updateViewLink();
-        hasChanges = false;
-    } catch(e) { alert('Load failed: ' + e.message); }
+    if(!editId)return;
+    try{
+        const r=await fetch('/api/specialties/'+editId);if(!r.ok)return;
+        const s=await r.json();
+        document.getElementById('name').value=s.name||'';
+        document.getElementById('slug').value=s.slug||'';slugEdited=true;
+        document.getElementById('icon').value=s.icon||'';
+        document.getElementById('category').value=s.category||'';
+        document.getElementById('description').value=s.description||'';
+        quill.root.innerHTML=s.long_description||'';
+        document.getElementById('status').value=s.status||'draft';
+        document.getElementById('is_featured').value=s.is_featured?'true':'false';
+        document.getElementById('display_order').value=s.display_order||0;
+        document.getElementById('treatment_count').value=s.treatment_count||0;
+        document.getElementById('meta_title').value=s.meta_title||'';
+        document.getElementById('meta_description').value=s.meta_description||'';
+        document.getElementById('image').value=s.image||'';
+        updateTopTitle();updatePublishUI();updateStats();analyzeSEO();
+        document.getElementById('pubFeatured').textContent=s.is_featured?'Yes ⭐':'No';
+        if(s.image)setFeatImage(s.image);
+        updateCharCount('meta_title','metaTitleCount',60);
+        updateCharCount('meta_description','metaDescCount',160);
+    }catch(e){console.error(e)}
 }
 
-// ===== AI CHAT =====
-let aiGenerating = false;
+// === AI CHAT ===
+function addMsg(text,type){const d=document.createElement('div');d.className='ai-msg ai-msg--'+type;d.innerHTML=text;document.getElementById('aiMessages').appendChild(d);document.getElementById('aiMessages').scrollTop=99999;return d}
 
-async function sendAI() {
-    const input = document.getElementById('aiInput');
-    const prompt = input.value.trim();
-    if (!prompt || aiGenerating) return;
-    input.value = '';
-    addAIMsg(prompt, 'user');
-    await callAI(prompt);
-}
-
-async function aiQuick(action) {
-    if (aiGenerating) return;
-    const name = document.getElementById('name').value || 'this specialty';
-    const currentContent = quill.getText().trim();
-    const prompts = {
-        write: `Write a comprehensive, detailed long description for the medical specialty "${name}". Include: overview, common conditions, procedures, benefits of treatment abroad. Format in HTML with h2, h3, p, ul, li tags. Make it 600-800 words.`,
-        intro: `Write a compelling 2-paragraph introduction for the "${name}" specialty page. Format in HTML with p tags.`,
-        conditions: `List the most common conditions and diseases treated under "${name}". Format as an HTML section with h3 and ul/li tags. Include 8-12 conditions with brief descriptions.`,
-        procedures: `List the most common procedures and treatments available under "${name}". Format as an HTML section with h3 and ul/li tags. Include 8-12 procedures with brief descriptions.`,
-        seo: `Based on the specialty "${name}", generate: 1) An SEO-optimized meta title (under 60 chars) 2) An SEO meta description (under 155 chars) 3) A short description for cards/listings (under 200 chars). Format as plain text with labels.`,
-        improve: `Here is the current content for "${name}":\n\n${currentContent.substring(0, 2000)}\n\nPlease improve this content: make it more detailed, better structured, more engaging, and more medically accurate. Return improved HTML.`
-    };
-    addAIMsg(action === 'write' ? '✍️ Write full content' : action === 'seo' ? '🔍 Generate SEO' : '✨ ' + action.charAt(0).toUpperCase() + action.slice(1), 'user');
-    await callAI(prompts[action] || prompts.write);
-}
-
-async function callAI(prompt) {
-    aiGenerating = true;
-    document.getElementById('aiSendBtn').disabled = true;
-    const loadMsg = addAIMsg('⏳ Thinking...', 'ai');
-    
-    try {
-        const context = `Specialty: ${document.getElementById('name').value || 'Unknown'}\nCategory: ${document.getElementById('category').value || 'general'}\nCurrent description: ${document.getElementById('description').value || 'none'}`;
-        const r = await fetch('/api/ai/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, type: 'specialty', context })
-        });
-        
-        if (!r.ok) throw new Error('AI request failed');
-        const data = await r.json();
-        const content = data.content || 'No response';
-        
-        loadMsg.innerHTML = formatAIResponse(content);
-        
-        // Add action buttons
-        const actions = document.createElement('div');
-        actions.style.cssText = 'display:flex;gap:6px;margin-top:8px';
-        
-        // Check if response contains HTML
-        if (content.includes('<h') || content.includes('<p>') || content.includes('<ul>')) {
-            const insertBtn = document.createElement('button');
-            insertBtn.textContent = '📋 Insert to Editor';
-            insertBtn.className = 'claude-quick';
-            insertBtn.style.cssText = 'background:rgba(242,101,34,.2);border-color:rgba(242,101,34,.3);color:#FF8A50';
-            insertBtn.onclick = () => {
-                // Extract HTML from response
-                let html = content;
-                // If wrapped in code blocks, extract
-                const match = html.match(/```html?\n?([\s\S]*?)```/);
-                if (match) html = match[1];
-                quill.root.innerHTML = quill.root.innerHTML === '<p><br></p>' ? html : quill.root.innerHTML + html;
-                insertBtn.textContent = '✅ Inserted!';
-                insertBtn.disabled = true;
-            };
-            actions.appendChild(insertBtn);
-            
-            const replaceBtn = document.createElement('button');
-            replaceBtn.textContent = '🔄 Replace All';
-            replaceBtn.className = 'claude-quick';
-            replaceBtn.onclick = () => {
-                let html = content;
-                const match2 = html.match(/```html?\n?([\s\S]*?)```/);
-                if (match2) html = match2[1];
-                quill.root.innerHTML = html;
-                replaceBtn.textContent = '✅ Replaced!';
-                replaceBtn.disabled = true;
-            };
-            actions.appendChild(replaceBtn);
+async function aiCmd(preset) {
+    const input=document.getElementById('aiInput');
+    let prompt=preset||input.value.trim();if(!prompt||aiGenerating)return;
+    if(!preset)input.value='';
+    addMsg(preset?prompt.substring(0,80)+'...':prompt,'user');
+    aiGenerating=true;document.getElementById('aiSendBtn').disabled=true;
+    const typing=document.createElement('div');typing.className='ai-msg ai-msg--bot';typing.innerHTML='<div class="ai-typing"><span></span><span></span><span></span></div>';
+    document.getElementById('aiMessages').appendChild(typing);
+    document.getElementById('aiMessages').scrollTop=99999;
+    try{
+        const specName=document.getElementById('name').value||'this specialty';
+        const context='Specialty: '+specName+'\nCategory: '+(document.getElementById('category').value||'general')+'\nTone: '+currentTone+'\nCurrent content length: '+quill.getText().trim().split(/\s+/).length+' words';
+        const fullPrompt='Specialty name: "'+specName+'"\n\n'+prompt+'\n\nIMPORTANT: Return content as clean HTML (h2, h3, p, ul, li tags). Do NOT wrap in markdown code blocks.';
+        const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:fullPrompt,type:'specialty',context})});
+        if(!r.ok)throw new Error('AI request failed');
+        const data=await r.json();let content=data.content||'No response';
+        typing.remove();
+        // Clean code blocks if present
+        let html=content;const match=html.match(/```html?\n?([\s\S]*?)```/);if(match)html=match[1].trim();
+        const hasHTML=html.includes('<h')||html.includes('<p>')||html.includes('<ul>');
+        const msgDiv=addMsg(hasHTML?'<div style="max-height:200px;overflow-y:auto;font-size:.78rem;line-height:1.5;border:1px solid var(--gray-200);border-radius:6px;padding:8px;margin-bottom:6px;background:var(--gray-50)">'+html+'</div>':content.replace(/\n/g,'<br>'),'bot');
+        // Action buttons
+        const acts=document.createElement('div');acts.className='ai-msg__actions';
+        if(hasHTML){
+            const ib=document.createElement('button');ib.className='ai-msg__btn ai-msg__btn--insert';ib.textContent='Replace editor ↗';ib.onclick=()=>{quill.root.innerHTML=html;ib.textContent='✅ Replaced!';ib.disabled=true};acts.appendChild(ib);
+            const ab=document.createElement('button');ab.className='ai-msg__btn ai-msg__btn--append';ab.textContent='Append ↓';ab.onclick=()=>{quill.root.innerHTML=(quill.root.innerHTML==='<p><br></p>'?'':quill.root.innerHTML)+html;ab.textContent='✅ Appended!';ab.disabled=true};acts.appendChild(ab);
         }
-        
-        // Check if SEO content
-        if (content.toLowerCase().includes('meta title') || content.toLowerCase().includes('meta description')) {
-            const seoBtn = document.createElement('button');
-            seoBtn.textContent = '🔍 Apply SEO';
-            seoBtn.className = 'claude-quick';
-            seoBtn.style.cssText = 'background:rgba(14,165,160,.2);border-color:rgba(14,165,160,.3);color:#0EA5A0';
-            seoBtn.onclick = () => {
-                const lines = content.split('\n');
-                lines.forEach(line => {
-                    if (line.toLowerCase().includes('meta title')) {
-                        const val = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim();
-                        if (val) document.getElementById('meta_title').value = val;
-                    }
-                    if (line.toLowerCase().includes('meta description')) {
-                        const val = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim();
-                        if (val) document.getElementById('meta_description').value = val;
-                    }
-                    if (line.toLowerCase().includes('short description') || line.toLowerCase().includes('card')) {
-                        const val = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim();
-                        if (val && val.length < 250) document.getElementById('description').value = val;
-                    }
-                });
-                seoBtn.textContent = '✅ Applied!';
-                seoBtn.disabled = true;
-            };
-            actions.appendChild(seoBtn);
+        if(content.toLowerCase().includes('meta title')||content.toLowerCase().includes('meta description')){
+            const sb=document.createElement('button');sb.className='ai-msg__btn ai-msg__btn--insert';sb.textContent='🔍 Apply SEO';sb.onclick=()=>{
+                content.split('\n').forEach(line=>{
+                    if(line.toLowerCase().includes('meta title')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_title').value=v}
+                    if(line.toLowerCase().includes('meta description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_description').value=v}
+                    if(line.toLowerCase().includes('short description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v&&v.length<250)document.getElementById('description').value=v}
+                });analyzeSEO();sb.textContent='✅ Applied!';sb.disabled=true};
+            acts.appendChild(sb);
         }
-        
-        if (actions.children.length) loadMsg.appendChild(actions);
-        
-    } catch(e) {
-        loadMsg.textContent = '❌ Error: ' + e.message;
-    }
-    
-    aiGenerating = false;
-    document.getElementById('aiSendBtn').disabled = false;
-    document.getElementById('aiMessages').scrollTop = 99999;
+        if(acts.children.length)msgDiv.appendChild(acts);
+    }catch(e){typing.remove();addMsg('❌ Error: '+e.message,'bot')}
+    aiGenerating=false;document.getElementById('aiSendBtn').disabled=false;
 }
 
-function addAIMsg(text, type) {
-    const div = document.createElement('div');
-    div.className = 'claude-msg claude-msg--' + type;
-    div.textContent = text;
-    document.getElementById('aiMessages').appendChild(div);
-    document.getElementById('aiMessages').scrollTop = 99999;
-    return div;
+// === IMAGE ===
+function setFeatImage(url){
+    const src=url.startsWith('http')?url:'https://enter.ginger.healthcare'+url;
+    const img=document.getElementById('featImgPreview');img.src=src;img.style.display='block';
+    document.getElementById('featImgEmpty').style.display='none';
+    document.getElementById('featImgActions').style.display='block';
 }
-
-function formatAIResponse(text) {
-    // Convert markdown-like to simple HTML
-    return text
-        .replace(/```html?\n?([\s\S]*?)```/g, '<div style="background:rgba(0,0,0,.2);padding:10px;border-radius:6px;margin:6px 0;font-size:.78rem;overflow-x:auto;white-space:pre-wrap">$1</div>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
+function removeImage(){document.getElementById('image').value='';document.getElementById('featImgPreview').style.display='none';document.getElementById('featImgEmpty').style.display='block';document.getElementById('featImgActions').style.display='none'}
+async function openMP(){
+    mpSelectedUrl=null;document.getElementById('mpSetBtn').disabled=true;
+    document.getElementById('mediaPicker').classList.add('active');
+    try{const r=await fetch('/api/media');const m=await r.json();
+    document.getElementById('mpGrid').innerHTML=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/')).map(x=>'<div class="mp-item" onclick="mpPick(this,\''+x.url+'\')"><img src="'+x.url+'" loading="lazy"></div>').join('')||'<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No images yet.</div>'}catch(e){console.error(e)}
 }
+function closeMP(){document.getElementById('mediaPicker').classList.remove('active')}
+function mpPick(el,url){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=url;document.getElementById('mpSetBtn').disabled=false}
+function mpConfirm(){if(!mpSelectedUrl)return;document.getElementById('image').value=mpSelectedUrl;setFeatImage(mpSelectedUrl);closeMP()}
+async function mpUpload(input){const file=input.files[0];if(!file)return;const s=document.getElementById('mpStatus');s.textContent='⏳ Uploading...';
+    try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.textContent='';openMP()},500)}else{s.textContent='❌ Failed'}}catch(e){s.textContent='❌ '+e.message}}
 
-// ===== IMAGE =====
-let selectedMediaUrl = null;
-
-function showImagePreview(url) {
-    if (!url) return;
-    const src = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
-    document.getElementById('imagePreview').innerHTML = '<img src="' + src + '" style="width:100%;border-radius:8px;border:1px solid var(--gray-200)" onerror="this.style.display=\'none\'" loading="lazy">';
-    document.getElementById('imgRemoveBtn').style.display = '';
+// === DRAG HANDLES ===
+function initDrag(handleId,panelId,isLeft){
+    const handle=document.getElementById(handleId),panel=document.getElementById(panelId);
+    let startX,startW;
+    handle.addEventListener('mousedown',e=>{e.preventDefault();startX=e.clientX;startW=panel.offsetWidth;handle.classList.add('dragging');
+        const move=e2=>{const dx=e2.clientX-startX;panel.style.width=Math.max(200,Math.min(500,startW+(isLeft?dx:-dx)))+'px'};
+        const up=()=>{handle.classList.remove('dragging');document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',up)};
+        document.addEventListener('mousemove',move);document.addEventListener('mouseup',up);
+    });
 }
+initDrag('dragLeft','panelLeft',true);
+initDrag('dragRight','panelRight',false);
 
-function clearImage() {
-    document.getElementById('image').value = '';
-    document.getElementById('imagePreview').innerHTML = '';
-    document.getElementById('imgRemoveBtn').style.display = 'none';
-    markChanged();
-}
+// === KEYBOARD ===
+window.addEventListener('beforeunload',e=>{if(document.getElementById('name').value){e.preventDefault();e.returnValue=''}});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveSpec(editId?'auto':null)}});
 
-async function openMP() {
-    selectedMediaUrl = null;
-    document.getElementById('mediaPicker').classList.add('open');
-    try {
-        const r = await fetch('/api/media');
-        const m = await r.json();
-        document.getElementById('mediaGrid').innerHTML = m.filter(x => x.mime_type && x.mime_type.startsWith('image/')).map(x =>
-            '<div class="mp-item" onclick="pickM(this,\'' + x.url + '\')"><img src="' + x.url + '"></div>'
-        ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images. Upload first.</div>';
-    } catch(e) { console.error(e); }
-}
-
-function closeMP() { document.getElementById('mediaPicker').classList.remove('open'); }
-function pickM(el, url) { document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected')); el.classList.add('selected'); selectedMediaUrl = url; }
-
-function confirmMP() {
-    if (!selectedMediaUrl) { alert('Select an image'); return; }
-    document.getElementById('image').value = selectedMediaUrl;
-    showImagePreview(selectedMediaUrl);
-    closeMP();
-    markChanged();
-}
-
-async function uploadFile(input) {
-    const file = input.files[0]; if (!file) return;
-    const s = document.getElementById('uploadStatus');
-    s.style.display = ''; s.textContent = '⏳ Uploading...';
-    try {
-        const fd = new FormData(); fd.append('file', file);
-        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
-        if (r.ok) { s.textContent = '✅ Done!'; input.value = ''; setTimeout(() => { s.style.display = 'none'; openMP(); }, 500); }
-        else { const e = await r.json(); s.textContent = '❌ ' + (e.error || 'Failed'); }
-    } catch(e) { s.textContent = '❌ ' + e.message; }
-}
-
-// ===== WARN UNSAVED =====
-window.addEventListener('beforeunload', e => { if (hasChanges) { e.preventDefault(); e.returnValue = ''; } });
-document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveSpec(null, false); } });
-
-// ===== INIT =====
-if (editId) loadSpec();
-updateViewLink();
+// === INIT ===
+if(editId)loadSpec();
 </script>
 </body></html>
