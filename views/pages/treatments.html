@@ -198,11 +198,11 @@ function render(list){
             <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${t.id},this.checked)"></td>
             <td class="item-title-cell">
                 <strong><a href="/treatments/edit/${t.id}">${esc(t.name)}</a></strong>
-                <span class="item-slug">/treatments/${esc(t.slug)}/</span>
+                <span class="item-slug">/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/</span>
                 <div class="row-actions">
                     <a href="/treatments/edit/${t.id}">Edit</a><span class="sep">|</span>
                     <button onclick="toggleQE(${t.id})">Quick Edit</button><span class="sep">|</span>
-                    <a href="https://ginger.healthcare/treatments/${esc(t.slug)}/" target="_blank">View</a><span class="sep">|</span>
+                    <a href="https://ginger.healthcare/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/" target="_blank">View</a><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${t.id})">Trash</button>
                 </div>
             </td>

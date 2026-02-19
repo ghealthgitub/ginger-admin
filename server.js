@@ -1377,7 +1377,7 @@ app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), 
 app.get('/api/treatments', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name FROM treatments t
+            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
              ORDER BY s.name ASC, t.name ASC`
         );
