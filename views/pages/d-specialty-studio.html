@@ -104,13 +104,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .drag-handle:hover,.drag-handle.dragging{background:var(--teal)}
 .drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--gray-400);font-size:12px}.drag-handle:hover::after{color:#fff}
 
-/* Why Choose editor */
-.why-section{border-top:1px solid var(--gray-200);margin-top:16px}
-.why-section__title{padding:12px 24px 8px;font-size:.82rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
-.why-section .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;background:var(--gray-50)}
-.why-section .ql-container{border:none!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
-.why-section .ql-editor{padding:12px 24px;min-height:120px;line-height:1.8}
-
 /* Media Picker */
 .mp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
 .mp-overlay.open{display:flex}
@@ -158,7 +151,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px">✍ WRITE</div>
         <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive page about this specialty in this destination, covering why patients travel here, top hospitals, success rates, and cost advantages. Use H2/H3 headings.')">✨ Full Page</button>
         <button class="ai-qbtn" onclick="aiCmd('Write a compelling introduction for this specialty in this destination')">📝 Intro</button>
-        <button class="ai-qbtn" onclick="aiCmd('Write a Why Choose section explaining why this destination is best for this specialty — include cost savings, hospital quality, doctor expertise, and recovery environment')">🏆 Why Choose</button>
         <button class="ai-qbtn" onclick="aiCmd('Write about treatment process, what patients can expect, and preparation tips')">🏥 Process</button>
         <button class="ai-qbtn" onclick="aiCmd('Add CTAs with links to /get-quote/ and /book-consultation/')">🔗 Add CTAs</button>
         <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px;margin-top:6px">✏ OPTIMIZE</div>
@@ -167,9 +159,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">— Grammar</button>
         <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
     </div>
-    <div class="ai-input-row">
-        <textarea class="ai-input" id="aiInput" placeholder="Ask AI to write, edit, improve..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"></textarea>
-        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">▶</button>
+    <div class="ai-input-row" style="flex-direction:column;gap:4px">
+        <div style="display:flex;gap:4px;align-items:flex-end">
+            <textarea class="ai-input" id="aiInput" placeholder="Ask AI to write, edit, improve..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"></textarea>
+            <div style="display:flex;flex-direction:column;gap:4px">
+                <button class="ai-send" id="aiSendBtn" onclick="sendAI()">▶</button>
+                <label style="width:32px;height:28px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:50%;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s" title="Attach image or document"><input type="file" id="aiFileInput" style="display:none" accept="image/*,.docx,.doc,.txt,.md,.pdf" onchange="handleFileAttach(this)">📎</label>
+            </div>
+        </div>
+        <div id="aiAttachments" style="display:none;padding:0 0 4px">
+            <div style="display:flex;align-items:center;gap:6px;background:rgba(14,165,160,.08);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:4px 8px;font-size:.72rem;color:var(--teal);font-weight:600">
+                <span id="aiFileName"></span>
+                <button onclick="removeAiAttachment()" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:.85rem;padding:0 2px">×</button>
+            </div>
+        </div>
+        <div style="display:flex;gap:6px">
+            <label style="display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:all .2s" title="Import Word document or images into editor"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importFile(this)">📄 Import files & images</label>
+        </div>
     </div>
 </div>
 <div class="drag-handle" id="dragLeft"></div>
@@ -189,10 +195,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="editor-info"><span id="wordCount">0 words</span><span id="readTime">0 min read</span></div>
     <div class="quill-wrap" id="writePanel">
         <div id="editor"></div>
-        <div class="why-section">
-            <div class="why-section__title">🏆 Why Choose (separate section)</div>
-            <div id="whyEditor"></div>
-        </div>
     </div>
     <div id="previewPanel" style="display:none;flex:1;overflow-y:auto"><div class="preview-frame" id="previewContent"></div></div>
 </div>
@@ -281,17 +283,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 // ============== STATE ==============
 const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
 let itemData = null, allDestinations = [], allSpecialties = [], currentTone = 'professional';
-let autoSaveTimer = null, hasUnsaved = false, quill = null, quillWhy = null;
+let autoSaveTimer = null, hasUnsaved = false, quill = null;
 let selectedMediaUrl = null, mediaPickerTarget = null, aiGenerating = false;
-let undoStack = [];
+let undoStack = [], aiAttachedContent = null;
 
 // ============== QUILL INIT ==============
 const quillToolbar = [['bold','italic','underline','strike'],['blockquote'],[{'header':1},{'header':2},{'header':3}],[{'list':'ordered'},{'list':'bullet'}],[{'indent':'-1'},{'indent':'+1'}],['link','image','video'],['clean']];
 quill = new Quill('#editor', {theme:'snow', placeholder:'Write detailed content about this specialty in this destination...', modules:{toolbar:quillToolbar}});
-quillWhy = new Quill('#whyEditor', {theme:'snow', placeholder:'Why choose this destination for this specialty? Cost advantages, doctor expertise, hospital quality...', modules:{toolbar:[['bold','italic','underline'],['link'],[{'list':'bullet'},{'list':'ordered'}],['clean']]}});
 
 quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
-quillWhy.on('text-change', () => { resetAutoSave(); });
 
 // ============== INIT ==============
 async function init() {
@@ -328,7 +328,6 @@ async function loadItem() {
         document.getElementById('metaDesc').value = itemData.meta_description || '';
 
         if (itemData.long_description) quill.root.innerHTML = itemData.long_description;
-        if (itemData.why_choose) quillWhy.root.innerHTML = itemData.why_choose;
 
         // Images
         if (itemData.image) setImagePreview('image', itemData.image);
@@ -372,7 +371,7 @@ async function saveItem(isAuto, statusOverride) {
         slug: slug,
         description: document.getElementById('description').value,
         long_description: quill.root.innerHTML.replace(/^<p><br><\/p>$/, ''),
-        why_choose: quillWhy.root.innerHTML.replace(/^<p><br><\/p>$/, ''),
+        why_choose: '',
         image: document.getElementById('image').value,
         hero_bg: document.getElementById('hero_bg').value,
         meta_title: document.getElementById('metaTitle').value,
@@ -486,11 +485,9 @@ function showTab(tab) {
     } else {
         document.getElementById('writePanel').style.display = 'none';
         document.getElementById('previewPanel').style.display = '';
-        const whyHtml = quillWhy.root.innerHTML.replace(/^<p><br><\/p>$/, '');
         document.getElementById('previewContent').innerHTML =
             '<h1>' + document.getElementById('itemName').value + '</h1>' +
-            quill.root.innerHTML +
-            (whyHtml ? '<hr style="margin:24px 0"><h2>Why Choose This Destination?</h2>' + whyHtml : '');
+            quill.root.innerHTML;
         document.querySelectorAll('.editor-tab')[1].classList.add('active');
     }
 }
@@ -539,7 +536,7 @@ function startAutoSave() { setInterval(() => { if (editId && hasUnsaved) saveIte
 
 // Undo
 function saveUndoSnapshot() {
-    undoStack.push({name: document.getElementById('itemName').value, content: quill.root.innerHTML, why: quillWhy.root.innerHTML});
+    undoStack.push({name: document.getElementById('itemName').value, content: quill.root.innerHTML});
     if (undoStack.length > 20) undoStack.shift();
     document.getElementById('undoBtn').style.display = undoStack.length > 0 ? '' : 'none';
 }
@@ -548,7 +545,6 @@ function undoChanges() {
     const snap = undoStack.pop();
     document.getElementById('itemName').value = snap.name;
     quill.root.innerHTML = snap.content;
-    quillWhy.root.innerHTML = snap.why;
     updateStats(); analyzeSEO(); resetAutoSave();
     document.getElementById('undoBtn').style.display = undoStack.length > 0 ? '' : 'none';
     showToast('↩ Undone');
@@ -663,11 +659,11 @@ Page: ${name || 'Destination Specialty'}
 Destination: ${destObj ? destObj.name : 'Not selected'}
 Specialty: ${specObj ? specObj.name : 'Not selected'}
 Current content: ${content.replace(/<[^>]*>/g, '').substring(0, 2000)}
+${aiAttachedContent ? '\nAttached document content:\n' + aiAttachedContent.substring(0, 3000) : ''}
 
 User request: ${msg}
 
 If the request is for SEO (meta title/description), respond with JSON: {"meta_title":"...","meta_description":"..."}
-If the request is about "Why Choose", respond with HTML content for the why-choose section.
 Otherwise respond with formatted HTML content. Use h2, h3, p, ul, li tags.`;
 
         const r = await fetch('/api/ai/generate', {
@@ -691,18 +687,13 @@ Otherwise respond with formatted HTML content. Use h2, h3, p, ul, li tags.`;
                 analyzeSEO();
                 loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Title:</strong> ' + seoData.meta_title + '<br><strong>Desc:</strong> ' + (seoData.meta_description||'').substring(0,100) + '...';
             } else {
-                const isWhyChoose = msg.toLowerCase().includes('why choose');
                 const cid = 'ai_' + Date.now();
                 window[cid] = result;
                 const preview = result.replace(/<[^>]*>/g, '').substring(0, 180);
-                let actions = '<div class="ai-msg__actions">' +
-                    '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\'' + cid + '\')">📋 Replace Main</button>' +
-                    '<button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\'' + cid + '\')">➕ Append Main</button>';
-                if (isWhyChoose) {
-                    actions += '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertWhyAI(\'' + cid + '\')" style="color:var(--ginger)">🏆 Replace Why</button>';
-                }
-                actions += '</div>';
-                loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') + actions;
+                loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') +
+                    '<div class="ai-msg__actions">' +
+                    '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\'' + cid + '\')">📋 Replace</button>' +
+                    '<button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\'' + cid + '\')">➕ Append</button></div>';
             }
         } else {
             loadDiv.innerHTML = '❌ AI error: ' + (data.error || 'Unknown error');
@@ -718,7 +709,117 @@ Otherwise respond with formatted HTML content. Use h2, h3, p, ul, li tags.`;
 
 function insertAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML=h;updateStats();analyzeSEO();resetAutoSave()} }
 function appendAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML+=h;updateStats();analyzeSEO();resetAutoSave()} }
-function insertWhyAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quillWhy.root.innerHTML=h;resetAutoSave()} }
+
+// ============== FILE UPLOAD & IMPORT ==============
+async function uploadImageToServer(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (r.ok) { const data = await r.json(); return data.url; }
+    } catch(e) {}
+    return null;
+}
+
+function handleFileAttach(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+
+    if (file.type.startsWith('image/')) {
+        uploadImageToServer(file).then(url => {
+            if (url) {
+                const range = quill.getSelection(true);
+                const idx = range ? range.index : quill.getLength();
+                quill.insertEmbed(idx, 'image', url);
+                quill.insertText(idx + 1, '\n');
+                quill.setSelection(idx + 2);
+                resetAutoSave();
+                showToast('✅ Image inserted');
+            }
+        });
+        return;
+    }
+
+    if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            aiAttachedContent = e.target.result;
+            document.getElementById('aiFileName').textContent = '📎 ' + file.name;
+            document.getElementById('aiAttachments').style.display = 'flex';
+        };
+        reader.readAsText(file);
+        return;
+    }
+
+    if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fetch('/api/import/docx-text', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                aiAttachedContent = data.text || '';
+                document.getElementById('aiFileName').textContent = '📎 ' + file.name;
+                document.getElementById('aiAttachments').style.display = 'flex';
+            })
+            .catch(() => alert('Could not read file'));
+        return;
+    }
+    alert('Supported: images, .docx, .txt, .md');
+}
+
+function removeAiAttachment() {
+    aiAttachedContent = null;
+    document.getElementById('aiAttachments').style.display = 'none';
+}
+
+async function importFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+
+    if (file.type.startsWith('image/')) {
+        showToast('📤 Uploading image...');
+        const url = await uploadImageToServer(file);
+        if (url) {
+            const range = quill.getSelection(true);
+            const idx = range ? range.index : quill.getLength();
+            quill.insertEmbed(idx, 'image', url);
+            quill.insertText(idx + 1, '\n');
+            showToast('✅ Image inserted');
+        } else { showToast('❌ Upload failed'); }
+        return;
+    }
+
+    if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        showToast('📄 Importing document...');
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+            const r = await fetch('/api/import/docx', { method: 'POST', body: fd });
+            if (r.ok) {
+                const data = await r.json();
+                saveUndoSnapshot();
+                if (data.html) { quill.root.innerHTML = data.html; updateStats(); analyzeSEO(); }
+                showToast('✅ Imported! ' + (data.imageCount || 0) + ' image(s)');
+            } else { showToast('❌ Import failed'); }
+        } catch(e) { showToast('❌ Import failed'); }
+        return;
+    }
+
+    if (file.name.endsWith('.txt') || file.name.endsWith('.md')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saveUndoSnapshot();
+            quill.root.innerHTML += e.target.result.replace(/\n/g, '<br>');
+            updateStats(); analyzeSEO();
+            showToast('✅ Text imported');
+        };
+        reader.readAsText(file);
+        return;
+    }
+    alert('Supported: .docx, .txt, images');
+}
 
 // ============== KEYBOARD SHORTCUTS ==============
 document.addEventListener('keydown', e => {
