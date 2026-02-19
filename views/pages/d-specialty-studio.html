@@ -1,0 +1,743 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>D. Specialty Studio | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+:root{--navy:#0B2545;--navy-light:#13315C;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:var(--white);font-size:.82rem;text-decoration:none;padding:6px 12px;border:none;border-radius:6px;transition:all .2s;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal)}
+.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+.topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
+.topbar__btn--publish{background:var(--teal);color:#fff}
+.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200);text-decoration:none}
+.topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
+.topbar__btn--undo{background:var(--gray-50);color:var(--gray-500);border:1px solid var(--gray-200);font-size:.78rem}
+.topbar__btn--undo:hover{background:#FEF3C7;color:#D97706;border-color:#FCD34D}
+.studio{display:flex;height:calc(100vh - 48px)}
+
+/* LEFT: AI Panel */
+.panel--ai{width:220px;min-width:180px;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;overflow:hidden}
+.ai-header{padding:12px;border-bottom:1px solid var(--gray-100)}
+.ai-header__title{font-weight:700;font-size:.85rem;color:var(--navy)}
+.ai-header__sub{font-size:.68rem;color:var(--gray-400);margin-top:2px}
+.tone-row{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--gray-100);flex-shrink:0;flex-wrap:wrap}
+.tone-btn{padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-400);font-family:inherit;transition:all .2s}
+.tone-btn:hover{color:var(--navy);border-color:var(--gray-300)}
+.tone-btn.active{background:rgba(14,165,160,.08);color:var(--teal);border-color:var(--teal)}
+.ai-ready{text-align:center;padding:8px 0;font-size:.72rem;font-weight:700;color:var(--teal);background:rgba(14,165,160,.04);border-bottom:1px solid var(--gray-100)}
+.ai-chat{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px}
+.ai-msg{padding:8px 10px;border-radius:10px;font-size:.78rem;line-height:1.45;max-width:95%;word-wrap:break-word}
+.ai-msg--bot{background:var(--gray-50);border:1px solid var(--gray-100);align-self:flex-start;color:var(--gray-600)}
+.ai-msg--user{background:rgba(14,165,160,.08);border:1px solid rgba(14,165,160,.15);align-self:flex-end;color:var(--navy)}
+.ai-msg__actions{display:flex;gap:4px;margin-top:6px}
+.ai-msg__btn{padding:3px 8px;border-radius:5px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);font-family:inherit}
+.ai-msg__btn--insert{color:var(--teal)}.ai-msg__btn--insert:hover{background:rgba(14,165,160,.08);border-color:var(--teal)}
+.ai-msg__btn--append{color:var(--ginger)}.ai-msg__btn--append:hover{background:rgba(242,101,34,.08);border-color:var(--ginger)}
+.ai-typing span{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gray-300);margin:0 2px;animation:dotBounce .6s infinite alternate}
+.ai-typing span:nth-child(2){animation-delay:.2s}
+.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes dotBounce{0%{opacity:.3;transform:translateY(0)}100%{opacity:1;transform:translateY(-4px)}}
+.ai-qbtns{padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--gray-100)}
+.ai-qbtn{padding:4px 8px;border-radius:6px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .2s}
+.ai-qbtn:hover{color:var(--teal);border-color:var(--teal);background:rgba(14,165,160,.04)}
+.ai-input-row{padding:8px;border-top:1px solid var(--gray-100);display:flex;gap:4px;align-items:flex-end;background:var(--white)}
+.ai-input{flex:1;border:1px solid var(--gray-200);border-radius:8px;padding:8px 10px;font-size:.78rem;font-family:inherit;resize:none;max-height:80px;outline:none}
+.ai-input:focus{border-color:var(--teal)}
+.ai-send{width:34px;height:34px;border-radius:50%;border:none;background:var(--teal);color:white;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ai-send:hover{background:#0c918c}
+
+/* MIDDLE: Editor */
+.panel--editor{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--white);border-right:1px solid var(--gray-200)}
+.editor-header{padding:12px 20px;border-bottom:1px solid var(--gray-100)}
+.editor-header__name{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:600;color:var(--navy);outline:none;border:none;width:100%;padding:4px 0}
+.editor-header__name:focus{border-bottom:2px solid var(--teal)}
+.editor-header__permalink{font-size:.72rem;color:var(--gray-400);margin-top:4px;display:flex;align-items:center;gap:6px}
+.editor-header__permalink a{color:var(--teal);font-weight:600;text-decoration:none}
+.editor-tabs{display:flex;gap:0;padding:0 16px;border-bottom:1px solid var(--gray-100)}
+.editor-tab{padding:8px 16px;font-size:.78rem;font-weight:600;color:var(--gray-400);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.editor-tab:hover{color:var(--navy)}
+.editor-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.editor-info{display:flex;gap:16px;padding:4px 20px;font-size:.72rem;color:var(--gray-400);border-bottom:1px solid var(--gray-100)}
+.quill-wrap{flex:1;overflow-y:auto;padding:0}
+.quill-wrap .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;background:var(--gray-50);position:sticky;top:0;z-index:5}
+.quill-wrap .ql-container{border:none!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
+.quill-wrap .ql-editor{padding:20px 24px;min-height:300px;line-height:1.8}
+.preview-frame{padding:24px;max-width:800px;margin:0 auto;font-family:'DM Sans',sans-serif}
+.preview-frame h1,.preview-frame h2,.preview-frame h3{font-family:'Playfair Display',serif;color:var(--navy)}
+.preview-frame img{max-width:100%;border-radius:8px}
+
+/* RIGHT: Sidebar */
+.panel--sidebar{width:320px;min-width:280px;background:var(--white);overflow-y:auto;padding:0}
+.panel--sidebar::-webkit-scrollbar{width:3px}.panel--sidebar::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.sb-box{border-bottom:1px solid var(--gray-100);padding:12px 16px}
+.sb-box__title{font-weight:700;font-size:.82rem;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sb-label{font-size:.72rem;font-weight:600;color:var(--gray-500);margin-bottom:3px;margin-top:8px}
+.sb-select{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;background:var(--white);color:var(--gray-700)}
+.sb-select:focus{outline:none;border-color:var(--teal)}
+.sb-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;color:var(--gray-700)}
+.sb-input:focus{outline:none;border-color:var(--teal)}
+.sb-textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;color:var(--gray-700);resize:vertical;min-height:50px}
+.sb-textarea:focus{outline:none;border-color:var(--teal)}
+.sb-hint{font-size:.68rem;color:var(--gray-400);margin-top:2px}
+.sb-btn{padding:7px 14px;border-radius:6px;font-weight:600;font-size:.78rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s;width:100%;text-align:center}
+.sb-btn--primary{background:var(--teal);color:#fff}.sb-btn--primary:hover{background:#0c918c}
+.sb-btn--ginger{background:var(--ginger);color:#fff}.sb-btn--ginger:hover{background:var(--ginger-dark)}
+.sb-btn--outline{background:var(--white);color:var(--gray-500);border:1px solid var(--gray-200)}.sb-btn--outline:hover{color:var(--navy);border-color:var(--gray-300)}
+.sb-score{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-weight:800;font-size:.82rem}
+.seo-good{background:#D1FAE5;color:#059669;border:2px solid #6EE7B7}
+.seo-ok{background:#FEF3C7;color:#D97706;border:2px solid #FCD34D}
+.seo-bad{background:#FEE2E2;color:#EF4444;border:2px solid #FCA5A5}
+.feat-img-preview{width:100%;border-radius:8px;max-height:180px;object-fit:cover;display:none;margin-top:6px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.drag-handle{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;position:relative;transition:background .2s}
+.drag-handle:hover,.drag-handle.dragging{background:var(--teal)}
+.drag-handle::after{content:'⋮';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--gray-400);font-size:12px}.drag-handle:hover::after{color:#fff}
+
+/* Why Choose editor */
+.why-section{border-top:1px solid var(--gray-200);margin-top:16px}
+.why-section__title{padding:12px 24px 8px;font-size:.82rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+.why-section .ql-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;background:var(--gray-50)}
+.why-section .ql-container{border:none!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
+.why-section .ql-editor{padding:12px 24px;min-height:120px;line-height:1.8}
+
+/* Media Picker */
+.mp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.mp-overlay.open{display:flex}
+.mp-modal{background:var(--white);border-radius:12px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column}
+.mp-header{padding:12px 16px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+.mp-header h3{font-size:.95rem;color:var(--navy)}
+.mp-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)}
+.mp-body{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mp-item{border:2px solid transparent;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:1}
+.mp-item:hover{border-color:var(--teal)}
+.mp-item.selected{border-color:var(--ginger)}
+.mp-item img{width:100%;height:100%;object-fit:cover}
+.mp-footer{padding:10px 16px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px}
+</style>
+</head><body>
+<div class="topbar">
+    <a href="/d-specialties" class="topbar__back">← D. Specialties</a>
+    <h1 class="topbar__title" id="topbarTitle">New D. Specialty</h1>
+    <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
+    <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
+    <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--undo" onclick="undoChanges()" id="undoBtn" style="display:none">↩ Undo</button>
+        <a class="topbar__btn topbar__btn--preview" id="viewBtn" href="#" target="_blank" style="display:none">● View Page ↗</a>
+        <button class="topbar__btn topbar__btn--save" onclick="saveItem(false,'draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" id="publishBtn" onclick="saveItem(false,'published')">🚀 Publish</button>
+    </div>
+</div>
+<div class="studio">
+
+<!-- LEFT: AI ASSISTANT -->
+<div class="panel--ai" id="panelLeft">
+    <div class="ai-header"><div class="ai-header__title">🤖 AI Writing Assistant</div><div class="ai-header__sub">Write, edit, optimize — powered by Claude</div></div>
+    <div class="tone-row">
+        <button class="tone-btn active" data-tone="professional" onclick="setTone(this)">Professional</button>
+        <button class="tone-btn" data-tone="friendly" onclick="setTone(this)">Friendly</button>
+        <button class="tone-btn" data-tone="medical" onclick="setTone(this)">Medical</button>
+        <button class="tone-btn" data-tone="patient-friendly" onclick="setTone(this)">Patient-friendly</button>
+        <button class="tone-btn" data-tone="seo-focused" onclick="setTone(this)">SEO-focused</button>
+    </div>
+    <div class="ai-ready">✨ AI Ready</div>
+    <div class="ai-chat" id="aiMessages">
+        <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize this destination specialty page. What would you like to do?</div>
+    </div>
+    <div class="ai-qbtns">
+        <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px">✍ WRITE</div>
+        <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive page about this specialty in this destination, covering why patients travel here, top hospitals, success rates, and cost advantages. Use H2/H3 headings.')">✨ Full Page</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write a compelling introduction for this specialty in this destination')">📝 Intro</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write a Why Choose section explaining why this destination is best for this specialty — include cost savings, hospital quality, doctor expertise, and recovery environment')">🏆 Why Choose</button>
+        <button class="ai-qbtn" onclick="aiCmd('Write about treatment process, what patients can expect, and preparation tips')">🏥 Process</button>
+        <button class="ai-qbtn" onclick="aiCmd('Add CTAs with links to /get-quote/ and /book-consultation/')">🔗 Add CTAs</button>
+        <div style="font-size:.68rem;font-weight:700;color:var(--gray-400);width:100%;margin-bottom:2px;margin-top:6px">✏ OPTIMIZE</div>
+        <button class="ai-qbtn" onclick="aiCmd('Generate SEO meta title and meta description for this destination specialty page')">🎯 Auto SEO</button>
+        <button class="ai-qbtn" onclick="aiCmd('Improve the writing — make it more professional and compelling')">💎 Improve</button>
+        <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">— Grammar</button>
+        <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+    </div>
+    <div class="ai-input-row">
+        <textarea class="ai-input" id="aiInput" placeholder="Ask AI to write, edit, improve..." rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"></textarea>
+        <button class="ai-send" id="aiSendBtn" onclick="sendAI()">▶</button>
+    </div>
+</div>
+<div class="drag-handle" id="dragLeft"></div>
+
+<!-- MIDDLE: EDITOR -->
+<div class="panel--editor">
+    <div class="editor-header">
+        <input type="text" class="editor-header__name" id="itemName" placeholder="e.g. Cardiac Surgery in India" oninput="updateTopTitle();resetAutoSave()">
+        <div class="editor-header__permalink">
+            Permalink: <span id="permalinkDisplay">ginger.healthcare/destinations/<span id="permalinkCountry">___</span>/<a href="#" id="permalinkSlug" onclick="document.getElementById('slug').focus();return false"></a>/</span>
+        </div>
+    </div>
+    <div class="editor-tabs">
+        <div class="editor-tab active" onclick="showTab('write')">✏ Write</div>
+        <div class="editor-tab" onclick="showTab('preview')">👁 Preview</div>
+    </div>
+    <div class="editor-info"><span id="wordCount">0 words</span><span id="readTime">0 min read</span></div>
+    <div class="quill-wrap" id="writePanel">
+        <div id="editor"></div>
+        <div class="why-section">
+            <div class="why-section__title">🏆 Why Choose (separate section)</div>
+            <div id="whyEditor"></div>
+        </div>
+    </div>
+    <div id="previewPanel" style="display:none;flex:1;overflow-y:auto"><div class="preview-frame" id="previewContent"></div></div>
+</div>
+<div class="drag-handle" id="dragRight"></div>
+
+<!-- RIGHT: SIDEBAR -->
+<div class="panel--sidebar" id="panelRight">
+    <div class="sb-box">
+        <div class="sb-box__title">🚀 Publish</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:.78rem;color:var(--gray-500)">Status:</span><span style="font-size:.78rem;font-weight:600" id="sidebarStatus">Draft</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:.72rem;color:var(--gray-500)">SEO:</span><span class="sb-score seo-bad" id="seoScore">0</span></div>
+        <div class="sb-label">Status</div>
+        <select class="sb-select" id="status" onchange="resetAutoSave()"><option value="draft">Draft</option><option value="published">✅ Published</option></select>
+        <div style="display:flex;gap:6px;margin-top:10px">
+            <button class="sb-btn sb-btn--outline" style="flex:1" onclick="saveItem(false,'draft')">Save Draft</button>
+            <button class="sb-btn sb-btn--ginger" style="flex:1" onclick="saveItem(false,'published')">🚀 Publish</button>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:12px;font-size:.72rem">
+            <a href="#" id="viewArticle" style="display:none;color:var(--teal)" target="_blank">● View Page ↗</a>
+            <a href="#" style="color:var(--gray-400)" onclick="if(confirm('Delete this D. Specialty?')){deleteItem()};return false">🗑 Delete</a>
+        </div>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🌍 Destination & Specialty</div>
+        <div class="sb-label">Destination *</div>
+        <select class="sb-select" id="destinationId" onchange="onDestChange();resetAutoSave()"><option value="">Select destination...</option></select>
+        <div class="sb-label">Specialty *</div>
+        <select class="sb-select" id="specialtyId" onchange="onSpecChange();resetAutoSave()"><option value="">Select specialty...</option></select>
+        <div class="sb-label">Slug</div>
+        <input class="sb-input" id="slug" placeholder="cardiac-surgery" oninput="updatePermalink();resetAutoSave()">
+        <div class="sb-hint">URL path: /destinations/{country}/{slug}/</div>
+        <div class="sb-label">Display Order</div>
+        <input class="sb-input" type="number" id="displayOrder" value="0" onchange="resetAutoSave()">
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">📝 Short Description</div>
+        <textarea class="sb-textarea" id="description" rows="3" placeholder="Brief overview shown in listings and cards..." oninput="resetAutoSave()"></textarea>
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🖼 Page Image</div>
+        <div id="featImgEmpty"><button class="sb-btn sb-btn--outline" onclick="openMediaPicker('image')">Choose Image</button></div>
+        <img class="feat-img-preview" id="featImgPreview">
+        <div id="featImgActions" style="display:none;margin-top:6px">
+            <span style="font-size:.72rem;color:var(--gray-500)" id="featImgName"></span><br>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem" onclick="openMediaPicker('image')">Change</button>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem;color:var(--ginger)" onclick="removeImage('image')">Remove</button>
+        </div>
+        <input type="hidden" id="image">
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🌄 Hero Background</div>
+        <div id="heroImgEmpty"><button class="sb-btn sb-btn--outline" onclick="openMediaPicker('hero_bg')">Choose Hero Image</button></div>
+        <img class="feat-img-preview" id="heroImgPreview">
+        <div id="heroImgActions" style="display:none;margin-top:6px">
+            <span style="font-size:.72rem;color:var(--gray-500)" id="heroImgName"></span><br>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem" onclick="openMediaPicker('hero_bg')">Change</button>
+            <button class="sb-btn sb-btn--outline" style="width:auto;display:inline-block;margin-top:4px;padding:4px 10px;font-size:.72rem;color:var(--ginger)" onclick="removeImage('hero_bg')">Remove</button>
+        </div>
+        <input type="hidden" id="hero_bg">
+    </div>
+    <div class="sb-box">
+        <div class="sb-box__title">🔍 SEO Settings</div>
+        <div class="sb-label">Meta Title <span style="float:right;color:var(--gray-400)" id="metaTitleCount">0/60</span></div>
+        <input class="sb-input" id="metaTitle" placeholder="SEO title" oninput="document.getElementById('metaTitleCount').textContent=this.value.length+'/60';analyzeSEO();resetAutoSave()">
+        <div class="sb-label">Meta Description <span style="float:right;color:var(--gray-400)" id="metaDescCount">0/160</span></div>
+        <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description" oninput="document.getElementById('metaDescCount').textContent=this.value.length+'/160';analyzeSEO();resetAutoSave()"></textarea>
+    </div>
+</div>
+</div>
+
+<!-- Media Picker Modal -->
+<div class="mp-overlay" id="mediaPicker">
+    <div class="mp-modal">
+        <div class="mp-header"><h3>Media Library</h3><button class="mp-close" onclick="closeMediaPicker()">✕</button></div>
+        <div class="mp-body" id="mediaGrid"></div>
+        <div class="mp-footer">
+            <button class="sb-btn sb-btn--outline" style="width:auto" onclick="closeMediaPicker()">Cancel</button>
+            <button class="sb-btn sb-btn--primary" style="width:auto" id="mpSelectBtn" onclick="selectMedia()">Select Image</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+// ============== STATE ==============
+const editId = new URLSearchParams(window.location.search).get('id') || (window.location.pathname.includes('/edit/') ? window.location.pathname.split('/edit/')[1] : null);
+let itemData = null, allDestinations = [], allSpecialties = [], currentTone = 'professional';
+let autoSaveTimer = null, hasUnsaved = false, quill = null, quillWhy = null;
+let selectedMediaUrl = null, mediaPickerTarget = null, aiGenerating = false;
+let undoStack = [];
+
+// ============== QUILL INIT ==============
+const quillToolbar = [['bold','italic','underline','strike'],['blockquote'],[{'header':1},{'header':2},{'header':3}],[{'list':'ordered'},{'list':'bullet'}],[{'indent':'-1'},{'indent':'+1'}],['link','image','video'],['clean']];
+quill = new Quill('#editor', {theme:'snow', placeholder:'Write detailed content about this specialty in this destination...', modules:{toolbar:quillToolbar}});
+quillWhy = new Quill('#whyEditor', {theme:'snow', placeholder:'Why choose this destination for this specialty? Cost advantages, doctor expertise, hospital quality...', modules:{toolbar:[['bold','italic','underline'],['link'],[{'list':'bullet'},{'list':'ordered'}],['clean']]}});
+
+quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
+quillWhy.on('text-change', () => { resetAutoSave(); });
+
+// ============== INIT ==============
+async function init() {
+    try {
+        const [dr, sr] = await Promise.all([fetch('/api/destinations'), fetch('/api/specialties')]);
+        allDestinations = await dr.json();
+        allSpecialties = await sr.json();
+
+        const dd = document.getElementById('destinationId');
+        allDestinations.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = (d.flag||'') + ' ' + d.name; dd.appendChild(o); });
+
+        const sd = document.getElementById('specialtyId');
+        allSpecialties.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = (s.icon||'') + ' ' + s.name; sd.appendChild(o); });
+    } catch(e) { console.error('Init error:', e); }
+
+    if (editId) await loadItem();
+    startAutoSave();
+}
+
+async function loadItem() {
+    try {
+        const r = await fetch('/api/d-specialties/' + editId);
+        if (!r.ok) { showToast('❌ Failed to load'); return; }
+        itemData = await r.json();
+
+        document.getElementById('itemName').value = itemData.name || '';
+        document.getElementById('slug').value = itemData.slug || '';
+        document.getElementById('destinationId').value = itemData.destination_id || '';
+        document.getElementById('specialtyId').value = itemData.specialty_id || '';
+        document.getElementById('description').value = itemData.description || '';
+        document.getElementById('displayOrder').value = itemData.display_order || 0;
+        document.getElementById('status').value = itemData.status || 'draft';
+        document.getElementById('metaTitle').value = itemData.meta_title || '';
+        document.getElementById('metaDesc').value = itemData.meta_description || '';
+
+        if (itemData.long_description) quill.root.innerHTML = itemData.long_description;
+        if (itemData.why_choose) quillWhy.root.innerHTML = itemData.why_choose;
+
+        // Images
+        if (itemData.image) setImagePreview('image', itemData.image);
+        if (itemData.hero_bg) setImagePreview('hero_bg', itemData.hero_bg);
+
+        updateTopTitle();
+        updatePermalink();
+        updateStats();
+        analyzeSEO();
+        updateStatusUI();
+        updateViewLinks();
+
+        document.getElementById('publishBtn').textContent = itemData.status === 'published' ? '🚀 Update' : '🚀 Publish';
+        document.getElementById('metaTitleCount').textContent = (itemData.meta_title||'').length + '/60';
+        document.getElementById('metaDescCount').textContent = (itemData.meta_description||'').length + '/160';
+    } catch(e) { console.error('Load error:', e); showToast('❌ Load error'); }
+}
+
+// ============== SAVE ==============
+async function saveItem(isAuto, statusOverride) {
+    const destId = parseInt(document.getElementById('destinationId').value) || null;
+    const specId = parseInt(document.getElementById('specialtyId').value) || null;
+
+    if (!destId) { if (!isAuto) alert('Please select a destination'); return; }
+    if (!specId) { if (!isAuto) alert('Please select a specialty'); return; }
+
+    const destObj = allDestinations.find(d => d.id == destId);
+    const specObj = allSpecialties.find(s => s.id == specId);
+
+    let name = document.getElementById('itemName').value;
+    let slug = document.getElementById('slug').value;
+
+    // Auto-generate name and slug if empty
+    if (!name && destObj && specObj) name = specObj.name + ' in ' + destObj.name;
+    if (!slug && specObj) slug = specObj.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    const data = {
+        destination_id: destId,
+        specialty_id: specId,
+        name: name,
+        slug: slug,
+        description: document.getElementById('description').value,
+        long_description: quill.root.innerHTML.replace(/^<p><br><\/p>$/, ''),
+        why_choose: quillWhy.root.innerHTML.replace(/^<p><br><\/p>$/, ''),
+        image: document.getElementById('image').value,
+        hero_bg: document.getElementById('hero_bg').value,
+        meta_title: document.getElementById('metaTitle').value,
+        meta_description: document.getElementById('metaDesc').value,
+        status: isAuto ? document.getElementById('status').value : (statusOverride || document.getElementById('status').value),
+        display_order: parseInt(document.getElementById('displayOrder').value) || 0
+    };
+
+    try {
+        const url = editId ? '/api/d-specialties/' + editId : '/api/d-specialties';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+
+        if (r.ok) {
+            const result = await r.json();
+            if (!editId) { window.location.href = '/d-specialty-studio/edit/' + result.id; return; }
+            hasUnsaved = false;
+            itemData = result;
+
+            if (isAuto) { showToast('💾 Auto-saved'); }
+            else {
+                const saved = document.getElementById('savedIndicator');
+                saved.style.display = 'inline';
+                setTimeout(() => saved.style.display = 'none', 2000);
+                updateStatusUI();
+                updateViewLinks();
+                document.getElementById('publishBtn').textContent = data.status === 'published' ? '🚀 Update' : '🚀 Publish';
+            }
+        } else {
+            const e = await r.json();
+            if (!isAuto) alert('Error: ' + (e.error || 'Save failed'));
+        }
+    } catch(e) { if (!isAuto) alert('Network error: ' + e.message); }
+}
+
+async function deleteItem() {
+    if (!editId) return;
+    try {
+        const r = await fetch('/api/d-specialties/' + editId, { method: 'DELETE' });
+        if (r.ok) window.location.href = '/d-specialties';
+        else alert('Delete failed');
+    } catch(e) { alert('Network error'); }
+}
+
+// ============== HELPERS ==============
+function onDestChange() {
+    autoName();
+    updatePermalink();
+}
+
+function onSpecChange() {
+    autoName();
+    updatePermalink();
+}
+
+function autoName() {
+    if (editId) return; // Don't overwrite on edit
+    const destId = document.getElementById('destinationId').value;
+    const specId = document.getElementById('specialtyId').value;
+    const destObj = allDestinations.find(d => d.id == destId);
+    const specObj = allSpecialties.find(s => s.id == specId);
+    if (destObj && specObj) {
+        document.getElementById('itemName').value = specObj.name + ' in ' + destObj.name;
+        document.getElementById('slug').value = specObj.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        updateTopTitle();
+        updatePermalink();
+    }
+}
+
+function updatePermalink() {
+    const slug = document.getElementById('slug').value;
+    const destId = document.getElementById('destinationId').value;
+    const dest = allDestinations.find(d => d.id == destId);
+    document.getElementById('permalinkCountry').textContent = dest ? dest.slug : '___';
+    document.getElementById('permalinkSlug').textContent = slug || '___';
+}
+
+function updateTopTitle() {
+    const name = document.getElementById('itemName').value;
+    document.getElementById('topbarTitle').textContent = name || 'New D. Specialty';
+}
+
+function updateStatusUI() {
+    const status = document.getElementById('status').value;
+    const badge = document.getElementById('statusBadge');
+    badge.textContent = status;
+    badge.className = 'topbar__status topbar__status--' + status;
+    document.getElementById('sidebarStatus').textContent = status === 'published' ? '✅ Published' : 'Draft';
+}
+
+function updateViewLinks() {
+    if (!editId || !itemData) return;
+    const destId = document.getElementById('destinationId').value;
+    const dest = allDestinations.find(d => d.id == destId);
+    const slug = document.getElementById('slug').value;
+    if (dest && slug) {
+        const url = 'https://ginger.healthcare/destinations/' + dest.slug + '/' + slug + '/';
+        document.getElementById('viewBtn').href = url;
+        document.getElementById('viewBtn').style.display = '';
+        document.getElementById('viewArticle').href = url;
+        document.getElementById('viewArticle').style.display = 'inline';
+    }
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.editor-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'write') {
+        document.getElementById('writePanel').style.display = '';
+        document.getElementById('previewPanel').style.display = 'none';
+        document.querySelectorAll('.editor-tab')[0].classList.add('active');
+    } else {
+        document.getElementById('writePanel').style.display = 'none';
+        document.getElementById('previewPanel').style.display = '';
+        const whyHtml = quillWhy.root.innerHTML.replace(/^<p><br><\/p>$/, '');
+        document.getElementById('previewContent').innerHTML =
+            '<h1>' + document.getElementById('itemName').value + '</h1>' +
+            quill.root.innerHTML +
+            (whyHtml ? '<hr style="margin:24px 0"><h2>Why Choose This Destination?</h2>' + whyHtml : '');
+        document.querySelectorAll('.editor-tab')[1].classList.add('active');
+    }
+}
+
+function updateStats() {
+    const text = quill.getText().trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    document.getElementById('wordCount').textContent = words + ' words';
+    document.getElementById('readTime').textContent = Math.max(1, Math.ceil(words / 200)) + ' min read';
+}
+
+function analyzeSEO() {
+    let score = 0;
+    const name = document.getElementById('itemName').value;
+    const desc = document.getElementById('description').value;
+    const content = quill.getText().trim();
+    const metaT = document.getElementById('metaTitle').value;
+    const metaD = document.getElementById('metaDesc').value;
+    const img = document.getElementById('image').value;
+
+    if (name.length > 10) score += 15;
+    if (desc.length > 30) score += 10;
+    if (content.split(/\s+/).length > 100) score += 20;
+    if (metaT.length >= 30 && metaT.length <= 60) score += 20; else if (metaT.length > 0) score += 8;
+    if (metaD.length >= 80 && metaD.length <= 160) score += 20; else if (metaD.length > 0) score += 8;
+    if (img) score += 15;
+
+    const el = document.getElementById('seoScore');
+    el.textContent = score;
+    el.className = 'sb-score ' + (score >= 70 ? 'seo-good' : score >= 40 ? 'seo-ok' : 'seo-bad');
+}
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function resetAutoSave() {
+    hasUnsaved = true;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => { if (editId && hasUnsaved) saveItem(true); }, 30000);
+}
+function startAutoSave() { setInterval(() => { if (editId && hasUnsaved) saveItem(true); }, 60000); }
+
+// Undo
+function saveUndoSnapshot() {
+    undoStack.push({name: document.getElementById('itemName').value, content: quill.root.innerHTML, why: quillWhy.root.innerHTML});
+    if (undoStack.length > 20) undoStack.shift();
+    document.getElementById('undoBtn').style.display = undoStack.length > 0 ? '' : 'none';
+}
+function undoChanges() {
+    if (!undoStack.length) return;
+    const snap = undoStack.pop();
+    document.getElementById('itemName').value = snap.name;
+    quill.root.innerHTML = snap.content;
+    quillWhy.root.innerHTML = snap.why;
+    updateStats(); analyzeSEO(); resetAutoSave();
+    document.getElementById('undoBtn').style.display = undoStack.length > 0 ? '' : 'none';
+    showToast('↩ Undone');
+}
+
+// ============== IMAGE PICKERS ==============
+function setImagePreview(field, url) {
+    if (!url) return;
+    const src = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+    if (field === 'image') {
+        document.getElementById('image').value = url;
+        document.getElementById('featImgPreview').src = src;
+        document.getElementById('featImgPreview').style.display = 'block';
+        document.getElementById('featImgEmpty').style.display = 'none';
+        document.getElementById('featImgActions').style.display = 'block';
+        document.getElementById('featImgName').textContent = url.split('/').pop();
+    } else if (field === 'hero_bg') {
+        document.getElementById('hero_bg').value = url;
+        document.getElementById('heroImgPreview').src = src;
+        document.getElementById('heroImgPreview').style.display = 'block';
+        document.getElementById('heroImgEmpty').style.display = 'none';
+        document.getElementById('heroImgActions').style.display = 'block';
+        document.getElementById('heroImgName').textContent = url.split('/').pop();
+    }
+}
+
+function removeImage(field) {
+    if (field === 'image') {
+        document.getElementById('image').value = '';
+        document.getElementById('featImgPreview').style.display = 'none';
+        document.getElementById('featImgEmpty').style.display = '';
+        document.getElementById('featImgActions').style.display = 'none';
+    } else if (field === 'hero_bg') {
+        document.getElementById('hero_bg').value = '';
+        document.getElementById('heroImgPreview').style.display = 'none';
+        document.getElementById('heroImgEmpty').style.display = '';
+        document.getElementById('heroImgActions').style.display = 'none';
+    }
+    analyzeSEO(); resetAutoSave();
+}
+
+async function openMediaPicker(target) {
+    mediaPickerTarget = target;
+    document.getElementById('mediaPicker').classList.add('open');
+    selectedMediaUrl = null;
+    try {
+        const r = await fetch('/api/media');
+        const allMedia = await r.json();
+        const grid = document.getElementById('mediaGrid');
+        grid.innerHTML = allMedia.filter(m => m.mime_type && m.mime_type.startsWith('image/')).map(m =>
+            '<div class="mp-item" onclick="selectMediaItem(this,\'' + m.url + '\')" data-url="' + m.url + '"><img src="' + m.url + '" alt="' + (m.alt_text||m.original_name||'') + '"></div>'
+        ).join('') || '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--gray-400)">No images found. Upload images via Media Library first.</div>';
+    } catch(e) { console.error('Media load error:', e); }
+}
+
+function selectMediaItem(el, url) {
+    document.querySelectorAll('.mp-item').forEach(i => i.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedMediaUrl = url;
+}
+
+function selectMedia() {
+    if (!selectedMediaUrl) { alert('Please select an image'); return; }
+    setImagePreview(mediaPickerTarget, selectedMediaUrl);
+    closeMediaPicker();
+    analyzeSEO(); resetAutoSave();
+}
+
+function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('open'); }
+
+// ============== AI ASSISTANT ==============
+function setTone(btn) {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTone = btn.dataset.tone;
+}
+
+function sendAI() { const input = document.getElementById('aiInput'); const msg = input.value.trim(); if (msg) aiCmd(msg); }
+
+async function aiCmd(customMsg) {
+    const input = document.getElementById('aiInput');
+    const msg = customMsg || input.value.trim();
+    if (!msg || aiGenerating) return;
+    input.value = '';
+    aiGenerating = true;
+    document.getElementById('aiSendBtn').disabled = true;
+
+    const messages = document.getElementById('aiMessages');
+    const userDiv = document.createElement('div');
+    userDiv.className = 'ai-msg ai-msg--user';
+    userDiv.textContent = msg;
+    messages.appendChild(userDiv);
+
+    const loadDiv = document.createElement('div');
+    loadDiv.className = 'ai-msg ai-msg--bot';
+    loadDiv.innerHTML = '<div class="ai-typing"><span></span><span></span><span></span></div>';
+    messages.appendChild(loadDiv);
+    messages.scrollTop = messages.scrollHeight;
+
+    saveUndoSnapshot();
+
+    try {
+        const content = quill.root.innerHTML;
+        const name = document.getElementById('itemName').value;
+        const destId = document.getElementById('destinationId').value;
+        const specId = document.getElementById('specialtyId').value;
+        const destObj = allDestinations.find(d => d.id == destId);
+        const specObj = allSpecialties.find(s => s.id == specId);
+
+        const prompt = `You are an AI writing assistant for a medical tourism website. Tone: ${currentTone}.
+Page: ${name || 'Destination Specialty'}
+Destination: ${destObj ? destObj.name : 'Not selected'}
+Specialty: ${specObj ? specObj.name : 'Not selected'}
+Current content: ${content.replace(/<[^>]*>/g, '').substring(0, 2000)}
+
+User request: ${msg}
+
+If the request is for SEO (meta title/description), respond with JSON: {"meta_title":"...","meta_description":"..."}
+If the request is about "Why Choose", respond with HTML content for the why-choose section.
+Otherwise respond with formatted HTML content. Use h2, h3, p, ul, li tags.`;
+
+        const r = await fetch('/api/ai/generate', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({prompt, type:'d-specialty', context: name})
+        });
+        const data = await r.json();
+
+        if (r.ok) {
+            let result = data.content || '';
+            let seoData = null;
+            try {
+                const clean = result.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+                if (clean.startsWith('{')) seoData = JSON.parse(clean);
+            } catch(e) {}
+
+            if (seoData && seoData.meta_title) {
+                document.getElementById('metaTitle').value = seoData.meta_title;
+                document.getElementById('metaDesc').value = seoData.meta_description || '';
+                analyzeSEO();
+                loadDiv.innerHTML = '✅ SEO fields updated!<br><strong>Title:</strong> ' + seoData.meta_title + '<br><strong>Desc:</strong> ' + (seoData.meta_description||'').substring(0,100) + '...';
+            } else {
+                const isWhyChoose = msg.toLowerCase().includes('why choose');
+                const cid = 'ai_' + Date.now();
+                window[cid] = result;
+                const preview = result.replace(/<[^>]*>/g, '').substring(0, 180);
+                let actions = '<div class="ai-msg__actions">' +
+                    '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertAI(\'' + cid + '\')">📋 Replace Main</button>' +
+                    '<button class="ai-msg__btn ai-msg__btn--append" onclick="appendAI(\'' + cid + '\')">➕ Append Main</button>';
+                if (isWhyChoose) {
+                    actions += '<button class="ai-msg__btn ai-msg__btn--insert" onclick="insertWhyAI(\'' + cid + '\')" style="color:var(--ginger)">🏆 Replace Why</button>';
+                }
+                actions += '</div>';
+                loadDiv.innerHTML = preview + (result.length > 180 ? '...' : '') + actions;
+            }
+        } else {
+            loadDiv.innerHTML = '❌ AI error: ' + (data.error || 'Unknown error');
+        }
+    } catch(e) {
+        loadDiv.innerHTML = '❌ Network error: ' + e.message;
+    }
+
+    aiGenerating = false;
+    document.getElementById('aiSendBtn').disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function insertAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML=h;updateStats();analyzeSEO();resetAutoSave()} }
+function appendAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quill.root.innerHTML+=h;updateStats();analyzeSEO();resetAutoSave()} }
+function insertWhyAI(cid) { saveUndoSnapshot(); const h = window[cid]; if(h){quillWhy.root.innerHTML=h;resetAutoSave()} }
+
+// ============== KEYBOARD SHORTCUTS ==============
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(false); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) { e.preventDefault(); undoChanges(); }
+});
+
+// ============== PANEL DRAG RESIZE ==============
+function setupDrag(hid, panel, dir) {
+    const handle = document.getElementById(hid);
+    let dragging = false, startX, startW;
+    handle.addEventListener('mousedown', e => { dragging = true; startX = e.clientX; startW = panel.offsetWidth; handle.classList.add('dragging'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault(); });
+    document.addEventListener('mousemove', e => { if (!dragging) return; const dx = e.clientX - startX; panel.style.width = Math.max(180, Math.min(startW + (dir === 'left' ? dx : -dx), window.innerWidth - 500)) + 'px'; });
+    document.addEventListener('mouseup', () => { if (!dragging) return; dragging = false; handle.classList.remove('dragging'); document.body.style.cursor = ''; document.body.style.userSelect = ''; });
+}
+setupDrag('dragLeft', document.getElementById('panelLeft'), 'left');
+setupDrag('dragRight', document.getElementById('panelRight'), 'right');
+
+// ============== INIT ==============
+init();
+</script>
+</body></html>
