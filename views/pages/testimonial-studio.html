@@ -228,7 +228,7 @@ a{text-decoration:none;color:inherit}
                 <label class="form-label">Source</label>
                 <select class="form-select" id="source" onchange="toggleGoogleFields();updatePreview()">
                     <option value="patient_direct">💬 Patient Direct</option>
-                    <option value="google_reviews">⭐ Google Review</option>
+                    <option value="google_reviews">🔍 Google Review</option>
                     <option value="doctor_shared">👨‍⚕️ Doctor Shared</option>
                     <option value="website">🌐 Website Submission</option>
                     <option value="partner">🏥 Hospital Partner</option>
@@ -630,7 +630,8 @@ function updatePreview() {
     card.className = 'prev-card' + (featured ? ' prev-card--featured' : '');
 
     // Source badge
-    const srcMap = {google_reviews:['Google Review','google','⭐'],doctor_shared:['Doctor Shared','doctor','👨‍⚕️'],patient_direct:['Patient Direct','direct','💬'],website:['Via Website','website','🌐'],partner:['Hospital Partner','partner','🏥']};
+    const googleImg = '<img src="https://ginger.healthcare/img/google-reviews.webp" alt="Google Reviews" style="height:14px;vertical-align:middle">';
+    const srcMap = {google_reviews:['Google Review','google',googleImg],doctor_shared:['Doctor Shared','doctor','👨‍⚕️'],patient_direct:['Patient Direct','direct','💬'],website:['Via Website','website','🌐'],partner:['Hospital Partner','partner','🏥']};
     const [srcLabel, srcClass, srcIcon] = srcMap[source] || srcMap.patient_direct;
     document.getElementById('prevSource').innerHTML = `<span class="prev-source prev-source--${srcClass}">${srcIcon} ${srcLabel}</span>`;
 
