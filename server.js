@@ -353,6 +353,10 @@ app.get('/testimonials', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'testimonials.html'));
 });
 
+app.get('/testimonial-studio', authRequired, (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'testimonial-studio.html'));
+});
+
 app.get('/api/testimonials', apiAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM testimonials ORDER BY created_at DESC');
@@ -362,11 +366,11 @@ app.get('/api/testimonials', apiAuth, async (req, res) => {
 
 app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status } = req.body;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
         const result = await pool.query(
-            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating || 5, quote, avatar_color, is_featured || false, status || 'draft']
+            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating || 5, quote, avatar_color, is_featured || false, status || 'draft', title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null]
         );
         await logActivity(req.user.id, 'create', 'testimonial', result.rows[0].id, `Created testimonial: ${patient_name}`);
         res.json(result.rows[0]);
@@ -375,11 +379,11 @@ app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), as
 
 app.put('/api/testimonials/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status } = req.body;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
         const result = await pool.query(
-            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, updated_at=NOW()
-             WHERE id=$12 RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, req.params.id]
+            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, title=$12, source=$13, images=$14, treatment_date=$15, google_review_id=$16, google_review_date=$17, google_review_url=$18, doctor_id=$19, hospital_id=$20, specialty_id=$21, treatment_id=$22, updated_at=NOW()
+             WHERE id=$23 RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating, quote, avatar_color, is_featured, status, title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'testimonial', req.params.id, `Updated: ${patient_name}`);
         res.json(result.rows[0]);
@@ -415,68 +419,6 @@ app.delete('/api/testimonials/:id', apiAuth, roleRequired('super_admin'), async 
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// ============== VIDEOS CRUD ==============
-app.get('/videos', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'videos.html'));
-});
-
-app.get('/api/videos', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT v.*, d.name as doctor_name, h.name as hospital_name, s.name as specialty_name, t.name as treatment_name
-             FROM videos v
-             LEFT JOIN doctors d ON v.doctor_id = d.id
-             LEFT JOIN hospitals h ON v.hospital_id = h.id
-             LEFT JOIN specialties s ON v.specialty_id = s.id
-             LEFT JOIN treatments t ON v.treatment_id = t.id
-             ORDER BY v.sort_order ASC, v.created_at DESC`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/videos', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status } = req.body;
-        if (!title || !youtube_url) return res.status(400).json({ error: 'Title and YouTube URL required' });
-        const result = await pool.query(
-            `INSERT INTO videos (title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
-            [title, slug, youtube_url, thumbnail, description, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, sort_order||0, is_featured||false, status||'draft']
-        );
-        await logActivity(req.user.id, 'create', 'video', result.rows[0].id, `Created: ${title}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'A video with this slug already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/videos/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { title, slug, youtube_url, thumbnail, description, doctor_id, hospital_id, specialty_id, treatment_id, sort_order, is_featured, status } = req.body;
-        const result = await pool.query(
-            `UPDATE videos SET title=$1, slug=$2, youtube_url=$3, thumbnail=$4, description=$5, doctor_id=$6, hospital_id=$7, specialty_id=$8, treatment_id=$9, sort_order=$10, is_featured=$11, status=$12, updated_at=NOW()
-             WHERE id=$13 RETURNING *`,
-            [title, slug, youtube_url, thumbnail, description, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, sort_order||0, is_featured||false, status, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        await logActivity(req.user.id, 'update', 'video', parseInt(req.params.id), `Updated: ${title}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'A video with this slug already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/videos/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM videos WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'video', parseInt(req.params.id), 'Deleted video');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
 // ============== HOSPITALS CRUD ==============
 app.get('/hospitals', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'hospitals.html'));
@@ -484,23 +426,18 @@ app.get('/hospitals', authRequired, (req, res) => {
 
 app.get('/api/hospitals', apiAuth, async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT h.*, d.name as destination_name, d.slug as destination_slug
-             FROM hospitals h LEFT JOIN destinations d ON h.destination_id = d.id
-             ORDER BY h.name ASC`
-        );
+        const result = await pool.query('SELECT * FROM hospitals ORDER BY name ASC');
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
 app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status } = req.body;
-        if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
+        const { name, slug, country, city, address, description, long_description, accreditations, specialties, beds, established, image, rating, is_featured, status } = req.body;
         const result = await pool.query(
-            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, location_image||null, gallery || [], gallery_people || [], rating, is_featured || false, status || 'draft']
+            `INSERT INTO hospitals (name, slug, country, city, address, description, long_description, accreditations, specialties, beds, established, image, rating, is_featured, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+            [name, slug, country, city, address, description, long_description, accreditations || [], specialties || [], beds, established, image, rating, is_featured || false, status || 'draft']
         );
         await logActivity(req.user.id, 'create', 'hospital', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -509,12 +446,11 @@ app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async
 
 app.put('/api/hospitals/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status } = req.body;
-        if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
+        const { name, slug, country, city, address, description, long_description, accreditations, specialties, beds, established, image, rating, is_featured, status } = req.body;
         const result = await pool.query(
-            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, latitude=$7, longitude=$8, airport_id=$9, airport_distance=$10, description=$11, long_description=$12, accreditations=$13, specialties=$14, beds=$15, established=$16, image=$17, location_image=$18, gallery=$19, gallery_people=$20, rating=$21, is_featured=$22, status=$23, updated_at=NOW()
-             WHERE id=$24 RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, location_image||null, gallery || [], gallery_people || [], rating, is_featured, status, req.params.id]
+            `UPDATE hospitals SET name=$1, slug=$2, country=$3, city=$4, address=$5, description=$6, long_description=$7, accreditations=$8, specialties=$9, beds=$10, established=$11, image=$12, rating=$13, is_featured=$14, status=$15, updated_at=NOW()
+             WHERE id=$16 RETURNING *`,
+            [name, slug, country, city, address, description, long_description, accreditations || [], specialties || [], beds, established, image, rating, is_featured, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'hospital', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
@@ -550,156 +486,6 @@ app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (re
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Hospital Studio pages
-app.get('/hospitals/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'hospital-studio.html'));
-});
-app.get('/hospitals/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'hospital-studio.html'));
-});
-
-// Single hospital GET (for studio editor)
-app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT h.*, d.name as destination_name, d.slug as destination_slug,
-                    a.name as airport_name, a.code as airport_code, a.latitude as airport_lat, a.longitude as airport_lng
-             FROM hospitals h
-             LEFT JOIN destinations d ON h.destination_id = d.id
-             LEFT JOIN airports a ON h.airport_id = a.id
-             WHERE h.id = $1`, [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== ACCREDITATIONS CRUD ==============
-app.get('/accreditations-mgmt', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'accreditations.html'));
-});
-app.get('/api/accreditations', apiAuth, async (req, res) => {
-    try { const result = await pool.query('SELECT * FROM accreditations ORDER BY name'); res.json(result.rows); }
-    catch (err) { res.status(500).json({ error: err.message }); }
-});
-app.post('/api/accreditations', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { name, short_name, full_name, icon, description, status } = req.body;
-        if (!name) return res.status(400).json({ error: 'Name is required' });
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const result = await pool.query(
-            'INSERT INTO accreditations (name, slug, short_name, full_name, icon, description, status) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-            [name, slug, short_name||null, full_name||null, icon||null, description||null, status||'published']
-        );
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-app.put('/api/accreditations/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { name, short_name, full_name, icon, description, status } = req.body;
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const result = await pool.query(
-            'UPDATE accreditations SET name=$1, slug=$2, short_name=$3, full_name=$4, icon=$5, description=$6, status=$7 WHERE id=$8 RETURNING *',
-            [name, slug, short_name||null, full_name||null, icon||null, description||null, status||'published', req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-app.delete('/api/accreditations/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try { await pool.query('DELETE FROM accreditations WHERE id = $1', [req.params.id]); res.json({ success: true }); }
-    catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// Hospital → Specialties junction
-app.get('/api/hospitals/:id/specialties', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT s.* FROM specialties s JOIN hospital_specialties hs ON s.id = hs.specialty_id WHERE hs.hospital_id = $1 ORDER BY s.name`, [req.params.id]);
-        res.json(result.rows);
-    } catch (err) { res.json([]); }
-});
-app.put('/api/hospitals/:id/specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { specialty_ids } = req.body;
-        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id = $1', [req.params.id]);
-        if (specialty_ids && specialty_ids.length > 0) {
-            const values = specialty_ids.map((sid, i) => `($1, $${i+2})`).join(',');
-            await pool.query(`INSERT INTO hospital_specialties (hospital_id, specialty_id) VALUES ${values}`, [req.params.id, ...specialty_ids]);
-        }
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// Hospital → Accreditations junction
-app.get('/api/hospitals/:id/accreditations', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT a.* FROM accreditations a JOIN hospital_accreditations ha ON a.id = ha.accreditation_id WHERE ha.hospital_id = $1 ORDER BY a.name`, [req.params.id]);
-        res.json(result.rows);
-    } catch (err) { res.json([]); }
-});
-app.put('/api/hospitals/:id/accreditations', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { accreditation_ids } = req.body;
-        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id = $1', [req.params.id]);
-        if (accreditation_ids && accreditation_ids.length > 0) {
-            const values = accreditation_ids.map((aid, i) => `($1, $${i+2})`).join(',');
-            await pool.query(`INSERT INTO hospital_accreditations (hospital_id, accreditation_id) VALUES ${values}`, [req.params.id, ...accreditation_ids]);
-        }
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// ============== AIRPORTS CRUD ==============
-app.get('/airports', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'airports.html'));
-});
-app.get('/airports/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'airport-studio.html'));
-});
-app.get('/airports/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'airport-studio.html'));
-});
-
-app.get('/api/airports', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM airports ORDER BY country, city, name');
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/airports', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { name, code, city, country, latitude, longitude, arrival_instructions, photos, status } = req.body;
-        if (!name || !city) return res.status(400).json({ error: 'Name and city are required' });
-        const slug = (code ? code.toLowerCase() + '-' : '') + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const result = await pool.query(
-            'INSERT INTO airports (name, slug, code, city, country, latitude, longitude, arrival_instructions, photos, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *',
-            [name, slug, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, photos||[], status||'draft']
-        );
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.put('/api/airports/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { name, code, city, country, latitude, longitude, arrival_instructions, photos, status } = req.body;
-        const slug = (code ? code.toLowerCase() + '-' : '') + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const result = await pool.query(
-            'UPDATE airports SET name=$1, slug=$2, code=$3, city=$4, country=$5, latitude=$6, longitude=$7, arrival_instructions=$8, photos=$9, status=$10 WHERE id=$11 RETURNING *',
-            [name, slug, code||null, city, country||null, latitude||null, longitude||null, arrival_instructions||null, photos||[], status||'draft', req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/airports/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM airports WHERE id = $1', [req.params.id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
 // ============== DOCTORS CRUD ==============
 app.get('/doctors', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'doctors.html'));
@@ -708,13 +494,8 @@ app.get('/doctors', authRequired, (req, res) => {
 app.get('/api/doctors', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT d.*, h.name as hospital_name, 
-                    dest.name as destination_name, dest.slug as destination_slug,
-                    sp.name as specialty_name_fk, sp.slug as specialty_slug
-             FROM doctors d
+            `SELECT d.*, h.name as hospital_name FROM doctors d
              LEFT JOIN hospitals h ON d.hospital_id = h.id
-             LEFT JOIN destinations dest ON d.destination_id = dest.id
-             LEFT JOIN specialties sp ON d.specialty_id = sp.id
              ORDER BY d.name ASC`
         );
         res.json(result.rows);
@@ -723,11 +504,11 @@ app.get('/api/doctors', apiAuth, async (req, res) => {
 
 app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `INSERT INTO doctors (name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
-            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, city || null, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
+            `INSERT INTO doctors (name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+            [name, slug, title, specialty, specialties || [], hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured || false, status || 'draft', treatments || []]
         );
         await logActivity(req.user.id, 'create', 'doctor', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -736,11 +517,11 @@ app.post('/api/doctors', apiAuth, roleRequired('super_admin', 'editor'), async (
 
 app.put('/api/doctors/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, title, specialty, specialty_id, specialties, hospital_id, destination_id, country, city, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
+        const { name, slug, title, specialty, specialties, hospital_id, country, experience_years, qualifications, description, long_description, image, languages, is_featured, status, treatments } = req.body;
         const result = await pool.query(
-            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, specialty_id=$5, specialties=$6, hospital_id=$7, destination_id=$8, country=$9, city=$10, experience_years=$11, qualifications=$12, description=$13, long_description=$14, image=$15, languages=$16, is_featured=$17, status=$18, treatments=$19, updated_at=NOW()
-             WHERE id=$20 RETURNING *`,
-            [name, slug, title, specialty, specialty_id || null, specialties || [], hospital_id, destination_id || null, country, city || null, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
+            `UPDATE doctors SET name=$1, slug=$2, title=$3, specialty=$4, specialties=$5, hospital_id=$6, country=$7, experience_years=$8, qualifications=$9, description=$10, long_description=$11, image=$12, languages=$13, is_featured=$14, status=$15, treatments=$16, updated_at=NOW()
+             WHERE id=$17 RETURNING *`,
+            [name, slug, title, specialty, specialties || [], hospital_id, country, experience_years, qualifications || [], description, long_description, image, languages || [], is_featured, status, treatments || [], req.params.id]
         );
         await logActivity(req.user.id, 'update', 'doctor', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
@@ -774,61 +555,6 @@ app.delete('/api/doctors/:id', apiAuth, roleRequired('super_admin'), async (req,
         await logActivity(req.user.id, 'delete', 'doctor', parseInt(req.params.id), 'Deleted doctor');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== DOCTOR STUDIO ==============
-app.get('/doctors/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
-});
-app.get('/doctors/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'doctor-studio.html'));
-});
-
-// Single doctor GET (for studio editor)
-app.get('/api/doctors/:id', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT d.*, h.name as hospital_name, h.country as hospital_country,
-                    dest.name as destination_name, dest.slug as destination_slug
-             FROM doctors d
-             LEFT JOIN hospitals h ON d.hospital_id = h.id
-             LEFT JOIN destinations dest ON d.destination_id = dest.id
-             WHERE d.id = $1`, [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// Doctor slug uniqueness check
-app.get('/api/doctor-slug-check/:slug', apiAuth, async (req, res) => {
-    try {
-        const excludeId = req.query.exclude || 0;
-        const result = await pool.query('SELECT id, name FROM doctors WHERE slug = $1 AND id != $2', [req.params.slug, excludeId]);
-        res.json({ available: result.rows.length === 0, existing: result.rows[0] || null });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// Doctor-treatments junction (GET linked treatment IDs)
-app.get('/api/doctor-treatments/:doctorId', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT treatment_id FROM doctor_treatments WHERE doctor_id = $1', [req.params.doctorId]);
-        res.json(result.rows);
-    } catch (err) { res.json([]); }
-});
-
-// Doctor-treatments junction (PUT — replace all links)
-app.put('/api/doctor-treatments/:doctorId', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { treatment_ids } = req.body;
-        const doctorId = req.params.doctorId;
-        await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = $1', [doctorId]);
-        if (treatment_ids && treatment_ids.length) {
-            const values = treatment_ids.map((tid, i) => `($1, $${i + 2})`).join(',');
-            await pool.query(`INSERT INTO doctor_treatments (doctor_id, treatment_id) VALUES ${values} ON CONFLICT DO NOTHING`, [doctorId, ...treatment_ids]);
-        }
-        res.json({ success: true, count: (treatment_ids || []).length });
-    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============== SUBMISSIONS ==============
@@ -952,9 +678,8 @@ const sharp = require('sharp');
 // Image sizes (like WordPress registered sizes)
 const IMAGE_SIZES = {
     thumbnail: { width: 150, height: 150, crop: true },
-    medium:    { width: 400, height: 400, crop: false },
-    medium_large: { width: 768, height: 768, crop: false },
-    large:     { width: 1200, height: 1200, crop: false }
+    medium:    { width: 300, height: 300, crop: false },
+    large:     { width: 1024, height: 1024, crop: false }
 };
 
 // Get year/month upload directory (like WordPress /uploads/2026/02/)
@@ -992,62 +717,28 @@ function uniqueFilename(dir, base, ext) {
     return finalName;
 }
 
-// Generate image subsizes + WebP versions (like wp_create_image_subsizes)
+// Generate image subsizes (like wp_create_image_subsizes)
 async function createImageSubsizes(filePath, dir, base, ext) {
     const sizes = {};
     try {
         const image = sharp(filePath);
         const metadata = await image.metadata();
 
-        // 1. Compress original (if JPEG/PNG, reduce quality)
-        if (/\.(jpg|jpeg)$/i.test(ext)) {
-            try {
-                await sharp(filePath).jpeg({ quality: 82, progressive: true }).toFile(filePath + '.tmp');
-                fs.renameSync(filePath + '.tmp', filePath);
-            } catch(e) { /* keep original if compression fails */ }
-        } else if (/\.png$/i.test(ext)) {
-            try {
-                await sharp(filePath).png({ quality: 85, compressionLevel: 8 }).toFile(filePath + '.tmp');
-                fs.renameSync(filePath + '.tmp', filePath);
-            } catch(e) { /* keep original */ }
-        }
-
-        // 2. Generate WebP of original (full size)
-        try {
-            const webpName = `${base}.webp`;
-            const webpPath = path.join(dir, webpName);
-            const webpInfo = await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
-            sizes['full_webp'] = { file: webpName, width: webpInfo.width, height: webpInfo.height, size: webpInfo.size };
-        } catch(e) { console.error('WebP full error:', e.message); }
-
-        // 3. Generate each size in original format + WebP
         for (const [sizeName, sizeConfig] of Object.entries(IMAGE_SIZES)) {
             if (metadata.width <= sizeConfig.width && metadata.height <= sizeConfig.height) continue;
-
-            const resizeOpts = sizeConfig.crop
-                ? { width: sizeConfig.width, height: sizeConfig.height, fit: 'cover', position: 'centre' }
-                : { width: sizeConfig.width, height: sizeConfig.height, fit: 'inside', withoutEnlargement: true };
-
-            // Original format
             const sizeFilename = `${base}-${sizeConfig.width}x${sizeConfig.height}${ext}`;
             const sizePath = path.join(dir, sizeFilename);
             try {
-                let resizer = sharp(filePath).resize(resizeOpts);
-                if (/\.(jpg|jpeg)$/i.test(ext)) resizer = resizer.jpeg({ quality: 82, progressive: true });
-                else if (/\.png$/i.test(ext)) resizer = resizer.png({ quality: 85, compressionLevel: 8 });
+                let resizer = sharp(filePath);
+                if (sizeConfig.crop) {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'cover', position: 'centre' });
+                } else {
+                    resizer = resizer.resize(sizeConfig.width, sizeConfig.height, { fit: 'inside', withoutEnlargement: true });
+                }
                 const info = await resizer.toFile(sizePath);
                 sizes[sizeName] = { file: sizeFilename, width: info.width, height: info.height, size: info.size };
             } catch(e) { console.error(`Failed to create ${sizeName}:`, e.message); }
-
-            // WebP version
-            const webpSizeName = `${base}-${sizeConfig.width}x${sizeConfig.height}.webp`;
-            const webpSizePath = path.join(dir, webpSizeName);
-            try {
-                const webpInfo = await sharp(filePath).resize(resizeOpts).webp({ quality: 78 }).toFile(webpSizePath);
-                sizes[`${sizeName}_webp`] = { file: webpSizeName, width: webpInfo.width, height: webpInfo.height, size: webpInfo.size };
-            } catch(e) { console.error(`Failed to create ${sizeName} WebP:`, e.message); }
         }
-
         return { width: metadata.width, height: metadata.height, sizes };
     } catch(e) {
         console.error('Image processing error:', e.message);
@@ -1134,82 +825,6 @@ app.put('/api/media/:id', apiAuth, roleRequired('super_admin', 'editor'), async 
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// POST /api/media/:id/optimize — Reprocess a single image (generate missing sizes + WebP)
-app.post('/api/media/:id/optimize', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM media WHERE id = $1', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        const media = result.rows[0];
-        if (!media.mime_type || !media.mime_type.startsWith('image/') || /svg/i.test(media.mime_type)) {
-            return res.json({ skipped: true, reason: 'Not a raster image' });
-        }
-        const filePath = path.join(__dirname, media.url);
-        if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found on disk' });
-
-        const dir = path.dirname(filePath);
-        const ext = path.extname(media.filename);
-        const base = path.basename(media.filename, ext);
-        const imgData = await createImageSubsizes(filePath, dir, base, ext);
-
-        const subdir = path.dirname(media.url);
-        const sizes = {};
-        for (const [key, val] of Object.entries(imgData.sizes)) {
-            sizes[key] = { ...val, url: `${subdir}/${val.file}` };
-        }
-        await pool.query('UPDATE media SET sizes = $1, width = $2, height = $3 WHERE id = $4',
-            [JSON.stringify(sizes), imgData.width, imgData.height, media.id]);
-
-        const originalSize = fs.statSync(filePath).size;
-        const webpSize = sizes.full_webp ? sizes.full_webp.size : null;
-        const savings = webpSize ? Math.round((1 - webpSize / originalSize) * 100) : 0;
-
-        res.json({ success: true, id: media.id, sizes: Object.keys(sizes).length, savings: savings + '% WebP savings' });
-    } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// POST /api/media/optimize-all — Bulk optimize all images (super_admin only)
-app.post('/api/media/optimize-all', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        const result = await pool.query("SELECT * FROM media WHERE mime_type LIKE 'image/%' AND mime_type != 'image/svg+xml' ORDER BY id");
-        const images = result.rows;
-        let processed = 0, skipped = 0, errors = 0, totalSaved = 0;
-
-        for (const media of images) {
-            const filePath = path.join(__dirname, media.url);
-            if (!fs.existsSync(filePath)) { skipped++; continue; }
-
-            // Skip if already has WebP sizes
-            const existingSizes = typeof media.sizes === 'string' ? JSON.parse(media.sizes || '{}') : (media.sizes || {});
-            if (existingSizes.full_webp) { skipped++; continue; }
-
-            const dir = path.dirname(filePath);
-            const ext = path.extname(media.filename);
-            const base = path.basename(media.filename, ext);
-
-            try {
-                const originalSize = fs.statSync(filePath).size;
-                const imgData = await createImageSubsizes(filePath, dir, base, ext);
-                const subdir = path.dirname(media.url);
-                const sizes = {};
-                for (const [key, val] of Object.entries(imgData.sizes)) {
-                    sizes[key] = { ...val, url: `${subdir}/${val.file}` };
-                }
-                await pool.query('UPDATE media SET sizes = $1, width = $2, height = $3 WHERE id = $4',
-                    [JSON.stringify(sizes), imgData.width, imgData.height, media.id]);
-
-                const newSize = fs.statSync(filePath).size;
-                totalSaved += (originalSize - newSize);
-                processed++;
-            } catch(e) { errors++; console.error(`Optimize ${media.id} error:`, e.message); }
-        }
-
-        res.json({
-            success: true, total: images.length, processed, skipped, errors,
-            totalSavedMB: (totalSaved / 1024 / 1024).toFixed(2) + ' MB'
-        });
-    } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
 // DELETE /api/media/:id — Delete file + all subsizes
 app.delete('/api/media/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
@@ -1278,14 +893,6 @@ app.put('/api/users/:id', apiAuth, roleRequired('super_admin'), async (req, res)
 // ============== SPECIALTIES CRUD ==============
 app.get('/specialties-mgmt', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'specialties.html'));
-});
-
-app.get('/specialties/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
-});
-
-app.get('/specialties/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
 });
 
 app.get('/api/specialties', apiAuth, async (req, res) => {
@@ -1366,34 +973,14 @@ app.get('/treatments', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'treatments.html'));
 });
 
-app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
-});
-
-app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
-});
-
 app.get('/api/treatments', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
-             LEFT JOIN specialties s ON t.specialty_id = s.id
-             ORDER BY s.name ASC, t.name ASC`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.get('/api/treatments/:id', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT t.*, s.name as specialty_name FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
-             WHERE t.id = $1`, [req.params.id]
+             ORDER BY s.name ASC, t.name ASC`
         );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(result.rows[0]);
+        res.json(result.rows);
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -1521,130 +1108,6 @@ app.delete('/api/destinations/:id', apiAuth, roleRequired('super_admin'), async 
     try {
         await pool.query('DELETE FROM destinations WHERE id = $1', [req.params.id]);
         await logActivity(req.user.id, 'delete', 'destination', parseInt(req.params.id), 'Deleted destination');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== D. SPECIALTIES CRUD (Page A — Destination + Specialty combos) ==============
-app.get('/d-specialties', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'd-specialties.html'));
-});
-
-app.get('/api/d-specialties', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT ds.*, d.name as destination_name, d.flag as destination_flag, d.slug as destination_slug,
-                    s.name as specialty_name, s.slug as specialty_slug, s.icon as specialty_icon
-             FROM destination_specialties ds
-             LEFT JOIN destinations d ON ds.destination_id = d.id
-             LEFT JOIN specialties s ON ds.specialty_id = s.id
-             ORDER BY d.name ASC, s.name ASC`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
-        if (!destination_id || !specialty_id) return res.status(400).json({ error: 'Destination and Specialty required' });
-        const result = await pool.query(
-            `INSERT INTO destination_specialties (destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status || 'draft', display_order || 0]
-        );
-        await logActivity(req.user.id, 'create', 'destination_specialty', result.rows[0].id, `Created: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'This destination + specialty combination already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/d-specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `UPDATE destination_specialties SET destination_id=$1, specialty_id=$2, name=$3, slug=$4, description=$5, long_description=$6, why_choose=$7, image=$8, hero_bg=$9, meta_title=$10, meta_description=$11, status=$12, display_order=$13
-             WHERE id=$14 RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order || 0, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        await logActivity(req.user.id, 'update', 'destination_specialty', parseInt(req.params.id), `Updated: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'This destination + specialty combination already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/d-specialties/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM destination_specialties WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'destination_specialty', parseInt(req.params.id), 'Deleted destination specialty');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== D. TREATMENTS CRUD (Page A — Destination + Treatment combos) ==============
-app.get('/d-treatments', authRequired, (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'pages', 'd-treatments.html'));
-});
-
-app.get('/api/d-treatments', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT dt.*, d.name as destination_name, d.flag as destination_flag, d.slug as destination_slug,
-                    t.name as treatment_name, t.slug as treatment_slug,
-                    s.name as specialty_name, s.slug as specialty_slug
-             FROM destination_treatments dt
-             LEFT JOIN destinations d ON dt.destination_id = d.id
-             LEFT JOIN treatments t ON dt.treatment_id = t.id
-             LEFT JOIN specialties s ON dt.specialty_id = s.id
-             ORDER BY d.name ASC, s.name ASC, t.name ASC`
-        );
-        res.json(result.rows);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-app.post('/api/d-treatments', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order } = req.body;
-        if (!destination_id || !treatment_id) return res.status(400).json({ error: 'Destination and Treatment required' });
-        const result = await pool.query(
-            `INSERT INTO destination_treatments (destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING *`,
-            [destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd||null, cost_max_usd||null, cost_includes, hospital_stay, meta_title, meta_description, status || 'draft', display_order || 0]
-        );
-        await logActivity(req.user.id, 'create', 'destination_treatment', result.rows[0].id, `Created: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'This destination + treatment combination already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put('/api/d-treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd, cost_max_usd, cost_includes, hospital_stay, meta_title, meta_description, status, display_order } = req.body;
-        const result = await pool.query(
-            `UPDATE destination_treatments SET destination_id=$1, treatment_id=$2, specialty_id=$3, name=$4, slug=$5, description=$6, long_description=$7, image=$8, hero_bg=$9, cost_min_usd=$10, cost_max_usd=$11, cost_includes=$12, hospital_stay=$13, meta_title=$14, meta_description=$15, status=$16, display_order=$17
-             WHERE id=$18 RETURNING *`,
-            [destination_id, treatment_id, specialty_id, name, slug, description, long_description, image, hero_bg, cost_min_usd||null, cost_max_usd||null, cost_includes, hospital_stay, meta_title, meta_description, status, display_order || 0, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        await logActivity(req.user.id, 'update', 'destination_treatment', parseInt(req.params.id), `Updated: ${name}`);
-        res.json(result.rows[0]);
-    } catch (err) {
-        if (err.code === '23505') return res.status(400).json({ error: 'This destination + treatment combination already exists' });
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/d-treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try {
-        await pool.query('DELETE FROM destination_treatments WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'destination_treatment', parseInt(req.params.id), 'Deleted destination treatment');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
@@ -1901,8 +1364,6 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
             testimonial: "You are helping create realistic patient testimonial templates for Ginger Healthcare. Make them sound authentic, emotional, and specific about the medical tourism experience. Include details about savings, hospital quality, and care.",
             hospital: "You are writing hospital descriptions for Ginger Healthcare. Focus on accreditations, specialties, facilities, and what makes each hospital stand out for international patients.",
             doctor: "You are writing doctor profiles for Ginger Healthcare. Highlight qualifications, experience, specialties, and patient care philosophy.",
-            specialty: "You are a medical content writer for Ginger Healthcare, a medical tourism platform. Write comprehensive, educational content about medical specialties. Cover: what the specialty involves, common conditions treated, procedures available, when patients should seek this specialty, and why international patients choose this specialty abroad. Use HTML formatting with h2, h3, p, ul, li tags. Be medically accurate but accessible to patients.",
-            treatment: "You are a medical content writer for Ginger Healthcare, a medical tourism platform. Write comprehensive, educational content about medical treatments and procedures. Cover: what the procedure involves, who needs it, how it's performed, preparation, recovery, success rates, risks, and why international patients choose this treatment abroad. Use HTML formatting with h2, h3, p, ul, li tags. Be medically accurate but accessible to patients.",
             page: "You are a copywriter for Ginger Healthcare's website. Write compelling, conversion-focused copy for medical tourism pages.",
             general: "You are an AI assistant for Ginger Healthcare's admin team. Help with content creation, editing, SEO optimization, and medical tourism industry knowledge."
         };

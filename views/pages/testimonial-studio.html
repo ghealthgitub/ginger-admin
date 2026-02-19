@@ -1,0 +1,692 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Testimonial Studio | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B2545;--navy-light:#13315C;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+a{text-decoration:none;color:inherit}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:var(--white);font-size:.82rem;padding:6px 12px;border:none;border-radius:6px;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal);cursor:pointer;font-family:inherit;transition:background .2s}
+.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+.topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
+.topbar__btn--publish{background:var(--teal);color:#fff}
+.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200)}
+.topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
+.topbar__btn--delete{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}
+.topbar__btn--delete:hover{background:#DC2626;color:#fff}
+
+/* STUDIO LAYOUT */
+.studio{display:flex;height:calc(100vh - 48px)}
+
+/* LEFT: Form */
+.panel-form{flex:1;overflow-y:auto;padding:24px;background:var(--white);border-right:1px solid var(--gray-200)}
+.panel-form::-webkit-scrollbar{width:4px}.panel-form::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px}
+
+/* RIGHT: Preview */
+.panel-preview{width:420px;min-width:340px;overflow-y:auto;padding:24px;background:var(--gray-50)}
+.panel-preview::-webkit-scrollbar{width:4px}.panel-preview::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px}
+
+/* FORM ELEMENTS */
+.form-section{margin-bottom:28px}
+.form-section__title{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--gray-100);display:flex;align-items:center;gap:6px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row--3{grid-template-columns:1fr 1fr 1fr}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px;display:block}
+.form-label small{font-weight:400;color:var(--gray-400)}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:.85rem;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal);outline:none}
+.form-textarea{resize:vertical;min-height:100px;line-height:1.6}
+.form-hint{font-size:.72rem;color:var(--gray-400);margin-top:3px}
+
+/* STAR RATING PICKER */
+.star-picker{display:flex;gap:4px;margin-top:4px}
+.star-picker__star{font-size:1.6rem;cursor:pointer;color:var(--gray-200);transition:color .15s}
+.star-picker__star--active{color:#F59E0B}
+.star-picker__star:hover{color:#F59E0B}
+
+/* IMAGE UPLOAD */
+.img-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.img-thumb{width:80px;height:80px;border-radius:10px;overflow:hidden;position:relative;border:1.5px solid var(--gray-200)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb__del{position:absolute;top:3px;right:3px;width:20px;height:20px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.img-thumb:hover .img-thumb__del{opacity:1}
+.img-add{width:80px;height:80px;border-radius:10px;border:2px dashed var(--gray-300);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-400);font-size:1.4rem;transition:all .2s}
+.img-add:hover{border-color:var(--teal);color:var(--teal);background:rgba(14,165,160,.04)}
+
+/* ENTITY DROPDOWNS */
+.entity-group{position:relative}
+.entity-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:50px;font-size:.72rem;font-weight:600;background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.15);color:var(--teal);margin-top:4px}
+.entity-badge button{background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:.8rem;margin-left:2px}.entity-badge button:hover{color:#DC2626}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.toggle{position:relative;width:40px;height:22px;background:var(--gray-200);border-radius:11px;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--teal)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.toggle.on::after{transform:translateX(18px)}
+.toggle-label{font-size:.85rem;font-weight:600;color:var(--navy)}
+
+/* AVATAR COLOR */
+.color-row{display:flex;gap:6px;margin-top:6px}
+.color-swatch{width:32px;height:32px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-swatch:hover,.color-swatch--active{border-color:var(--navy);transform:scale(1.1)}
+
+/* PREVIEW CARD */
+.prev-card{background:var(--white);border:1.5px solid var(--gray-200);border-radius:16px;padding:24px;transition:all .3s}
+.prev-card--featured{border-color:var(--ginger)}
+.prev-source{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.03em;margin-bottom:10px}
+.prev-source--google{background:#E8F5E9;color:#1B5E20}.prev-source--doctor{background:#E3F2FD;color:#1565C0}
+.prev-source--direct{background:#FFF3E0;color:#E65100}.prev-source--website{background:#F3E5F5;color:#6A1B9A}.prev-source--partner{background:#E0F2F1;color:#00695C}
+.prev-stars{display:flex;gap:2px;margin-bottom:12px}
+.prev-star{color:#F59E0B;font-size:1rem}.prev-star--empty{color:var(--gray-200)}
+.prev-quote{font-size:.92rem;line-height:1.7;color:var(--gray-600);margin-bottom:16px;padding-left:16px;border-left:3px solid var(--ginger);font-style:italic}
+.prev-images{display:flex;gap:6px;margin-bottom:14px}.prev-images img{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--gray-200)}
+.prev-patient{display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--gray-100)}
+.prev-avatar{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0}
+.prev-name{font-weight:700;font-size:.88rem;color:var(--navy)}
+.prev-country{font-size:.78rem;color:var(--gray-400)}
+.prev-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.prev-tag{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:50px;font-size:.68rem;font-weight:600;border:1px solid var(--gray-200);color:var(--gray-500);background:var(--gray-50)}
+.prev-tag--spec{color:var(--teal);border-color:rgba(14,165,160,.2);background:rgba(14,165,160,.04)}
+.prev-tag--dest{color:var(--navy);border-color:rgba(11,37,69,.15)}
+.prev-tag--treat{color:var(--ginger);border-color:rgba(242,101,34,.15)}
+.prev-tag--hosp{color:#6366f1;border-color:rgba(99,102,241,.15)}
+.prev-tag--doc{color:#0d9488;border-color:rgba(13,148,136,.15)}
+.prev-title{font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:6px;font-family:'Playfair Display',serif}
+.prev-section{margin-top:24px}.prev-section h3{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;display:flex;align-items:center;gap:8px}
+.toast--show{opacity:1;transform:translateY(0)}
+.toast--success{background:#059669}.toast--error{background:#DC2626}
+
+/* MEDIA PICKER MODAL */
+.media-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center}
+.media-overlay.open{display:flex}
+.media-modal{background:#fff;border-radius:12px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column}
+.media-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
+.media-header h3{font-family:'Playfair Display',serif;color:var(--navy);font-size:1rem}
+.media-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.media-close:hover{background:var(--gray-100)}
+.media-body{padding:16px 20px;overflow-y:auto;flex:1}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.media-item{aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative}
+.media-item:hover{border-color:var(--teal)}.media-item--selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.3)}
+.media-item img{width:100%;height:100%;object-fit:cover}
+.media-footer{padding:12px 20px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px}
+.media-footer .btn{padding:8px 18px;border-radius:6px;font-weight:600;font-size:.82rem;cursor:pointer;border:none;font-family:inherit}
+.media-footer .btn--primary{background:var(--teal);color:#fff}.media-footer .btn--ghost{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+
+@media(max-width:900px){.studio{flex-direction:column}.panel-preview{width:100%;max-height:40vh}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <a href="/testimonials" class="topbar__back">← Back</a>
+    <div class="topbar__title" id="pageTitle">New Testimonial</div>
+    <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
+    <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
+    <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--preview" onclick="window.open('/testimonials/','_blank')">👁 View Page</button>
+        <button class="topbar__btn topbar__btn--save" onclick="saveTestimonial('draft')">💾 Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" onclick="saveTestimonial('published')">✅ Publish</button>
+        <button class="topbar__btn topbar__btn--delete" id="deleteBtn" style="display:none" onclick="deleteTestimonial()">🗑 Delete</button>
+    </div>
+</div>
+
+<!-- STUDIO -->
+<div class="studio">
+
+<!-- LEFT: FORM -->
+<div class="panel-form">
+
+    <!-- Patient Info -->
+    <div class="form-section">
+        <div class="form-section__title">👤 Patient Information</div>
+        <div class="form-group">
+            <label class="form-label">Patient Name *</label>
+            <input class="form-input" id="patientName" placeholder="e.g. John Peterson" oninput="updatePreview()">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Country *</label>
+                <input class="form-input" id="patientCountry" placeholder="e.g. Australia" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Country Flag</label>
+                <input class="form-input" id="patientFlag" placeholder="e.g. 🇦🇺" maxlength="10" oninput="updatePreview()">
+                <div class="form-hint">Paste an emoji flag</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Avatar Color</label>
+            <div class="color-row" id="colorRow"></div>
+        </div>
+    </div>
+
+    <!-- Review Content -->
+    <div class="form-section">
+        <div class="form-section__title">⭐ Review</div>
+        <div class="form-group">
+            <label class="form-label">Title <small>(optional headline)</small></label>
+            <input class="form-input" id="title" placeholder="e.g. Life-changing experience at Medanta" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Rating *</label>
+            <div class="star-picker" id="starPicker"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Quote / Review *</label>
+            <textarea class="form-textarea" id="quote" rows="5" placeholder="The patient's testimonial text..." oninput="updatePreview()"></textarea>
+        </div>
+    </div>
+
+    <!-- Source -->
+    <div class="form-section">
+        <div class="form-section__title">📋 Source</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                <select class="form-select" id="source" onchange="toggleGoogleFields();updatePreview()">
+                    <option value="patient_direct">💬 Patient Direct</option>
+                    <option value="google_reviews">⭐ Google Review</option>
+                    <option value="doctor_shared">👨‍⚕️ Doctor Shared</option>
+                    <option value="website">🌐 Website Submission</option>
+                    <option value="partner">🏥 Hospital Partner</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Treatment Date <small>(optional)</small></label>
+                <input class="form-input" id="treatmentDate" type="date">
+            </div>
+        </div>
+        <div id="googleFields" style="display:none">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Google Review URL</label>
+                    <input class="form-input" id="googleReviewUrl" placeholder="https://maps.google.com/...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Google Review Date</label>
+                    <input class="form-input" id="googleReviewDate" type="date">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entity Linking -->
+    <div class="form-section">
+        <div class="form-section__title">🔗 Link to Entities</div>
+        <div class="form-row">
+            <div class="form-group entity-group">
+                <label class="form-label">Specialty</label>
+                <select class="form-select" id="specialtyId" onchange="updateTextFromSelect('specialtyId','specialtyText');updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+                <input type="hidden" id="specialtyText">
+            </div>
+            <div class="form-group entity-group">
+                <label class="form-label">Treatment</label>
+                <select class="form-select" id="treatmentId" onchange="updateTextFromSelect('treatmentId','treatmentText');updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+                <input type="hidden" id="treatmentText">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group entity-group">
+                <label class="form-label">Destination</label>
+                <select class="form-select" id="destinationSelect" onchange="updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+            </div>
+            <div class="form-group entity-group">
+                <label class="form-label">Hospital</label>
+                <select class="form-select" id="hospitalId" onchange="updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group entity-group">
+            <label class="form-label">Doctor</label>
+            <select class="form-select" id="doctorId" onchange="updatePreview()">
+                <option value="">— Select —</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Images -->
+    <div class="form-section">
+        <div class="form-section__title">📷 Patient Images</div>
+        <div class="form-hint" style="margin-bottom:8px">Add photos shared by the patient — treatment results, hospital visit, etc.</div>
+        <div class="img-grid" id="imgGrid">
+            <div class="img-add" onclick="openMediaPicker()">+</div>
+        </div>
+    </div>
+
+    <!-- Options -->
+    <div class="form-section">
+        <div class="form-section__title">⚙️ Options</div>
+        <div class="toggle-row">
+            <div class="toggle" id="featuredToggle" onclick="this.classList.toggle('on');updatePreview()"></div>
+            <span class="toggle-label">Featured Testimonial</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- RIGHT: PREVIEW -->
+<div class="panel-preview">
+    <div class="prev-section">
+        <h3>Live Preview</h3>
+    </div>
+    <div class="prev-card" id="prevCard">
+        <div id="prevSource"></div>
+        <div class="prev-stars" id="prevStars"></div>
+        <div id="prevTitle"></div>
+        <div class="prev-quote" id="prevQuote">Patient testimonial will appear here...</div>
+        <div class="prev-images" id="prevImages"></div>
+        <div class="prev-patient">
+            <div class="prev-avatar" id="prevAvatar" style="background:linear-gradient(135deg,#0EA5A0,#0c8f8a)">?</div>
+            <div>
+                <div class="prev-name" id="prevName">Patient Name</div>
+                <div class="prev-country" id="prevCountry">Country</div>
+            </div>
+        </div>
+        <div class="prev-tags" id="prevTags"></div>
+    </div>
+</div>
+
+</div>
+
+<!-- MEDIA PICKER MODAL -->
+<div class="media-overlay" id="mediaOverlay">
+    <div class="media-modal">
+        <div class="media-header">
+            <h3>📷 Select Images</h3>
+            <button class="media-close" onclick="closeMediaPicker()">✕</button>
+        </div>
+        <div class="media-body">
+            <div class="media-grid" id="mediaGrid"></div>
+        </div>
+        <div class="media-footer">
+            <button class="btn btn--ghost" onclick="closeMediaPicker()">Cancel</button>
+            <button class="btn btn--primary" onclick="confirmMediaSelection()">Add Selected</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// State
+let testimonialId = null;
+let currentRating = 5;
+let selectedImages = [];
+let mediaSelections = [];
+let allMedia = [];
+let allSpecialties = [], allTreatments = [], allDestinations = [], allHospitals = [], allDoctors = [];
+
+const COLORS = [
+    'linear-gradient(135deg,#0EA5A0,#0c8f8a)',
+    'linear-gradient(135deg,#2563EB,#1E40AF)',
+    'linear-gradient(135deg,#7C3AED,#5B21B6)',
+    'linear-gradient(135deg,#DC2626,#B91C1C)',
+    'linear-gradient(135deg,#D97706,#B45309)',
+    'linear-gradient(135deg,#059669,#047857)',
+    'linear-gradient(135deg,#EC4899,#BE185D)',
+    'linear-gradient(135deg,#6366F1,#4338CA)'
+];
+let selectedColor = COLORS[0];
+
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    // Parse ID from URL
+    const params = new URLSearchParams(window.location.search);
+    testimonialId = params.get('id');
+
+    buildStarPicker();
+    buildColorPicker();
+    await loadEntities();
+
+    if (testimonialId) {
+        await loadTestimonial(testimonialId);
+        document.getElementById('deleteBtn').style.display = '';
+    }
+    updatePreview();
+});
+
+// Load entity dropdowns
+async function loadEntities() {
+    try {
+        const [specRes, treatRes, destRes, hospRes, docRes, mediaRes] = await Promise.all([
+            fetch('/api/specialties', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/treatments', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/destinations', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/hospitals', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/doctors', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/media', {credentials:'include'}).then(r=>r.json())
+        ]);
+        allSpecialties = specRes || [];
+        allTreatments = treatRes || [];
+        allDestinations = destRes || [];
+        allHospitals = hospRes || [];
+        allDoctors = docRes || [];
+        allMedia = (mediaRes || []).filter(m => m.mimetype && m.mimetype.startsWith('image/'));
+
+        populateSelect('specialtyId', allSpecialties);
+        populateSelect('treatmentId', allTreatments);
+        populateSelect('destinationSelect', allDestinations);
+        populateSelect('hospitalId', allHospitals);
+        populateSelect('doctorId', allDoctors);
+    } catch(e) { console.error('Load entities error:', e); }
+}
+
+function populateSelect(id, items) {
+    const sel = document.getElementById(id);
+    items.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = i.name || i.title || i.patient_name || '';
+        sel.appendChild(opt);
+    });
+}
+
+// Load existing testimonial
+async function loadTestimonial(id) {
+    try {
+        const res = await fetch('/api/testimonials', {credentials:'include'});
+        const all = await res.json();
+        const t = all.find(x => x.id == id);
+        if (!t) return toast('Testimonial not found', 'error');
+
+        document.getElementById('patientName').value = t.patient_name || '';
+        document.getElementById('patientCountry').value = t.patient_country || '';
+        document.getElementById('patientFlag').value = t.patient_flag || '';
+        document.getElementById('title').value = t.title || '';
+        document.getElementById('quote').value = t.quote || '';
+        document.getElementById('source').value = t.source || 'patient_direct';
+        document.getElementById('treatmentDate').value = t.treatment_date ? t.treatment_date.split('T')[0] : '';
+        document.getElementById('googleReviewUrl').value = t.google_review_url || '';
+        document.getElementById('googleReviewDate').value = t.google_review_date ? t.google_review_date.split('T')[0] : '';
+
+        if (t.specialty_id) document.getElementById('specialtyId').value = t.specialty_id;
+        if (t.treatment_id) document.getElementById('treatmentId').value = t.treatment_id;
+        if (t.hospital_id) document.getElementById('hospitalId').value = t.hospital_id;
+        if (t.doctor_id) document.getElementById('doctorId').value = t.doctor_id;
+
+        // Destination — match by name
+        if (t.destination) {
+            const dest = allDestinations.find(d => d.name.toLowerCase() === t.destination.toLowerCase());
+            if (dest) document.getElementById('destinationSelect').value = dest.id;
+        }
+
+        currentRating = t.rating || 5;
+        buildStarPicker();
+
+        if (t.avatar_color) { selectedColor = t.avatar_color; buildColorPicker(); }
+        if (t.is_featured) document.getElementById('featuredToggle').classList.add('on');
+        if (t.images && t.images.length) { selectedImages = [...t.images]; renderImages(); }
+
+        const status = t.status || 'draft';
+        document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
+        document.getElementById('statusBadge').textContent = status;
+        document.getElementById('pageTitle').textContent = t.patient_name || 'Edit Testimonial';
+
+        toggleGoogleFields();
+        updatePreview();
+    } catch(e) { console.error('Load error:', e); toast('Failed to load', 'error'); }
+}
+
+// Star picker
+function buildStarPicker() {
+    const el = document.getElementById('starPicker');
+    el.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('span');
+        star.className = 'star-picker__star' + (i <= currentRating ? ' star-picker__star--active' : '');
+        star.textContent = '★';
+        star.onclick = () => { currentRating = i; buildStarPicker(); updatePreview(); };
+        el.appendChild(star);
+    }
+}
+
+// Color picker
+function buildColorPicker() {
+    const el = document.getElementById('colorRow');
+    el.innerHTML = '';
+    COLORS.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch' + (c === selectedColor ? ' color-swatch--active' : '');
+        sw.style.background = c;
+        sw.onclick = () => { selectedColor = c; buildColorPicker(); updatePreview(); };
+        el.appendChild(sw);
+    });
+}
+
+// Google fields toggle
+function toggleGoogleFields() {
+    document.getElementById('googleFields').style.display = document.getElementById('source').value === 'google_reviews' ? '' : 'none';
+}
+
+// Update text from FK select
+function updateTextFromSelect(selectId, hiddenId) {
+    const sel = document.getElementById(selectId);
+    document.getElementById(hiddenId).value = sel.options[sel.selectedIndex]?.text || '';
+}
+
+// Images
+function renderImages() {
+    const grid = document.getElementById('imgGrid');
+    grid.innerHTML = '';
+    selectedImages.forEach((url, i) => {
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const thumb = document.createElement('div');
+        thumb.className = 'img-thumb';
+        thumb.innerHTML = `<img src="${adminUrl}" alt=""><button class="img-thumb__del" onclick="removeImage(${i})">✕</button>`;
+        grid.appendChild(thumb);
+    });
+    const addBtn = document.createElement('div');
+    addBtn.className = 'img-add';
+    addBtn.textContent = '+';
+    addBtn.onclick = openMediaPicker;
+    grid.appendChild(addBtn);
+    updatePreview();
+}
+
+function removeImage(idx) {
+    selectedImages.splice(idx, 1);
+    renderImages();
+}
+
+// Media picker
+function openMediaPicker() {
+    mediaSelections = [];
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    allMedia.forEach(m => {
+        const url = m.url || ('/uploads/' + m.filename);
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.dataset.url = url;
+        item.innerHTML = `<img src="${adminUrl}" alt="${m.original_name || ''}">`;
+        item.onclick = () => {
+            item.classList.toggle('media-item--selected');
+            if (item.classList.contains('media-item--selected')) {
+                mediaSelections.push(url);
+            } else {
+                mediaSelections = mediaSelections.filter(u => u !== url);
+            }
+        };
+        grid.appendChild(item);
+    });
+    document.getElementById('mediaOverlay').classList.add('open');
+}
+
+function closeMediaPicker() {
+    document.getElementById('mediaOverlay').classList.remove('open');
+}
+
+function confirmMediaSelection() {
+    selectedImages = [...selectedImages, ...mediaSelections];
+    closeMediaPicker();
+    renderImages();
+}
+
+// Live preview
+function updatePreview() {
+    const name = document.getElementById('patientName').value || 'Patient Name';
+    const country = document.getElementById('patientCountry').value;
+    const flag = document.getElementById('patientFlag').value;
+    const quote = document.getElementById('quote').value || 'Patient testimonial will appear here...';
+    const titleVal = document.getElementById('title').value;
+    const source = document.getElementById('source').value;
+    const featured = document.getElementById('featuredToggle').classList.contains('on');
+
+    // Card class
+    const card = document.getElementById('prevCard');
+    card.className = 'prev-card' + (featured ? ' prev-card--featured' : '');
+
+    // Source badge
+    const srcMap = {google_reviews:['Google Review','google','⭐'],doctor_shared:['Doctor Shared','doctor','👨‍⚕️'],patient_direct:['Patient Direct','direct','💬'],website:['Via Website','website','🌐'],partner:['Hospital Partner','partner','🏥']};
+    const [srcLabel, srcClass, srcIcon] = srcMap[source] || srcMap.patient_direct;
+    document.getElementById('prevSource').innerHTML = `<span class="prev-source prev-source--${srcClass}">${srcIcon} ${srcLabel}</span>`;
+
+    // Stars
+    let starsHtml = '';
+    for (let i = 1; i <= 5; i++) starsHtml += `<span class="prev-star${i > currentRating ? ' prev-star--empty' : ''}">★</span>`;
+    document.getElementById('prevStars').innerHTML = starsHtml;
+
+    // Title
+    document.getElementById('prevTitle').innerHTML = titleVal ? `<div class="prev-title">${titleVal}</div>` : '';
+
+    // Quote
+    document.getElementById('prevQuote').textContent = quote;
+
+    // Images
+    let imgHtml = '';
+    selectedImages.forEach(url => {
+        const full = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        imgHtml += `<img src="${full}" alt="">`;
+    });
+    document.getElementById('prevImages').innerHTML = imgHtml;
+
+    // Patient
+    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    document.getElementById('prevAvatar').style.background = selectedColor;
+    document.getElementById('prevAvatar').textContent = initials;
+    document.getElementById('prevName').textContent = name;
+    document.getElementById('prevCountry').textContent = `${flag} ${country}`.trim() || 'Country';
+
+    // Tags
+    let tags = '';
+    const specSel = document.getElementById('specialtyId');
+    const treatSel = document.getElementById('treatmentId');
+    const destSel = document.getElementById('destinationSelect');
+    const hospSel = document.getElementById('hospitalId');
+    const docSel = document.getElementById('doctorId');
+    if (specSel.value) tags += `<span class="prev-tag prev-tag--spec">🏥 ${specSel.options[specSel.selectedIndex].text}</span>`;
+    if (destSel.value) tags += `<span class="prev-tag prev-tag--dest">🌍 ${destSel.options[destSel.selectedIndex].text}</span>`;
+    if (treatSel.value) tags += `<span class="prev-tag prev-tag--treat">💊 ${treatSel.options[treatSel.selectedIndex].text}</span>`;
+    if (hospSel.value) tags += `<span class="prev-tag prev-tag--hosp">🏨 ${hospSel.options[hospSel.selectedIndex].text}</span>`;
+    if (docSel.value) tags += `<span class="prev-tag prev-tag--doc">👨‍⚕️ ${docSel.options[docSel.selectedIndex].text}</span>`;
+    document.getElementById('prevTags').innerHTML = tags;
+}
+
+// Save
+async function saveTestimonial(status) {
+    const data = {
+        patient_name: document.getElementById('patientName').value,
+        patient_country: document.getElementById('patientCountry').value,
+        patient_flag: document.getElementById('patientFlag').value,
+        title: document.getElementById('title').value,
+        quote: document.getElementById('quote').value,
+        rating: currentRating,
+        source: document.getElementById('source').value,
+        avatar_color: selectedColor,
+        is_featured: document.getElementById('featuredToggle').classList.contains('on'),
+        status: status,
+        images: selectedImages,
+        treatment_date: document.getElementById('treatmentDate').value || null,
+        google_review_url: document.getElementById('googleReviewUrl').value || null,
+        google_review_date: document.getElementById('googleReviewDate').value || null,
+        // Entity FKs
+        specialty_id: document.getElementById('specialtyId').value || null,
+        treatment_id: document.getElementById('treatmentId').value || null,
+        hospital_id: document.getElementById('hospitalId').value || null,
+        doctor_id: document.getElementById('doctorId').value || null,
+        // Text fields (auto from FK selection for backward compat)
+        specialty: document.getElementById('specialtyId').options[document.getElementById('specialtyId').selectedIndex]?.text || '',
+        treatment: document.getElementById('treatmentId').options[document.getElementById('treatmentId').selectedIndex]?.text || '',
+        destination: document.getElementById('destinationSelect').options[document.getElementById('destinationSelect').selectedIndex]?.text || ''
+    };
+
+    if (!data.patient_name || !data.quote) return toast('Name and quote are required', 'error');
+
+    try {
+        const url = testimonialId ? `/api/testimonials/${testimonialId}` : '/api/testimonials';
+        const method = testimonialId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method, credentials: 'include',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const saved = await res.json();
+        testimonialId = saved.id;
+
+        document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
+        document.getElementById('statusBadge').textContent = status;
+        document.getElementById('pageTitle').textContent = data.patient_name;
+        document.getElementById('deleteBtn').style.display = '';
+
+        // Update URL without reload
+        if (!window.location.search.includes('id=')) {
+            history.replaceState(null, '', '?id=' + saved.id);
+        }
+
+        const indicator = document.getElementById('savedIndicator');
+        indicator.style.display = 'inline';
+        setTimeout(() => indicator.style.display = 'none', 2000);
+        toast(status === 'published' ? 'Published!' : 'Saved as draft', 'success');
+    } catch(e) {
+        console.error('Save error:', e);
+        toast('Save failed: ' + e.message, 'error');
+    }
+}
+
+// Delete
+async function deleteTestimonial() {
+    if (!testimonialId || !confirm('Delete this testimonial?')) return;
+    try {
+        await fetch(`/api/testimonials/${testimonialId}`, {method:'DELETE', credentials:'include'});
+        toast('Deleted', 'success');
+        setTimeout(() => window.location.href = '/testimonials', 500);
+    } catch(e) { toast('Delete failed', 'error'); }
+}
+
+// Toast
+function toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = 'toast toast--show toast--' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+</script>
+</body></html>
