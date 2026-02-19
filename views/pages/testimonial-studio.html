@@ -318,7 +318,13 @@ a{text-decoration:none;color:inherit}
     <div class="media-modal">
         <div class="media-header">
             <h3>📷 Select Images</h3>
-            <button class="media-close" onclick="closeMediaPicker()">✕</button>
+            <div style="display:flex;gap:8px;align-items:center">
+                <label class="btn btn--primary" style="cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:4px">
+                    📤 Upload New
+                    <input type="file" accept="image/*" multiple style="display:none" onchange="uploadMediaFiles(this.files)">
+                </label>
+                <button class="media-close" onclick="closeMediaPicker()">✕</button>
+            </div>
         </div>
         <div class="media-body">
             <div class="media-grid" id="mediaGrid"></div>
@@ -387,7 +393,7 @@ async function loadEntities() {
         allDestinations = destRes || [];
         allHospitals = hospRes || [];
         allDoctors = docRes || [];
-        allMedia = (mediaRes || []).filter(m => m.mimetype && m.mimetype.startsWith('image/'));
+        allMedia = (mediaRes || []).filter(m => m.mime_type && m.mime_type.startsWith('image/'));
 
         populateSelect('specialtyId', allSpecialties);
         populateSelect('treatmentId', allTreatments);
@@ -519,13 +525,19 @@ function openMediaPicker() {
     mediaSelections = [];
     const grid = document.getElementById('mediaGrid');
     grid.innerHTML = '';
+    
+    if (!allMedia.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:40px">No images in media library. Upload images first via <a href="/media" style="color:var(--teal);font-weight:600">Media Library</a>.</p>';
+    }
+    
     allMedia.forEach(m => {
-        const url = m.url || ('/uploads/' + m.filename);
+        const url = m.url || '';
+        if (!url) return;
         const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
         const item = document.createElement('div');
         item.className = 'media-item';
         item.dataset.url = url;
-        item.innerHTML = `<img src="${adminUrl}" alt="${m.original_name || ''}">`;
+        item.innerHTML = `<img src="${adminUrl}" alt="${m.alt_text || m.original_name || ''}">`;
         item.onclick = () => {
             item.classList.toggle('media-item--selected');
             if (item.classList.contains('media-item--selected')) {
@@ -541,6 +553,22 @@ function openMediaPicker() {
 
 function closeMediaPicker() {
     document.getElementById('mediaOverlay').classList.remove('open');
+}
+
+async function uploadMediaFiles(files) {
+    for (const file of files) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch('/api/media/upload', {method:'POST', credentials:'include', body: formData});
+            if (!res.ok) throw new Error('Upload failed');
+            const saved = await res.json();
+            allMedia.unshift(saved);
+            toast('Uploaded: ' + file.name, 'success');
+        } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
+    }
+    // Refresh picker
+    openMediaPicker();
 }
 
 function confirmMediaSelection() {
