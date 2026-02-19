@@ -366,15 +366,21 @@ app.get('/api/testimonials', apiAuth, async (req, res) => {
 
 app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
-        // Auto-generate slug from patient name + treatment/specialty
-        const slugBase = (patient_name || 'testimonial').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const slugSuffix = Date.now().toString(36).slice(-4);
-        const slug = slugBase + '-' + slugSuffix;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id, patient_image } = req.body;
+        // Generate clean slug: "john-peterson-hair-transplant-turkey"
+        let slug = req.body.slug;
+        if (!slug) {
+            const parts = [patient_name, treatment || specialty || '', destination || ''].filter(Boolean);
+            slug = parts.join(' ').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+        // Ensure unique
+        const exists = await pool.query('SELECT id FROM testimonials WHERE slug = $1', [slug]);
+        if (exists.rows.length) slug = slug + '-' + Date.now().toString(36).slice(-4);
+
         const result = await pool.query(
-            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id, slug)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating || 5, quote, avatar_color, is_featured || false, status || 'draft', title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, slug]
+            `INSERT INTO testimonials (patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id, slug, patient_image)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24) RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating || 5, quote, avatar_color, is_featured || false, status || 'draft', title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, slug, patient_image||null]
         );
         await logActivity(req.user.id, 'create', 'testimonial', result.rows[0].id, `Created testimonial: ${patient_name}`);
         res.json(result.rows[0]);
@@ -383,18 +389,23 @@ app.post('/api/testimonials', apiAuth, roleRequired('super_admin', 'editor'), as
 
 app.put('/api/testimonials/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id } = req.body;
-        // Check if slug exists, generate if not
-        const existing = await pool.query('SELECT slug FROM testimonials WHERE id = $1', [req.params.id]);
-        let slug = existing.rows[0]?.slug;
+        const { patient_name, patient_country, patient_flag, treatment, specialty, destination, rating, quote, avatar_color, is_featured, status, title, source, images, treatment_date, google_review_id, google_review_date, google_review_url, doctor_id, hospital_id, specialty_id, treatment_id, patient_image } = req.body;
+        // Use provided slug or generate clean one
+        let slug = req.body.slug;
         if (!slug) {
-            const slugBase = (patient_name || 'testimonial').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-            slug = slugBase + '-' + Date.now().toString(36).slice(-4);
+            const existing = await pool.query('SELECT slug FROM testimonials WHERE id = $1', [req.params.id]);
+            slug = existing.rows[0]?.slug;
+        }
+        if (!slug) {
+            const parts = [patient_name, treatment || specialty || '', destination || ''].filter(Boolean);
+            slug = parts.join(' ').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const exists = await pool.query('SELECT id FROM testimonials WHERE slug = $1 AND id != $2', [slug, req.params.id]);
+            if (exists.rows.length) slug = slug + '-' + Date.now().toString(36).slice(-4);
         }
         const result = await pool.query(
-            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, title=$12, source=$13, images=$14, treatment_date=$15, google_review_id=$16, google_review_date=$17, google_review_url=$18, doctor_id=$19, hospital_id=$20, specialty_id=$21, treatment_id=$22, slug=$23, updated_at=NOW()
-             WHERE id=$24 RETURNING *`,
-            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating, quote, avatar_color, is_featured, status, title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, slug, req.params.id]
+            `UPDATE testimonials SET patient_name=$1, patient_country=$2, patient_flag=$3, treatment=$4, specialty=$5, destination=$6, rating=$7, quote=$8, avatar_color=$9, is_featured=$10, status=$11, title=$12, source=$13, images=$14, treatment_date=$15, google_review_id=$16, google_review_date=$17, google_review_url=$18, doctor_id=$19, hospital_id=$20, specialty_id=$21, treatment_id=$22, slug=$23, patient_image=$24, updated_at=NOW()
+             WHERE id=$25 RETURNING *`,
+            [patient_name, patient_country, patient_flag, treatment||'', specialty||'', destination||'', rating, quote, avatar_color, is_featured, status, title||null, source||'patient_direct', images||null, treatment_date||null, google_review_id||null, google_review_date||null, google_review_url||null, doctor_id||null, hospital_id||null, specialty_id||null, treatment_id||null, slug, patient_image||null, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'testimonial', req.params.id, `Updated: ${patient_name}`);
         res.json(result.rows[0]);

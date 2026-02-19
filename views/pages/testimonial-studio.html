@@ -159,7 +159,15 @@ a{text-decoration:none;color:inherit}
         <div class="form-section__title">👤 Patient Information</div>
         <div class="form-group">
             <label class="form-label">Patient Name *</label>
-            <input class="form-input" id="patientName" placeholder="e.g. John Peterson" oninput="updatePreview()">
+            <input class="form-input" id="patientName" placeholder="e.g. John Peterson" oninput="updatePreview();autoSlug()">
+        </div>
+        <div class="form-group" id="slugGroup" style="display:none">
+            <label class="form-label">URL Slug <small>(auto-generated, editable)</small></label>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-size:.78rem;color:var(--gray-400);white-space:nowrap">ginger.healthcare/testimonials/</span>
+                <input class="form-input" id="slugInput" style="flex:1" placeholder="john-peterson-hair-transplant-turkey" oninput="slugEdited=true">
+                <button type="button" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;background:var(--gray-50);cursor:pointer;font-size:.72rem;font-weight:600;color:var(--gray-500);white-space:nowrap" onclick="slugEdited=false;autoSlug()">↻ Reset</button>
+            </div>
         </div>
         <div class="form-row">
             <div class="form-group">
@@ -172,9 +180,26 @@ a{text-decoration:none;color:inherit}
                 <div class="form-hint">Paste an emoji flag</div>
             </div>
         </div>
-        <div class="form-group">
-            <label class="form-label">Avatar Color</label>
-            <div class="color-row" id="colorRow"></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Patient Photo <small>(round avatar)</small></label>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div id="patientPhotoPreview" style="width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid var(--gray-200);display:flex;align-items:center;justify-content:center;background:var(--gray-50);flex-shrink:0">
+                        <span style="color:var(--gray-300);font-size:1.2rem">👤</span>
+                    </div>
+                    <div style="flex:1">
+                        <button type="button" class="form-input" style="cursor:pointer;text-align:left;color:var(--teal);font-weight:600" onclick="openPatientPhotoPicker()">📷 Choose from Media</button>
+                        <div class="form-hint">Optional — shows round photo instead of initials</div>
+                    </div>
+                    <button type="button" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:4px;background:none;cursor:pointer;font-size:.7rem;color:var(--gray-400)" onclick="clearPatientPhoto()">✕</button>
+                </div>
+                <input type="hidden" id="patientImage">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Avatar Color</label>
+                <div class="color-row" id="colorRow"></div>
+                <div class="form-hint">Used when no photo is set</div>
+            </div>
         </div>
     </div>
 
@@ -454,6 +479,12 @@ async function loadTestimonial(id) {
         document.getElementById('statusBadge').textContent = status;
         document.getElementById('pageTitle').textContent = t.patient_name || 'Edit Testimonial';
         currentSlug = t.slug || null;
+        if (t.slug) {
+            document.getElementById('slugInput').value = t.slug;
+            document.getElementById('slugGroup').style.display = '';
+            slugEdited = true; // Don't auto-overwrite existing slug
+        }
+        if (t.patient_image) setPatientPhoto(t.patient_image);
 
         toggleGoogleFields();
         updatePreview();
@@ -573,9 +604,15 @@ async function uploadMediaFiles(files) {
 }
 
 function confirmMediaSelection() {
-    selectedImages = [...selectedImages, ...mediaSelections];
+    const mode = document.getElementById('mediaOverlay').dataset.mode;
+    if (mode === 'patient_photo') {
+        if (mediaSelections.length) setPatientPhoto(mediaSelections[0]);
+        document.getElementById('mediaOverlay').dataset.mode = '';
+    } else {
+        selectedImages = [...selectedImages, ...mediaSelections];
+        renderImages();
+    }
     closeMediaPicker();
-    renderImages();
 }
 
 // Live preview
@@ -618,8 +655,15 @@ function updatePreview() {
 
     // Patient
     const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    document.getElementById('prevAvatar').style.background = selectedColor;
-    document.getElementById('prevAvatar').textContent = initials;
+    const piUrl = document.getElementById('patientImage').value;
+    if (piUrl) {
+        const adminPi = piUrl.startsWith('http') ? piUrl : 'https://enter.ginger.healthcare' + piUrl;
+        document.getElementById('prevAvatar').style.background = 'none';
+        document.getElementById('prevAvatar').innerHTML = `<img src="${adminPi}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`;
+    } else {
+        document.getElementById('prevAvatar').style.background = selectedColor;
+        document.getElementById('prevAvatar').textContent = initials;
+    }
     document.getElementById('prevName').textContent = name;
     document.getElementById('prevCountry').textContent = `${flag} ${country}`.trim() || 'Country';
 
@@ -655,6 +699,8 @@ async function saveTestimonial(status) {
         treatment_date: document.getElementById('treatmentDate').value || null,
         google_review_url: document.getElementById('googleReviewUrl').value || null,
         google_review_date: document.getElementById('googleReviewDate').value || null,
+        slug: document.getElementById('slugInput').value || null,
+        patient_image: document.getElementById('patientImage').value || null,
         // Entity FKs
         specialty_id: document.getElementById('specialtyId').value || null,
         treatment_id: document.getElementById('treatmentId').value || null,
@@ -680,6 +726,11 @@ async function saveTestimonial(status) {
         const saved = await res.json();
         testimonialId = saved.id;
         currentSlug = saved.slug || null;
+        if (saved.slug) {
+            document.getElementById('slugInput').value = saved.slug;
+            document.getElementById('slugGroup').style.display = '';
+            slugEdited = true;
+        }
 
         document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
         document.getElementById('statusBadge').textContent = status;
@@ -709,6 +760,67 @@ async function deleteTestimonial() {
         toast('Deleted', 'success');
         setTimeout(() => window.location.href = '/testimonials', 500);
     } catch(e) { toast('Delete failed', 'error'); }
+}
+
+// Slug management
+let slugEdited = false;
+
+function autoSlug() {
+    if (slugEdited) return;
+    const name = document.getElementById('patientName').value;
+    const treat = document.getElementById('treatmentId');
+    const treatText = treat.value ? treat.options[treat.selectedIndex]?.text : '';
+    const dest = document.getElementById('destinationSelect');
+    const destText = dest.value ? dest.options[dest.selectedIndex]?.text : '';
+    const parts = [name, treatText, destText].filter(Boolean);
+    const slug = parts.join(' ').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    document.getElementById('slugInput').value = slug;
+}
+
+// Patient photo
+let patientImageUrl = '';
+
+function openPatientPhotoPicker() {
+    // Reuse media picker but for single selection
+    mediaSelections = [];
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    if (!allMedia.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:40px">No images. Upload via <a href="/media" style="color:var(--teal)">Media Library</a>.</p>';
+    }
+    allMedia.forEach(m => {
+        const url = m.url || '';
+        if (!url) return;
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.dataset.url = url;
+        item.innerHTML = `<img src="${adminUrl}" alt="">`;
+        item.onclick = () => {
+            grid.querySelectorAll('.media-item--selected').forEach(i => i.classList.remove('media-item--selected'));
+            item.classList.add('media-item--selected');
+            mediaSelections = [url];
+        };
+        grid.appendChild(item);
+    });
+    // Override confirm to set patient photo
+    document.getElementById('mediaOverlay').classList.add('open');
+    document.getElementById('mediaOverlay').dataset.mode = 'patient_photo';
+}
+
+function clearPatientPhoto() {
+    patientImageUrl = '';
+    document.getElementById('patientImage').value = '';
+    document.getElementById('patientPhotoPreview').innerHTML = '<span style="color:var(--gray-300);font-size:1.2rem">👤</span>';
+    updatePreview();
+}
+
+function setPatientPhoto(url) {
+    patientImageUrl = url;
+    document.getElementById('patientImage').value = url;
+    const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+    document.getElementById('patientPhotoPreview').innerHTML = `<img src="${adminUrl}" style="width:100%;height:100%;object-fit:cover">`;
+    updatePreview();
 }
 
 // View on site

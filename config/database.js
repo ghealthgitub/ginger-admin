@@ -441,6 +441,7 @@ async function initDB() {
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS treatment_date DATE`);
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS title VARCHAR(300)`);
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS slug VARCHAR(300)`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS patient_image VARCHAR(500)`);
         await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS testimonials_slug_unique ON testimonials(slug) WHERE slug IS NOT NULL`);
 
         console.log('✅ Database tables initialized (22 tables)');
