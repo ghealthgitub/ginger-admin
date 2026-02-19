@@ -141,7 +141,7 @@ a{text-decoration:none;color:inherit}
     <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
     <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
     <div class="topbar__actions">
-        <button class="topbar__btn topbar__btn--preview" onclick="window.open('/testimonials/','_blank')">👁 View Page</button>
+        <button class="topbar__btn topbar__btn--preview" id="viewPageBtn" onclick="viewOnSite()">👁 View Page</button>
         <button class="topbar__btn topbar__btn--save" onclick="saveTestimonial('draft')">💾 Save Draft</button>
         <button class="topbar__btn topbar__btn--publish" onclick="saveTestimonial('published')">✅ Publish</button>
         <button class="topbar__btn topbar__btn--delete" id="deleteBtn" style="display:none" onclick="deleteTestimonial()">🗑 Delete</button>
@@ -453,6 +453,7 @@ async function loadTestimonial(id) {
         document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
         document.getElementById('statusBadge').textContent = status;
         document.getElementById('pageTitle').textContent = t.patient_name || 'Edit Testimonial';
+        currentSlug = t.slug || null;
 
         toggleGoogleFields();
         updatePreview();
@@ -678,6 +679,7 @@ async function saveTestimonial(status) {
         if (!res.ok) throw new Error(await res.text());
         const saved = await res.json();
         testimonialId = saved.id;
+        currentSlug = saved.slug || null;
 
         document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
         document.getElementById('statusBadge').textContent = status;
@@ -708,6 +710,15 @@ async function deleteTestimonial() {
         setTimeout(() => window.location.href = '/testimonials', 500);
     } catch(e) { toast('Delete failed', 'error'); }
 }
+
+// View on site
+function viewOnSite() {
+    // Try to get slug from loaded data
+    const slug = currentSlug || testimonialId;
+    if (slug) window.open('https://ginger.healthcare/testimonials/' + slug + '/', '_blank');
+    else window.open('https://ginger.healthcare/testimonials/', '_blank');
+}
+let currentSlug = null;
 
 // Toast
 function toast(msg, type='success') {
