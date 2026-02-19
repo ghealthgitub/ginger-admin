@@ -107,10 +107,9 @@ tr:hover .row-actions{opacity:1}
             <th onclick="sortBy('destination')">Destination <span class="sort-icon">↕</span></th>
             <th onclick="sortBy('specialty')">Specialty <span class="sort-icon">↕</span></th>
             <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
-            <th>View</th>
             <th onclick="sortBy('date')">Date <span class="sort-icon">↕</span></th>
         </tr></thead>
-        <tbody id="list"><tr><td colspan="7" class="empty-state">Loading...</td></tr></tbody>
+        <tbody id="list"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
         </table>
     </div></div>
 </div>
@@ -212,7 +211,7 @@ function esc(s){const d=document.createElement('div');d.textContent=s||'';return
 
 function renderTable(f){
     const tb=document.getElementById('list');
-    if(!f.length){tb.innerHTML='<tr><td colspan="7" class="empty-state">No items found</td></tr>';return}
+    if(!f.length){tb.innerHTML='<tr><td colspan="6" class="empty-state">No items found</td></tr>';return}
     tb.innerHTML=f.map(i=>{
         const chk=selectedIds.has(i.id)?'checked':'',sel=selectedIds.has(i.id)?' selected':'';
         const dt=new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -220,23 +219,22 @@ function renderTable(f){
         return`<tr id="row-${i.id}" class="${sel}">
             <td class="cb-cell"><input type="checkbox" ${chk} onchange="toggleSel(${i.id},this.checked)"></td>
             <td class="post-title-cell">
-                <strong><a href="#" onclick="openEditModal(${i.id});return false">${esc(i.name)}</a></strong>
+                <strong><a href="/d-specialty-studio/edit/${i.id}">${esc(i.name)}</a></strong>
                 <span class="post-slug">/destinations/${esc(i.destination_slug||'')}/${esc(i.specialty_slug||i.slug)}/</span>
                 <div class="row-actions">
-                    <a href="/d-specialty-studio/edit/${i.id}" style="color:var(--teal);font-weight:700">Studio</a><span class="sep">|</span>
+                    <a href="/d-specialty-studio/edit/${i.id}" style="color:var(--teal);font-weight:700">Edit</a><span class="sep">|</span>
                     <a href="#" onclick="openEditModal(${i.id});return false">Quick Edit</a><span class="sep">|</span>
                     <button onclick="toggleQE(${i.id})">Inline Edit</button><span class="sep">|</span>
-                    ${i.status==='published'?'<a href="'+viewUrl+'" target="_blank">View</a><span class="sep">|</span>':''}
                     <button class="act-del" onclick="deleteItem(${i.id})">Trash</button>
+                    ${i.status==='published'?'<span class="sep">|</span><a href="'+viewUrl+'" target="_blank">View</a>':''}
                 </div>
             </td>
             <td><span class="dest-flag">${esc(i.destination_flag||'')}</span>${esc(i.destination_name||'—')}</td>
             <td><span class="spec-icon">${esc(i.specialty_icon||'')}</span>${esc(i.specialty_name||'—')}</td>
             <td><span class="badge badge--${i.status}">${i.status}</span></td>
-            <td>${i.status==='published'?'<a href="'+viewUrl+'" target="_blank" style="font-size:.75rem;color:var(--teal)">👁</a>':''}</td>
             <td class="date-cell">${dt}</td>
         </tr>
-        <tr class="quick-edit-row" id="qe-${i.id}" style="display:none"><td colspan="7" style="padding:0;border:none"><div class="quick-edit"><div class="quick-edit__title">QUICK EDIT — ${esc(i.name)}</div>
+        <tr class="quick-edit-row" id="qe-${i.id}" style="display:none"><td colspan="6" style="padding:0;border:none"><div class="quick-edit"><div class="quick-edit__title">QUICK EDIT — ${esc(i.name)}</div>
             <div class="quick-edit__grid">
                 <div><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="qn-${i.id}" value="${esc(i.name)}"></div><div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qs-${i.id}" value="${esc(i.slug)}"></div></div>
                 <div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="qt-${i.id}"><option value="draft" ${i.status==='draft'?'selected':''}>Draft</option><option value="published" ${i.status==='published'?'selected':''}>Published</option></select></div><div class="form-group" style="margin-top:10px"><label class="form-label">Order</label><input class="form-input" type="number" id="qo-${i.id}" value="${i.display_order||0}"></div></div>
