@@ -131,8 +131,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <span class="topbar__status topbar__status--draft" id="topStatus">DRAFT</span>
     <span class="topbar__saved" id="topSaved">✓ Saved</span>
     <div class="topbar__actions">
-        <button class="topbar__btn topbar__btn--save" onclick="saveSpec('draft')">Save Draft</button>
-        <button class="topbar__btn topbar__btn--publish" onclick="saveSpec('published')">🚀 Publish</button>
+        <button class="topbar__btn topbar__btn--save" onclick="saveItem('draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" onclick="saveItem('published')">🚀 Publish</button>
     </div>
 </div>
 <div class="studio">
@@ -214,7 +214,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="publish-row"><span>📊</span><strong>SEO:</strong><span class="seo-badge seo-badge--gray" id="seoBadge">0 / 100</span></div>
             <select class="sb-select" id="status" onchange="updatePublishUI()"><option value="draft">📝 Draft</option><option value="published">✅ Published</option></select>
             <div style="display:flex;gap:10px;margin-bottom:6px"><div style="flex:1"><div class="sb-label">Featured</div><select class="sb-select" id="is_featured" style="margin-bottom:0"><option value="false">No</option><option value="true">Yes ⭐</option></select></div><div style="flex:1"><div class="sb-label">Order</div><input class="sb-input" type="number" id="display_order" value="0" style="margin-bottom:0"></div></div>
-            <div class="publish-btns"><button class="btn-save" onclick="saveSpec('draft')">Save Draft</button><button class="btn-publish" onclick="saveSpec('published')">🚀 Publish</button></div>
+            <div class="publish-btns"><button class="btn-save" onclick="saveItem('draft')">Save Draft</button><button class="btn-publish" onclick="saveItem('published')">🚀 Publish</button></div>
         </div>
     </div>
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🖼 Featured Image</div><span class="sb-box__toggle">▾</span></div>
@@ -395,10 +395,14 @@ async function uploadImageToServer(file){const fd=new FormData();fd.append('file
 // === IMAGE ===
 function setFeatImage(url){const src=url.startsWith('http')?url:'https://enter.ginger.healthcare'+url;const img=document.getElementById('featImgPreview');img.src=src;img.style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block'}
 function removeImage(){document.getElementById('image').value='';document.getElementById('featImgPreview').style.display='none';document.getElementById('featImgEmpty').style.display='block';document.getElementById('featImgActions').style.display='none'}
-async function openMP(){mpSelectedUrl=null;document.getElementById('mpSetBtn').disabled=true;document.getElementById('mediaPicker').classList.add('active');
-    try{const r=await fetch('/api/media');const m=await r.json();document.getElementById('mpGrid').innerHTML=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/')).map(x=>'<div class="mp-item" onclick="mpPick(this,\''+x.url+'\')"><img src="'+x.url+'" loading="lazy"></div>').join('')||'<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No images yet.</div>'}catch(e){console.error(e)}}
+async function openMP(){mpSelectedUrl=null;document.getElementById('mpSetBtn').disabled=true;
+    document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div>';
+    document.getElementById('mediaPicker').classList.add('active');
+    try{const r=await fetch('/api/media');const m=await r.json();const imgs=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/'));
+    if(!imgs.length){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No images yet. Upload one below.</div>';return}
+    document.getElementById('mpGrid').innerHTML=imgs.map((x,i)=>'<div class="mp-item" onclick="mpPick(this,'+i+')" data-url="'+encodeURIComponent(x.url)+'"><img src="'+x.url+'" loading="lazy"></div>').join('')}catch(e){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load media</div>'}}
 function closeMP(){document.getElementById('mediaPicker').classList.remove('active')}
-function mpPick(el,url){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=url;document.getElementById('mpSetBtn').disabled=false}
+function mpPick(el,idx){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=decodeURIComponent(el.dataset.url);document.getElementById('mpSetBtn').disabled=false}
 function mpConfirm(){if(!mpSelectedUrl)return;document.getElementById('image').value=mpSelectedUrl;setFeatImage(mpSelectedUrl);closeMP()}
 async function mpUpload(input){const file=input.files[0];if(!file)return;const s=document.getElementById('mpStatus');s.textContent='⏳ Uploading...';
     try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.textContent='';openMP()},500)}else s.textContent='❌ Failed'}catch(e){s.textContent='❌ '+e.message}}
