@@ -1366,6 +1366,14 @@ app.get('/treatments', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'treatments.html'));
 });
 
+app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
+});
+
+app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
+});
+
 app.get('/api/treatments', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
@@ -1374,6 +1382,18 @@ app.get('/api/treatments', apiAuth, async (req, res) => {
              ORDER BY s.name ASC, t.name ASC`
         );
         res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/treatments/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT t.*, s.name as specialty_name FROM treatments t
+             LEFT JOIN specialties s ON t.specialty_id = s.id
+             WHERE t.id = $1`, [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -1882,6 +1902,7 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
             hospital: "You are writing hospital descriptions for Ginger Healthcare. Focus on accreditations, specialties, facilities, and what makes each hospital stand out for international patients.",
             doctor: "You are writing doctor profiles for Ginger Healthcare. Highlight qualifications, experience, specialties, and patient care philosophy.",
             specialty: "You are a medical content writer for Ginger Healthcare, a medical tourism platform. Write comprehensive, educational content about medical specialties. Cover: what the specialty involves, common conditions treated, procedures available, when patients should seek this specialty, and why international patients choose this specialty abroad. Use HTML formatting with h2, h3, p, ul, li tags. Be medically accurate but accessible to patients.",
+            treatment: "You are a medical content writer for Ginger Healthcare, a medical tourism platform. Write comprehensive, educational content about medical treatments and procedures. Cover: what the procedure involves, who needs it, how it's performed, preparation, recovery, success rates, risks, and why international patients choose this treatment abroad. Use HTML formatting with h2, h3, p, ul, li tags. Be medically accurate but accessible to patients.",
             page: "You are a copywriter for Ginger Healthcare's website. Write compelling, conversion-focused copy for medical tourism pages.",
             general: "You are an AI assistant for Ginger Healthcare's admin team. Help with content creation, editing, SEO optimization, and medical tourism industry knowledge."
         };
