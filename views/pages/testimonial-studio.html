@@ -659,10 +659,10 @@ async function saveTestimonial(status) {
         treatment_id: document.getElementById('treatmentId').value || null,
         hospital_id: document.getElementById('hospitalId').value || null,
         doctor_id: document.getElementById('doctorId').value || null,
-        // Text fields (auto from FK selection for backward compat)
-        specialty: document.getElementById('specialtyId').options[document.getElementById('specialtyId').selectedIndex]?.text || '',
-        treatment: document.getElementById('treatmentId').options[document.getElementById('treatmentId').selectedIndex]?.text || '',
-        destination: document.getElementById('destinationSelect').options[document.getElementById('destinationSelect').selectedIndex]?.text || ''
+        // Text fields (auto from FK selection for backward compat — only if actually selected)
+        specialty: document.getElementById('specialtyId').value ? document.getElementById('specialtyId').options[document.getElementById('specialtyId').selectedIndex]?.text : '',
+        treatment: document.getElementById('treatmentId').value ? document.getElementById('treatmentId').options[document.getElementById('treatmentId').selectedIndex]?.text : '',
+        destination: document.getElementById('destinationSelect').value ? document.getElementById('destinationSelect').options[document.getElementById('destinationSelect').selectedIndex]?.text : ''
     };
 
     if (!data.patient_name || !data.quote) return toast('Name and quote are required', 'error');
