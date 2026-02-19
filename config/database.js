@@ -432,6 +432,15 @@ async function initDB() {
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS specialty_id INTEGER REFERENCES specialties(id)`);
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS treatment_id INTEGER REFERENCES treatments(id)`);
 
+        // Testimonials — Enhancement columns (Session 27)
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS source VARCHAR(50) DEFAULT 'patient_direct'`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS images TEXT[]`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS google_review_id VARCHAR(200)`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS google_review_date TIMESTAMP`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS google_review_url VARCHAR(500)`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS treatment_date DATE`);
+        await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS title VARCHAR(300)`);
+
         console.log('✅ Database tables initialized (22 tables)');
     } catch (err) {
         console.error('❌ Database init error:', err.message);
