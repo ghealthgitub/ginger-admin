@@ -314,8 +314,8 @@ async function saveItem(status) {
         const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
         if(r.ok){const result=await r.json();
             if(isAuto){showToast('✓ Auto-saved');const sv=document.getElementById('topSaved');sv.style.display='inline';setTimeout(()=>sv.style.display='none',2000)}
-            else if(!editId&&result.id){window.location.href='/treatments/edit/'+result.id}
-            else{window.location.href='/treatments'}
+            else if(!editId&&result.id){saving=true;window.location.href='/treatments/edit/'+result.id}
+            else{saving=true;window.location.href='/treatments'}
         }else{const e=await r.json();if(!isAuto)alert(e.error||'Save failed')}
     }catch(e){if(!isAuto)alert('Save failed')}
 }
@@ -415,7 +415,8 @@ function initDrag(hid,pid,isL){const h=document.getElementById(hid),p=document.g
     document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)})}
 initDrag('dragLeft','panelLeft',true);initDrag('dragRight','panelRight',false);
 
-window.addEventListener('beforeunload',e=>{if(document.getElementById('name').value){e.preventDefault();e.returnValue=''}});
+let saving=false;
+window.addEventListener('beforeunload',e=>{if(!saving&&document.getElementById('name').value){e.preventDefault();e.returnValue=''}});
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveItem(editId?'auto':null)}});
 
 // === INIT ===
