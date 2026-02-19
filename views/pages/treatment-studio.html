@@ -185,10 +185,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="panel-middle" id="panelMiddle">
     <div class="title-area">
         <input type="text" class="title-input" id="name" placeholder="Treatment name..." oninput="autoSlug();updateTopTitle()">
-        <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)">ginger.healthcare/treatments/</span><input type="text" id="slug" placeholder="treatment-slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
+        <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)" id="permalinkBase">ginger.healthcare/specialties/.../</span><input type="text" id="slug" placeholder="treatment-slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
     </div>
     <div class="spec-fields">
-        <div class="spec-field" style="flex:1"><label>Specialty</label><select id="specialty_id" style="width:100%"><option value="">Select specialty...</option></select></div>
+        <div class="spec-field" style="flex:1"><label>Specialty</label><select id="specialty_id" style="width:100%" onchange="updatePermalink()"><option value="">Select specialty...</option></select></div>
         <div class="spec-field"><label>Duration</label><input type="text" id="duration" placeholder="e.g. 2-4 hours" style="width:120px"></div>
         <div class="spec-field"><label>Recovery</label><input type="text" id="recovery_time" placeholder="e.g. 2-3 weeks" style="width:120px"></div>
     </div>
@@ -241,7 +241,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="mp-overlay" id="mediaPicker" onclick="if(event.target===this)closeMP()">
 <div class="mp-modal"><div class="mp-head"><h3>Select Image</h3><button class="mp-close" onclick="closeMP()">×</button></div>
 <div class="mp-body"><div class="mp-grid" id="mpGrid"></div></div>
-<div class="mp-foot"><label style="padding:6px 14px;border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--gray-600)">📤 Upload<input type="file" accept="image/*" onchange="mpUpload(this)" style="display:none"></label><div id="mpStatus" style="flex:1;font-size:.78rem;color:var(--gray-400)"></div><button class="set-btn" id="mpSetBtn" disabled onclick="mpConfirm()">Set Image</button></div>
+<div class="mp-foot"><label style="padding:6px 14px;border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--gray-600)">📤 Upload<input type="file" accept="image/*" onchange="mpUpload(this)" style="display:none"></label><button class="set-btn" id="mpDelBtn" disabled onclick="mpDelete()" style="background:#EF4444;margin-left:8px">🗑 Delete</button><div id="mpStatus" style="flex:1;font-size:.78rem;color:var(--gray-400)"></div><button class="set-btn" id="mpSetBtn" disabled onclick="mpConfirm()">Set Image</button></div>
 </div></div>
 <div class="autosave-toast" id="autoToast"></div>
 
@@ -249,7 +249,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 const pathParts = window.location.pathname.split('/');
 const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
-let currentTone = 'professional', autoSaveTimer = null, slugEdited = false, aiGenerating = false, mpSelectedUrl = null;
+let currentTone = 'professional', autoSaveTimer = null, slugEdited = false, aiGenerating = false, mpSelectedUrl = null, mpSelectedId = null;
 
 const quill = new Quill('#editor', {
     theme: 'snow', placeholder: 'Write detailed content about this treatment...',
@@ -297,10 +297,13 @@ function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classL
 function showToast(msg){const t=document.getElementById('autoToast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2000)}
 
 // === LOAD SPECIALTIES DROPDOWN ===
+let specData=[];
 async function loadSpecialties() {
-    try { const r=await fetch('/api/specialties');const specs=await r.json();const sel=document.getElementById('specialty_id');
-    specs.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=(s.icon||'')+' '+s.name;sel.appendChild(o)})} catch(e){console.error(e)}
+    try { const r=await fetch('/api/specialties');specData=await r.json();const sel=document.getElementById('specialty_id');
+    specData.forEach(s=>{const o=document.createElement('option');o.value=s.id;o.textContent=(s.icon||'')+' '+s.name;o.dataset.slug=s.slug;sel.appendChild(o)})} catch(e){console.error(e)}
 }
+function getSpecSlug(){const sel=document.getElementById('specialty_id');const opt=sel.options[sel.selectedIndex];return opt&&opt.dataset.slug?opt.dataset.slug:''}
+function updatePermalink(){const ss=getSpecSlug();document.getElementById('permalinkBase').textContent=ss?'ginger.healthcare/specialties/'+ss+'/':'ginger.healthcare/specialties/.../'}
 
 // === SAVE ===
 async function saveItem(status) {
@@ -322,7 +325,7 @@ async function saveItem(status) {
             updatePublishUI();
             if(isAuto){showToast('✓ Auto-saved')}
             else{const sv=document.getElementById('topSaved');sv.style.display='inline';
-                if(result.status==='published'&&result.slug){sv.innerHTML='✅ Published! <a href="https://ginger.healthcare/treatments/'+result.slug+'/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';setTimeout(()=>sv.style.display='none',8000)}
+                if(result.status==='published'&&result.slug){const ss=getSpecSlug();const viewUrl=ss?'https://ginger.healthcare/specialties/'+ss+'/'+result.slug+'/':'https://ginger.healthcare/treatments/'+result.slug+'/';sv.innerHTML='✅ Published! <a href="'+viewUrl+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';setTimeout(()=>sv.style.display='none',8000)}
                 else{sv.innerHTML='✅ Saved!';setTimeout(()=>sv.style.display='none',3000)}}
         }else{const e=await r.json();if(!isAuto)alert(e.error||'Save failed')}
     }catch(e){if(!isAuto)alert('Save failed')}
@@ -334,6 +337,7 @@ async function loadItem() {
     try{const r=await fetch('/api/treatments/'+editId);if(!r.ok)return;const t=await r.json();
         document.getElementById('name').value=t.name||'';document.getElementById('slug').value=t.slug||'';slugEdited=true;
         document.getElementById('specialty_id').value=t.specialty_id||'';
+        updatePermalink();
         document.getElementById('description').value=t.description||'';quill.root.innerHTML=t.long_description||'';
         document.getElementById('duration').value=t.duration||'';document.getElementById('recovery_time').value=t.recovery_time||'';
         document.getElementById('success_rate').value=t.success_rate||'';document.getElementById('cost_range_usd').value=t.cost_range_usd||'';
@@ -403,15 +407,17 @@ async function uploadImageToServer(file){const fd=new FormData();fd.append('file
 // === IMAGE ===
 function setFeatImage(url){const src=url.startsWith('http')?url:'https://enter.ginger.healthcare'+url;const img=document.getElementById('featImgPreview');img.src=src;img.style.display='block';document.getElementById('featImgEmpty').style.display='none';document.getElementById('featImgActions').style.display='block'}
 function removeImage(){document.getElementById('image').value='';document.getElementById('featImgPreview').style.display='none';document.getElementById('featImgEmpty').style.display='block';document.getElementById('featImgActions').style.display='none'}
-async function openMP(){mpSelectedUrl=null;document.getElementById('mpSetBtn').disabled=true;
+async function openMP(){mpSelectedUrl=null;mpSelectedId=null;document.getElementById('mpSetBtn').disabled=true;document.getElementById('mpDelBtn').disabled=true;
     document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div>';
     document.getElementById('mediaPicker').classList.add('active');
     try{const r=await fetch('/api/media');const m=await r.json();const imgs=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/'));
     if(!imgs.length){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No images yet. Upload one below.</div>';return}
-    document.getElementById('mpGrid').innerHTML=imgs.map((x,i)=>'<div class="mp-item" onclick="mpPick(this,'+i+')" data-url="'+encodeURIComponent(x.url)+'"><img src="'+x.url+'" loading="lazy"></div>').join('')}catch(e){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load media</div>'}}
+    document.getElementById('mpGrid').innerHTML=imgs.map((x,i)=>'<div class="mp-item" onclick="mpPick(this,'+i+')" data-url="'+encodeURIComponent(x.url)+'" data-id="'+x.id+'"><img src="'+x.url+'" loading="lazy"></div>').join('')}catch(e){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load media</div>'}}
 function closeMP(){document.getElementById('mediaPicker').classList.remove('active')}
-function mpPick(el,idx){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=decodeURIComponent(el.dataset.url);document.getElementById('mpSetBtn').disabled=false}
+function mpPick(el,idx){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=decodeURIComponent(el.dataset.url);mpSelectedId=el.dataset.id;document.getElementById('mpSetBtn').disabled=false;document.getElementById('mpDelBtn').disabled=false}
 function mpConfirm(){if(!mpSelectedUrl)return;document.getElementById('image').value=mpSelectedUrl;setFeatImage(mpSelectedUrl);closeMP()}
+async function mpDelete(){if(!mpSelectedId)return;if(!confirm('Delete this image permanently? This cannot be undone.'))return;
+    try{const r=await fetch('/api/media/'+mpSelectedId,{method:'DELETE'});if(r.ok){mpSelectedUrl=null;mpSelectedId=null;document.getElementById('mpSetBtn').disabled=true;document.getElementById('mpDelBtn').disabled=true;openMP()}else{const e=await r.json();alert(e.error||'Delete failed')}}catch(e){alert('Delete failed')}}
 async function mpUpload(input){const file=input.files[0];if(!file)return;const s=document.getElementById('mpStatus');s.textContent='⏳ Uploading...';
     try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.textContent='';openMP()},500)}else s.textContent='❌ Failed'}catch(e){s.textContent='❌ '+e.message}}
 

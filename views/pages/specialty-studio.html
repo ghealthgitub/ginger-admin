@@ -237,7 +237,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="mp-overlay" id="mediaPicker" onclick="if(event.target===this)closeMP()">
 <div class="mp-modal"><div class="mp-head"><h3>Select Image</h3><button class="mp-close" onclick="closeMP()">×</button></div>
 <div class="mp-body"><div class="mp-grid" id="mpGrid"></div></div>
-<div class="mp-foot"><label style="padding:6px 14px;border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--gray-600)">📤 Upload<input type="file" accept="image/*" onchange="mpUpload(this)" style="display:none"></label><div id="mpStatus" style="flex:1;font-size:.78rem;color:var(--gray-400)"></div><button class="set-btn" id="mpSetBtn" disabled onclick="mpConfirm()">Set Image</button></div>
+<div class="mp-foot"><label style="padding:6px 14px;border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--gray-600)">📤 Upload<input type="file" accept="image/*" onchange="mpUpload(this)" style="display:none"></label><button class="set-btn" id="mpDelBtn" disabled onclick="mpDelete()" style="background:#EF4444;margin-left:8px">🗑 Delete</button><div id="mpStatus" style="flex:1;font-size:.78rem;color:var(--gray-400)"></div><button class="set-btn" id="mpSetBtn" disabled onclick="mpConfirm()">Set Image</button></div>
 </div></div>
 <div class="autosave-toast" id="autoToast"></div>
 
@@ -245,7 +245,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <script>
 const pathParts = window.location.pathname.split('/');
 const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
-let currentTone = 'professional', autoSaveTimer = null, slugEdited = false, aiGenerating = false, mpSelectedUrl = null;
+let currentTone = 'professional', autoSaveTimer = null, slugEdited = false, aiGenerating = false, mpSelectedUrl = null, mpSelectedId = null;
 
 const quill = new Quill('#editor', {
     theme: 'snow', placeholder: 'Write detailed content about this specialty...',
@@ -408,16 +408,18 @@ function setFeatImage(url){
 }
 function removeImage(){document.getElementById('image').value='';document.getElementById('featImgPreview').style.display='none';document.getElementById('featImgEmpty').style.display='block';document.getElementById('featImgActions').style.display='none'}
 async function openMP(){
-    mpSelectedUrl=null;document.getElementById('mpSetBtn').disabled=true;
+    mpSelectedUrl=null;mpSelectedId=null;document.getElementById('mpSetBtn').disabled=true;document.getElementById('mpDelBtn').disabled=true;
     document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div>';
     document.getElementById('mediaPicker').classList.add('active');
     try{const r=await fetch('/api/media');const m=await r.json();const imgs=m.filter(x=>x.mime_type&&x.mime_type.startsWith('image/'));
     if(!imgs.length){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No images yet. Upload one below.</div>';return}
-    document.getElementById('mpGrid').innerHTML=imgs.map((x,i)=>'<div class="mp-item" onclick="mpPick(this,'+i+')" data-url="'+encodeURIComponent(x.url)+'"><img src="'+x.url+'" loading="lazy"></div>').join('')}catch(e){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load media</div>'}
+    document.getElementById('mpGrid').innerHTML=imgs.map((x,i)=>'<div class="mp-item" onclick="mpPick(this,'+i+')" data-url="'+encodeURIComponent(x.url)+'" data-id="'+x.id+'"><img src="'+x.url+'" loading="lazy"></div>').join('')}catch(e){document.getElementById('mpGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load media</div>'}
 }
 function closeMP(){document.getElementById('mediaPicker').classList.remove('active')}
-function mpPick(el,idx){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=decodeURIComponent(el.dataset.url);document.getElementById('mpSetBtn').disabled=false}
+function mpPick(el,idx){document.querySelectorAll('.mp-item').forEach(i=>i.classList.remove('selected'));el.classList.add('selected');mpSelectedUrl=decodeURIComponent(el.dataset.url);mpSelectedId=el.dataset.id;document.getElementById('mpSetBtn').disabled=false;document.getElementById('mpDelBtn').disabled=false}
 function mpConfirm(){if(!mpSelectedUrl)return;document.getElementById('image').value=mpSelectedUrl;setFeatImage(mpSelectedUrl);closeMP()}
+async function mpDelete(){if(!mpSelectedId)return;if(!confirm('Delete this image permanently? This cannot be undone.'))return;
+    try{const r=await fetch('/api/media/'+mpSelectedId,{method:'DELETE'});if(r.ok){mpSelectedUrl=null;mpSelectedId=null;document.getElementById('mpSetBtn').disabled=true;document.getElementById('mpDelBtn').disabled=true;openMP()}else{const e=await r.json();alert(e.error||'Delete failed')}}catch(e){alert('Delete failed')}}
 async function mpUpload(input){const file=input.files[0];if(!file)return;const s=document.getElementById('mpStatus');s.textContent='⏳ Uploading...';
     try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/media/upload',{method:'POST',body:fd});if(r.ok){s.textContent='✅ Done!';input.value='';setTimeout(()=>{s.textContent='';openMP()},500)}else{s.textContent='❌ Failed'}}catch(e){s.textContent='❌ '+e.message}}
 
