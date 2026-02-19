@@ -285,7 +285,11 @@ function analyzeSEO() {
     b.className='seo-badge '+(s>=70?'seo-badge--green':s>=40?'seo-badge--yellow':s>0?'seo-badge--red':'seo-badge--gray');
 }
 function updateCharCount(id,cid,max){const l=document.getElementById(id).value.length,e=document.getElementById(cid);e.textContent=l+'/'+max;e.style.color=l>max?'#EF4444':l>max*.8?'#F59E0B':''}
-function updatePublishUI(){const s=document.getElementById('status').value;document.getElementById('pubStatus').textContent=s==='published'?'Published':'Draft';document.getElementById('topStatus').className='topbar__status topbar__status--'+s;document.getElementById('topStatus').textContent=s.toUpperCase()}
+function updatePublishUI(){const s=document.getElementById('status').value;const pub=s==='published';
+    document.getElementById('pubStatus').textContent=pub?'Published':'Draft';
+    document.getElementById('topStatus').className='topbar__status topbar__status--'+s;document.getElementById('topStatus').textContent=s.toUpperCase();
+    document.querySelectorAll('.btn-publish').forEach(b=>b.textContent=pub?'✅ Update':'🚀 Publish');
+    document.querySelectorAll('.topbar__btn--publish').forEach(b=>b.textContent=pub?'✅ Update':'🚀 Publish')}
 function setTone(btn){document.querySelectorAll('.tone-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');currentTone=btn.dataset.tone}
 function showToast(msg){const t=document.getElementById('autoToast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2000)}
 
