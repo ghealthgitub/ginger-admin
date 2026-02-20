@@ -495,6 +495,28 @@ async function saveItem(status) {
         meta_title: document.getElementById('meta_title').value, meta_description: document.getElementById('meta_description').value,
         status: status || document.getElementById('status').value };
     if(!data.name) { if(!isAuto) alert('Name is required'); return; }
+    // Specialty required for publishing (treatments must be under a specialty)
+    if (status === 'published' && !data.specialty_id) {
+        if (!isAuto) {
+            const specField = document.getElementById('specialty_id');
+            specField.focus();
+            specField.style.border = '2px solid #EF4444';
+            setTimeout(() => specField.style.border = '', 3000);
+            alert('⚠️ Specialty is required to publish.\n\nTreatments must be linked to a specialty so they appear at /specialties/{specialty}/{treatment}/');
+        }
+        return;
+    }
+    // Featured image required for publishing
+    if (status === 'published' && !data.image) {
+        if (!isAuto) {
+            const imgBox = document.getElementById('featImgBox');
+            imgBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.querySelector('.sb-box:nth-child(2)').style.border = '2px solid #EF4444';
+            setTimeout(() => document.querySelector('.sb-box:nth-child(2)').style.border = '', 3000);
+            alert('⚠️ Featured image is required to publish.\n\nPlease add a featured image in the right panel before publishing.');
+        }
+        return;
+    }
     if(!data.slug) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try { const url = editId ? '/api/treatments/' + editId : '/api/treatments';
         const r = await fetch(url, { method: editId ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
