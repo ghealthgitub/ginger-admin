@@ -268,12 +268,16 @@ const quill = new Quill('#editor', {
 });
 quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
 
-// === WORD PASTE: Upload pasted images automatically ===
+// === WORD PASTE: Handle images from clipboard ===
 quill.root.addEventListener('paste', async (e) => {
     const items = e.clipboardData?.items;
     if (!items) return;
+
+    // Case 1: Direct image paste (screenshot, single image copy)
+    let hasImageItem = false;
     for (const item of items) {
         if (item.type.startsWith('image/')) {
+            hasImageItem = true;
             e.preventDefault();
             const file = item.getAsFile();
             if (!file) return;
@@ -284,13 +288,51 @@ quill.root.addEventListener('paste', async (e) => {
                 quill.insertEmbed(range?.index || quill.getLength(), 'image', url);
                 quill.insertText((range?.index || quill.getLength()) + 1, '\n');
                 showToast('✅ Image uploaded');
-            } else {
-                showToast('❌ Upload failed');
-            }
+            } else { showToast('❌ Upload failed'); }
             return;
         }
     }
+
+    // Case 2: Word paste — let Quill handle HTML paste, then fix broken images after
+    if (!hasImageItem) {
+        setTimeout(() => fixWordImages(), 500);
+    }
 });
+
+// After Word paste: find file:/// and data:image src, upload them
+async function fixWordImages() {
+    const imgs = quill.root.querySelectorAll('img');
+    let fixCount = 0;
+    for (const img of imgs) {
+        const src = img.getAttribute('src') || '';
+        // Skip already-uploaded images
+        if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('/uploads/')) continue;
+
+        if (src.startsWith('data:image')) {
+            // Base64 embedded image — convert to file and upload
+            fixCount++;
+            showToast('📤 Uploading embedded image ' + fixCount + '...');
+            try {
+                const res = await fetch(src);
+                const blob = await res.blob();
+                const file = new File([blob], 'pasted-image-' + fixCount + '.png', { type: blob.type });
+                const url = await uploadImageToServer(file);
+                if (url) { img.setAttribute('src', url); }
+                else { img.remove(); }
+            } catch(err) { img.remove(); }
+        } else if (src.startsWith('file:///') || src.includes('msohtmlclip') || src.includes('clip_image')) {
+            // Word local file reference — cannot access, remove with placeholder
+            fixCount++;
+            const placeholder = document.createElement('span');
+            placeholder.style.cssText = 'display:inline-block;padding:12px 20px;background:#FEF3C7;border:2px dashed #F59E0B;border-radius:8px;color:#92400E;font-size:13px;margin:8px 0;';
+            placeholder.textContent = '⚠️ Image could not be pasted from Word. Use "Insert Images" button above to add it.';
+            img.replaceWith(placeholder);
+        }
+    }
+    if (fixCount > 0) {
+        showToast(fixCount === 1 ? '📷 1 image processed' : '📷 ' + fixCount + ' images processed');
+    }
+}
 
 // === CLICK IMAGE IN EDITOR → Open Image Editor ===
 quill.root.addEventListener('click', (e) => {
