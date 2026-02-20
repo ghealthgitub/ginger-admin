@@ -438,16 +438,19 @@ quill.root.addEventListener('drop', function(e) {
     }
 });
 
-// Click image in editor → select it (single click), edit details (double click)
-// First click selects. Mousedown on already-selected image starts drag (handled in drag IIFE below).
+// Click image in editor → select it with NATIVE browser selection (like WordPress/TinyMCE)
+// This makes Ctrl+C, Ctrl+X, Delete work automatically via the browser — no custom handlers needed.
 quill.root.addEventListener('mousedown', function(e) {
     if (e.target.tagName === 'IMG') {
         if (!e.target.classList.contains('ql-img-selected')) {
-            // First click — just select it
             e.preventDefault();
+            e.stopPropagation();
             clearImageSelection();
             e.target.classList.add('ql-img-selected');
             currentEditImg = e.target;
+            // WordPress approach: use native browser Selection to wrap the image
+            // This makes Ctrl+C/X work automatically
+            nativeSelectNode(e.target);
         }
         // If already selected, let the drag handler (below) take over
     } else {
@@ -1105,91 +1108,35 @@ async function aiAction(type) {
     btns.forEach(b => b.disabled = false);
 }
 
-// === KEYBOARD SHORTCUTS ===
-let clipboardImg = null; // stores copied/cut image data
+// === NATIVE IMAGE SELECTION (WordPress/TinyMCE approach) ===
+// Wraps the image in a native browser Selection/Range so Ctrl+C, Ctrl+X, Ctrl+V
+// work automatically through the browser — no custom clipboard code needed.
+function nativeSelectNode(node) {
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.selectNode(node);
+    sel.removeAllRanges();
+    sel.addRange(range);
+}
 
+// === KEYBOARD SHORTCUTS ===
 window.addEventListener('beforeunload', e => { if (document.getElementById('name').value) { e.preventDefault(); e.returnValue = ''; }});
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(editId ? 'auto' : null); }
     if (e.key === 'Escape') { clearImageSelection(); closeImgEdit(); closeMediaPicker(); }
 });
 
-// Image copy/cut/paste/delete — must be on the editor root to fire before browser clipboard
+// Delete/Backspace on selected image
 quill.root.addEventListener('keydown', function(e) {
     if (!currentEditImg) return;
-    const ctrl = e.ctrlKey || e.metaKey;
-
-    // Copy
-    if (ctrl && e.key === 'c') {
-        e.preventDefault(); e.stopPropagation();
-        clipboardImg = captureImgData(currentEditImg);
-        showToast('📋 Image copied');
-    }
-    // Cut
-    if (ctrl && e.key === 'x') {
-        e.preventDefault(); e.stopPropagation();
-        clipboardImg = captureImgData(currentEditImg);
-        currentEditImg.remove();
-        clearImageSelection();
-        showToast('✂️ Image cut');
-    }
-    // Paste
-    if (ctrl && e.key === 'v' && clipboardImg) {
-        e.preventDefault(); e.stopPropagation();
-        pasteClipboardImg();
-    }
-    // Delete / Backspace
     if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault(); e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
         currentEditImg.remove();
         clearImageSelection();
         showToast('🗑 Image removed');
     }
 });
-
-// Also handle paste when editor is not focused but we have a clipboard image
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardImg && !currentEditImg) {
-        const inInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
-        const inModal = document.querySelector('.img-edit-overlay.active') || document.querySelector('.mp-overlay.active');
-        if (!inInput && !inModal) {
-            e.preventDefault();
-            pasteClipboardImg();
-        }
-    }
-});
-
-function captureImgData(img) {
-    return {
-        src: img.src,
-        alt: img.alt || '',
-        width: img.getAttribute('width') || '',
-        height: img.getAttribute('height') || '',
-        classes: img.className.replace('ql-img-selected', '').trim(),
-        styleW: img.style.width,
-        styleH: img.style.height
-    };
-}
-
-function pasteClipboardImg() {
-    if (!clipboardImg) return;
-    const range = quill.getSelection(true);
-    const idx = range ? range.index : quill.getLength();
-    quill.insertEmbed(idx, 'image', clipboardImg.src);
-    quill.setSelection(idx + 1);
-    // Apply saved attributes
-    setTimeout(() => {
-        const imgs = quill.root.querySelectorAll('img[src="' + CSS.escape(clipboardImg.src) + '"]');
-        const inserted = imgs[imgs.length - 1];
-        if (inserted) {
-            if (clipboardImg.alt) inserted.alt = clipboardImg.alt;
-            if (clipboardImg.width) { inserted.setAttribute('width', clipboardImg.width); inserted.style.width = clipboardImg.styleW || clipboardImg.width + 'px'; }
-            if (clipboardImg.height) { inserted.setAttribute('height', clipboardImg.height); inserted.style.height = clipboardImg.styleH || clipboardImg.height + 'px'; }
-            if (clipboardImg.classes) inserted.className = clipboardImg.classes;
-        }
-    }, 50);
-    showToast('📋 Image pasted');
-}
 
 // === INIT ===
 loadSpecialties().then(() => { if (editId) loadItem(); });
