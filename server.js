@@ -1303,6 +1303,12 @@ app.put('/api/users/:id', apiAuth, roleRequired('super_admin'), async (req, res)
 app.get('/specialties-mgmt', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'specialties.html'));
 });
+app.get('/specialties/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
+});
+app.get('/specialties/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'specialty-studio.html'));
+});
 
 app.get('/api/specialties', apiAuth, async (req, res) => {
     try {
@@ -1381,6 +1387,12 @@ app.delete('/api/specialties/:id', apiAuth, roleRequired('super_admin'), async (
 app.get('/treatments', authRequired, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'pages', 'treatments.html'));
 });
+app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
+});
+app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'pages', 'treatment-studio.html'));
+});
 
 app.get('/api/treatments', apiAuth, async (req, res) => {
     try {
@@ -1391,6 +1403,17 @@ app.get('/api/treatments', apiAuth, async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/treatments/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT t.*, s.name as specialty_name FROM treatments t
+             LEFT JOIN specialties s ON t.specialty_id = s.id
+             WHERE t.id = $1`, [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/treatments', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
