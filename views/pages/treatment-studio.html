@@ -442,18 +442,14 @@ quill.root.addEventListener('drop', function(e) {
 });
 
 // Click image in editor → show resize handles + open edit on double-click
-quill.root.addEventListener('click', function(e) {
+quill.root.addEventListener('mousedown', function(e) {
     if (e.target.tagName === 'IMG') {
-        // Remove previous selection
         quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
         e.target.classList.add('ql-img-selected');
         currentEditImg = e.target;
         showResizeHandles(e.target);
     } else {
-        // Clicked elsewhere — deselect
-        quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
-        removeResizeHandles();
-        currentEditImg = null;
+        clearImageSelection();
     }
 });
 // Double-click image → open full Image Details modal
@@ -463,6 +459,25 @@ quill.root.addEventListener('dblclick', function(e) {
         openImgEdit(e.target);
     }
 });
+// Also clear when clicking toolbar, sidebar, or anywhere outside editor
+document.addEventListener('mousedown', function(e) {
+    if (!e.target.closest('.ql-editor') && !e.target.closest('.img-resize-handle') && !e.target.closest('.img-edit-overlay')) {
+        clearImageSelection();
+    }
+});
+// Clear on any text change (typing, delete, cut, etc.)
+quill.on('text-change', function(delta) {
+    // If the selected image was removed from DOM, clean up
+    if (currentEditImg && !currentEditImg.parentNode) {
+        removeResizeHandles();
+        currentEditImg = null;
+    }
+});
+function clearImageSelection() {
+    quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
+    removeResizeHandles();
+    currentEditImg = null;
+}
 
 // === CORE IMAGE UPLOAD FUNCTION ===
 async function uploadImageToServer(file) {
@@ -793,8 +808,11 @@ function showResizeHandles(img) {
 }
 
 function removeResizeHandles() {
+    // Remove tracked wrapper
     if (resizeWrap && resizeWrap.parentNode) resizeWrap.parentNode.removeChild(resizeWrap);
     resizeWrap = null;
+    // Also find and remove any orphaned wrappers (safety net)
+    document.querySelectorAll('.img-resize-wrap').forEach(el => el.remove());
 }
 
 function startResize(e, img, corner, infoEl) {
