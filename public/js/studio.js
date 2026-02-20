@@ -274,6 +274,7 @@ const Studio = {
                     <button class="ai-btn" onclick="Studio.aiAction('optimize')">🎯 Optimize</button>
                     <button class="ai-btn" onclick="Studio.aiAction('grammar')">✏ Grammar</button>
                     <button class="ai-btn" onclick="Studio.aiAction('headings')">📑 Headings</button>
+                    <button class="ai-btn" onclick="Studio.cleanSpacing()">🧹 Clean Spacing</button>
                 </div>
             </div>
         </div>`;
@@ -1219,6 +1220,71 @@ const Studio = {
                 b.style.borderColor = '';
             });
             if (clickedBtn) clickedBtn.innerHTML = labels[type] || type;
+        }
+    },
+
+    // ── CLEAN SPACING ────────────────────────────────────────
+    cleanSpacing() {
+        const editor = this.quill.root;
+        let changed = 0;
+
+        // 1. Remove <br> tags that are the sole child of a <p> (empty paragraphs)
+        editor.querySelectorAll('p').forEach(p => {
+            const kids = Array.from(p.childNodes).filter(n => !(n.nodeType === 3 && n.textContent.trim() === ''));
+            if (kids.length === 1 && kids[0].nodeName === 'BR') {
+                p.remove(); changed++;
+            }
+        });
+
+        // 2. Remove completely empty <p> tags (no text, no meaningful children)
+        editor.querySelectorAll('p').forEach(p => {
+            if (p.textContent.trim() === '' && !p.querySelector('img, iframe, video')) {
+                p.remove(); changed++;
+            }
+        });
+
+        // 3. Collapse runs of 3+ consecutive <br> tags anywhere in the editor
+        editor.querySelectorAll('br').forEach(br => {
+            let next = br.nextSibling;
+            let count = 0;
+            while (next && next.nodeName === 'BR') {
+                const toRemove = next;
+                next = next.nextSibling;
+                toRemove.remove();
+                count++; changed++;
+            }
+        });
+
+        // 4. Remove blank paragraphs that appear between headings and their content
+        //    i.e. h2/h3 immediately followed by an empty <p> before the real content
+        editor.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+            let next = h.nextElementSibling;
+            while (next && next.tagName === 'P' && next.textContent.trim() === '' && !next.querySelector('img')) {
+                const toRemove = next;
+                next = next.nextElementSibling;
+                toRemove.remove(); changed++;
+            }
+        });
+
+        // 5. Trim leading/trailing whitespace-only text nodes inside paragraphs
+        editor.querySelectorAll('p, li, h1, h2, h3, h4').forEach(el => {
+            // Trim leading whitespace text nodes
+            while (el.firstChild && el.firstChild.nodeType === 3 && el.firstChild.textContent.trim() === '') {
+                el.removeChild(el.firstChild);
+            }
+            // Trim trailing whitespace text nodes
+            while (el.lastChild && el.lastChild.nodeType === 3 && el.lastChild.textContent.trim() === '') {
+                el.removeChild(el.lastChild);
+            }
+        });
+
+        this.updateStats();
+        this.analyzeSEO();
+
+        if (changed > 0) {
+            this.showToast('🧹 Cleaned ' + changed + ' spacing issue(s)');
+        } else {
+            this.showToast('✅ Spacing already clean');
         }
     },
 
