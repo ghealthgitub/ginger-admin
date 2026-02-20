@@ -1106,60 +1106,56 @@ async function aiAction(type) {
 }
 
 // === KEYBOARD SHORTCUTS ===
-let clipboardImg = null; // stores copied/cut image data {src, alt, width, height, classes, styleW, styleH}
+let clipboardImg = null; // stores copied/cut image data
 
 window.addEventListener('beforeunload', e => { if (document.getElementById('name').value) { e.preventDefault(); e.returnValue = ''; }});
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(editId ? 'auto' : null); }
     if (e.key === 'Escape') { clearImageSelection(); closeImgEdit(); closeMediaPicker(); }
+});
 
-    // Only handle image shortcuts when an image is selected and we're not in an input field
-    const inInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
-    const inModal = document.querySelector('.img-edit-overlay.active') || document.querySelector('.mp-overlay.active');
+// Image copy/cut/paste/delete — must be on the editor root to fire before browser clipboard
+quill.root.addEventListener('keydown', function(e) {
+    if (!currentEditImg) return;
+    const ctrl = e.ctrlKey || e.metaKey;
 
-    if (currentEditImg && !inInput && !inModal) {
-        // Delete / Backspace — remove image
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-            e.preventDefault();
-            currentEditImg.remove();
-            clearImageSelection();
-            showToast('🗑 Image removed');
-        }
-        // Ctrl+C — copy image
-        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-            e.preventDefault();
-            clipboardImg = captureImgData(currentEditImg);
-            showToast('📋 Image copied');
-        }
-        // Ctrl+X — cut image
-        if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
-            e.preventDefault();
-            clipboardImg = captureImgData(currentEditImg);
-            currentEditImg.remove();
-            clearImageSelection();
-            showToast('✂️ Image cut');
-        }
+    // Copy
+    if (ctrl && e.key === 'c') {
+        e.preventDefault(); e.stopPropagation();
+        clipboardImg = captureImgData(currentEditImg);
+        showToast('📋 Image copied');
     }
+    // Cut
+    if (ctrl && e.key === 'x') {
+        e.preventDefault(); e.stopPropagation();
+        clipboardImg = captureImgData(currentEditImg);
+        currentEditImg.remove();
+        clearImageSelection();
+        showToast('✂️ Image cut');
+    }
+    // Paste
+    if (ctrl && e.key === 'v' && clipboardImg) {
+        e.preventDefault(); e.stopPropagation();
+        pasteClipboardImg();
+    }
+    // Delete / Backspace
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault(); e.stopPropagation();
+        currentEditImg.remove();
+        clearImageSelection();
+        showToast('🗑 Image removed');
+    }
+});
 
-    // Ctrl+V — paste image (if we have one in our clipboard)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardImg && !inInput && !inModal) {
-        // Only intercept if we have a copied image — otherwise let Quill handle normal paste
-        e.preventDefault();
-        const range = quill.getSelection(true);
-        const idx = range ? range.index : quill.getLength();
-        quill.insertEmbed(idx, 'image', clipboardImg.src);
-        quill.setSelection(idx + 1);
-        // Apply saved attributes after insertion
-        setTimeout(() => {
-            const inserted = quill.root.querySelector('img[src="' + clipboardImg.src + '"]:last-of-type');
-            if (inserted) {
-                if (clipboardImg.alt) inserted.alt = clipboardImg.alt;
-                if (clipboardImg.width) { inserted.setAttribute('width', clipboardImg.width); inserted.style.width = clipboardImg.styleW || clipboardImg.width + 'px'; }
-                if (clipboardImg.height) { inserted.setAttribute('height', clipboardImg.height); inserted.style.height = clipboardImg.styleH || clipboardImg.height + 'px'; }
-                if (clipboardImg.classes) inserted.className = clipboardImg.classes;
-            }
-        }, 50);
-        showToast('📋 Image pasted');
+// Also handle paste when editor is not focused but we have a clipboard image
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboardImg && !currentEditImg) {
+        const inInput = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
+        const inModal = document.querySelector('.img-edit-overlay.active') || document.querySelector('.mp-overlay.active');
+        if (!inInput && !inModal) {
+            e.preventDefault();
+            pasteClipboardImg();
+        }
     }
 });
 
@@ -1173,6 +1169,26 @@ function captureImgData(img) {
         styleW: img.style.width,
         styleH: img.style.height
     };
+}
+
+function pasteClipboardImg() {
+    if (!clipboardImg) return;
+    const range = quill.getSelection(true);
+    const idx = range ? range.index : quill.getLength();
+    quill.insertEmbed(idx, 'image', clipboardImg.src);
+    quill.setSelection(idx + 1);
+    // Apply saved attributes
+    setTimeout(() => {
+        const imgs = quill.root.querySelectorAll('img[src="' + CSS.escape(clipboardImg.src) + '"]');
+        const inserted = imgs[imgs.length - 1];
+        if (inserted) {
+            if (clipboardImg.alt) inserted.alt = clipboardImg.alt;
+            if (clipboardImg.width) { inserted.setAttribute('width', clipboardImg.width); inserted.style.width = clipboardImg.styleW || clipboardImg.width + 'px'; }
+            if (clipboardImg.height) { inserted.setAttribute('height', clipboardImg.height); inserted.style.height = clipboardImg.styleH || clipboardImg.height + 'px'; }
+            if (clipboardImg.classes) inserted.className = clipboardImg.classes;
+        }
+    }, 50);
+    showToast('📋 Image pasted');
 }
 
 // === INIT ===
