@@ -60,19 +60,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-editor h1,.editor-wrap .ql-editor h2,.editor-wrap .ql-editor h3{font-family:'Playfair Display',serif;color:var(--navy);margin:14px 0 8px}
 .editor-wrap .ql-editor p{margin-bottom:12px}
 .editor-wrap .ql-editor img{max-width:100%;height:auto;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border .15s}
-.editor-wrap .ql-editor img:hover{border-color:var(--teal)}
-.editor-wrap .ql-editor img.ql-img-selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2)}
+.editor-wrap .ql-editor img:hover{border-color:rgba(14,165,160,.4)}
+.editor-wrap .ql-editor img.ql-img-selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2);resize:both;overflow:hidden;cursor:grab}
+.editor-wrap .ql-editor img.ql-img-selected:active{cursor:grabbing}
 /* Image alignment classes */
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
 .editor-wrap .ql-editor img.img-align-right{float:right;margin:0 0 12px 16px}
 .editor-wrap .ql-editor img.img-align-center{display:block;margin:12px auto;float:none}
 .editor-wrap .ql-editor img.img-align-none{float:none;display:inline;margin:0}
-/* Resize wrapper shown when image is selected */
-.img-resize-wrap{position:absolute;border:2px solid var(--teal);pointer-events:none;z-index:5}
-.img-resize-handle{position:absolute;width:12px;height:12px;background:var(--teal);border:2px solid #fff;border-radius:2px;pointer-events:all;cursor:nwse-resize;z-index:6;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.img-resize-handle.tl{top:-6px;left:-6px;cursor:nwse-resize}.img-resize-handle.tr{top:-6px;right:-6px;cursor:nesw-resize}
-.img-resize-handle.bl{bottom:-6px;left:-6px;cursor:nesw-resize}.img-resize-handle.br{bottom:-6px;right:-6px;cursor:nwse-resize}
-.img-resize-info{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap;pointer-events:none}
+/* Size badge shown during resize */
+.img-size-badge{position:fixed;background:var(--navy);color:#fff;padding:3px 10px;border-radius:5px;font-size:.72rem;font-weight:700;pointer-events:none;z-index:9999;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);display:none}
 .preview-pane{flex:1;overflow-y:auto;display:none;padding:20px 32px;font-size:.95rem;line-height:1.85}
 .preview-pane.active{display:block}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy)}
@@ -441,43 +438,140 @@ quill.root.addEventListener('drop', function(e) {
     }
 });
 
-// Click image in editor → show resize handles + open edit on double-click
+// Click image in editor → select it (single click), edit details (double click)
 quill.root.addEventListener('mousedown', function(e) {
     if (e.target.tagName === 'IMG') {
-        quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
+        e.preventDefault(); // prevent Quill cursor jump
+        clearImageSelection();
         e.target.classList.add('ql-img-selected');
         currentEditImg = e.target;
-        showResizeHandles(e.target);
     } else {
         clearImageSelection();
     }
 });
-// Double-click image → open full Image Details modal
 quill.root.addEventListener('dblclick', function(e) {
     if (e.target.tagName === 'IMG') {
         currentEditImg = e.target;
         openImgEdit(e.target);
     }
 });
-// Also clear when clicking toolbar, sidebar, or anywhere outside editor
+// Click outside editor clears selection
 document.addEventListener('mousedown', function(e) {
-    if (!e.target.closest('.ql-editor') && !e.target.closest('.img-resize-handle') && !e.target.closest('.img-edit-overlay')) {
+    if (!e.target.closest('.ql-editor') && !e.target.closest('.img-edit-overlay') && !e.target.closest('.mp-overlay')) {
         clearImageSelection();
     }
 });
-// Clear on any text change (typing, delete, cut, etc.)
-quill.on('text-change', function(delta) {
-    // If the selected image was removed from DOM, clean up
-    if (currentEditImg && !currentEditImg.parentNode) {
-        removeResizeHandles();
+// If image is removed from DOM via Quill operations, clean up
+quill.on('text-change', function() {
+    if (currentEditImg && !document.contains(currentEditImg)) {
         currentEditImg = null;
     }
 });
 function clearImageSelection() {
     quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
-    removeResizeHandles();
     currentEditImg = null;
 }
+
+// === IMAGE DRAG TO REPOSITION ===
+// Let user drag a selected image to move it to a different place in the content
+(function() {
+    let dragImg = null, dragGhost = null, dropMarker = null;
+
+    quill.root.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') {
+            dragImg = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', ''); // required for Firefox
+            // Create drop marker
+            dropMarker = document.createElement('div');
+            dropMarker.style.cssText = 'height:3px;background:var(--teal);border-radius:2px;margin:4px 0;transition:all .1s;';
+            setTimeout(() => { if(dragImg) dragImg.style.opacity = '0.4'; }, 0);
+        }
+    });
+
+    quill.root.addEventListener('dragover', function(e) {
+        if (!dragImg) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        // Find nearest block element to show drop marker
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        if (target && target !== dragImg && target !== dropMarker) {
+            const block = target.closest('p, h1, h2, h3, li, blockquote, div') || target;
+            if (block && block.parentNode === quill.root) {
+                const rect = block.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (dropMarker.parentNode) dropMarker.parentNode.removeChild(dropMarker);
+                if (e.clientY < mid) {
+                    block.parentNode.insertBefore(dropMarker, block);
+                } else {
+                    block.parentNode.insertBefore(dropMarker, block.nextSibling);
+                }
+            }
+        }
+    });
+
+    quill.root.addEventListener('drop', function(e) {
+        if (!dragImg) return;
+        e.preventDefault();
+        dragImg.style.opacity = '1';
+        if (dropMarker && dropMarker.parentNode) {
+            // Move image to drop location
+            dropMarker.parentNode.insertBefore(dragImg, dropMarker);
+            dropMarker.parentNode.removeChild(dropMarker);
+        }
+        dragImg = null; dropMarker = null;
+    });
+
+    quill.root.addEventListener('dragend', function(e) {
+        if (dragImg) dragImg.style.opacity = '1';
+        if (dropMarker && dropMarker.parentNode) dropMarker.parentNode.removeChild(dropMarker);
+        dragImg = null; dropMarker = null;
+    });
+})();
+
+// === OBSERVE IMAGE RESIZE (native CSS resize:both) ===
+// When user uses the browser's native resize handle, capture the new dimensions
+(function() {
+    const badge = document.createElement('div');
+    badge.className = 'img-size-badge';
+    document.body.appendChild(badge);
+    let observing = null, resizeObserver = null;
+
+    resizeObserver = new ResizeObserver(entries => {
+        for (const entry of entries) {
+            const img = entry.target;
+            if (img.tagName !== 'IMG') continue;
+            const w = Math.round(entry.contentRect.width);
+            const h = Math.round(entry.contentRect.height);
+            if (w > 0 && h > 0) {
+                img.setAttribute('width', w);
+                img.setAttribute('height', h);
+                // Show size badge near cursor
+                badge.textContent = w + ' × ' + h;
+                badge.style.display = 'block';
+                const rect = img.getBoundingClientRect();
+                badge.style.left = (rect.right - 80) + 'px';
+                badge.style.top = (rect.bottom + 4) + 'px';
+                clearTimeout(badge._hide);
+                badge._hide = setTimeout(() => { badge.style.display = 'none'; }, 1200);
+            }
+        }
+    });
+
+    // Observe selected images
+    const editor = quill.root;
+    new MutationObserver(() => {
+        const sel = editor.querySelector('.ql-img-selected');
+        if (sel && sel !== observing) {
+            if (observing) resizeObserver.unobserve(observing);
+            resizeObserver.observe(sel);
+            observing = sel;
+        } else if (!sel && observing) {
+            resizeObserver.unobserve(observing);
+            observing = null;
+        }
+    }).observe(editor, { attributes: true, subtree: true, attributeFilter: ['class'] });
+})();
 
 // === CORE IMAGE UPLOAD FUNCTION ===
 async function uploadImageToServer(file) {
@@ -699,7 +793,6 @@ function openImgEdit(img) {
 function closeImgEdit() {
     document.getElementById('imgEditOverlay').classList.remove('active');
     if (currentEditImg) currentEditImg.classList.remove('ql-img-selected');
-    removeResizeHandles();
     currentEditImg = null;
 }
 
@@ -781,69 +874,7 @@ function removeEditorImage() {
     }
 }
 
-// === DRAG-RESIZE IN EDITOR (corner handles) ===
-let resizeWrap = null;
-function showResizeHandles(img) {
-    removeResizeHandles();
-    const editor = document.querySelector('.ql-editor');
-    const editorRect = editor.getBoundingClientRect();
-    const imgRect = img.getBoundingClientRect();
-    resizeWrap = document.createElement('div');
-    resizeWrap.className = 'img-resize-wrap';
-    resizeWrap.style.cssText = 'position:absolute;top:'+(imgRect.top - editorRect.top + editor.scrollTop)+'px;left:'+(imgRect.left - editorRect.left)+'px;width:'+img.width+'px;height:'+img.height+'px;';
-    const info = document.createElement('div');
-    info.className = 'img-resize-info';
-    info.textContent = img.width + ' × ' + img.height;
-    resizeWrap.appendChild(info);
-    ['br','bl','tr','tl'].forEach(pos => {
-        const h = document.createElement('div');
-        h.className = 'img-resize-handle ' + pos;
-        h.addEventListener('mousedown', (e) => startResize(e, img, pos, info));
-        resizeWrap.appendChild(h);
-    });
-    // Place in the ql-container (which has position relative via Quill)
-    const container = document.querySelector('.ql-container');
-    container.style.position = 'relative';
-    container.appendChild(resizeWrap);
-}
-
-function removeResizeHandles() {
-    // Remove tracked wrapper
-    if (resizeWrap && resizeWrap.parentNode) resizeWrap.parentNode.removeChild(resizeWrap);
-    resizeWrap = null;
-    // Also find and remove any orphaned wrappers (safety net)
-    document.querySelectorAll('.img-resize-wrap').forEach(el => el.remove());
-}
-
-function startResize(e, img, corner, infoEl) {
-    e.preventDefault(); e.stopPropagation();
-    const startX = e.clientX, startY = e.clientY;
-    const startW = img.width, startH = img.height;
-    const ratio = startW / startH;
-    const onMove = (ev) => {
-        let dx = ev.clientX - startX, dy = ev.clientY - startY;
-        if (corner === 'tl') { dx = -dx; dy = -dy; }
-        else if (corner === 'tr') { dy = -dy; }
-        else if (corner === 'bl') { dx = -dx; }
-        let newW = Math.max(40, startW + dx);
-        let newH = Math.round(newW / ratio);
-        img.style.width = newW + 'px';
-        img.style.height = newH + 'px';
-        img.setAttribute('width', newW);
-        img.setAttribute('height', newH);
-        if (resizeWrap) {
-            resizeWrap.style.width = newW + 'px';
-            resizeWrap.style.height = newH + 'px';
-        }
-        if (infoEl) infoEl.textContent = newW + ' × ' + newH;
-    };
-    const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-}
+// (Resize is handled by native CSS resize:both on .ql-img-selected + ResizeObserver above)
 
 // === FEATURED IMAGE ===
 function setFeatImage(url) {
@@ -1013,19 +1044,12 @@ async function aiAction(type) {
 window.addEventListener('beforeunload', e => { if (document.getElementById('name').value) { e.preventDefault(); e.returnValue = ''; }});
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(editId ? 'auto' : null); }
-    if (e.key === 'Escape') { removeResizeHandles(); closeImgEdit(); closeMediaPicker(); }
+    if (e.key === 'Escape') { clearImageSelection(); closeImgEdit(); closeMediaPicker(); }
     // Delete key removes selected image
-    if ((e.key === 'Delete' || e.key === 'Backspace') && currentEditImg && document.activeElement === quill.root) {
-        // Only if not in a text input
-        if (!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
-            currentEditImg.parentNode.removeChild(currentEditImg);
-            removeResizeHandles(); currentEditImg = null;
-        }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && currentEditImg && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+        currentEditImg.remove();
+        clearImageSelection();
     }
-});
-// Reposition handles on scroll
-document.querySelector('.ql-editor').addEventListener('scroll', () => {
-    if (currentEditImg && resizeWrap) showResizeHandles(currentEditImg);
 });
 
 // === INIT ===
