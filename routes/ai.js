@@ -1,0 +1,137 @@
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, rootDir }) {
+
+// ============== CLAUDE AI ASSISTANT ==============
+app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    servePage(res, 'ai-assistant');
+});
+
+// ============== DOCX IMPORT ==============
+const mammoth = require('mammoth');
+
+// POST /api/import/docx — Import .docx with images converted to uploaded files
+app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const filePath = req.file.path;
+        let imageCount = 0;
+
+        const result = await mammoth.convertToHtml(
+            { path: filePath },
+            {
+                convertImage: mammoth.images.imgElement(async function(image) {
+                    try {
+                        const imageBuffer = await image.read();
+                        const ext = image.contentType === 'image/png' ? '.png' : image.contentType === 'image/gif' ? '.gif' : '.jpg';
+                        const filename = 'docx-import-' + Date.now() + '-' + (++imageCount) + ext;
+
+                        // Save to uploads folder using same year/month structure
+                        const now = new Date();
+                        const year = now.getFullYear().toString();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const subdir = path.join('uploads', year, month);
+                        const fs = require('fs');
+                        if (!fs.existsSync(subdir)) fs.mkdirSync(subdir, { recursive: true });
+
+                        const savePath = path.join(subdir, filename);
+                        fs.writeFileSync(savePath, imageBuffer);
+
+                        // Process with sharp if it's an image
+                        let width = null, height = null, sizes = {};
+                        try {
+                            const sharp = require('sharp');
+                            const meta = await sharp(imageBuffer).metadata();
+                            width = meta.width;
+                            height = meta.height;
+
+                            // Generate thumbnail
+                            const thumbName = filename.replace(/\.[^.]+$/, '-150x150' + ext);
+                            await sharp(imageBuffer).resize(150, 150, { fit: 'cover' }).toFile(path.join(subdir, thumbName));
+                            sizes.thumbnail = { url: '/' + subdir.replace(/\\/g,'/') + '/' + thumbName, width: 150, height: 150 };
+
+                            // Generate medium
+                            if (width > 300) {
+                                const medName = filename.replace(/\.[^.]+$/, '-300x0' + ext);
+                                await sharp(imageBuffer).resize(300, null).toFile(path.join(subdir, medName));
+                                sizes.medium = { url: '/' + subdir.replace(/\\/g,'/') + '/' + medName, width: 300 };
+                            }
+                        } catch(sharpErr) {}
+
+                        const url = '/' + savePath.replace(/\\/g, '/');
+
+                        // Save to DB
+                        await pool.query(
+                            'INSERT INTO media (filename, original_name, mime_type, size, url, width, height, sizes, folder, uploaded_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+                            [filename, filename, image.contentType, imageBuffer.length, url, width, height, JSON.stringify(sizes), year + '/' + month, req.user.id]
+                        );
+
+                        return { src: url };
+                    } catch(imgErr) {
+                        console.error('Docx image error:', imgErr.message);
+                        return { src: '' };
+                    }
+                })
+            }
+        );
+
+        // Clean up uploaded docx file
+        try { require('fs').unlinkSync(filePath); } catch(e) {}
+
+        res.json({ html: result.value, imageCount, messages: result.messages });
+    } catch (err) {
+        console.error('Docx import error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/import/docx-text — Extract plain text from .docx (for AI context)
+app.post('/api/import/docx-text', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const result = await mammoth.extractRawText({ path: req.file.path });
+        try { require('fs').unlinkSync(req.file.path); } catch(e) {}
+        res.json({ text: result.value });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { prompt, type, context } = req.body;
+
+        const systemPrompts = {
+            blog: "You are a medical tourism content writer for Ginger Healthcare. Write engaging, informative, SEO-friendly blog posts. Use a warm, professional tone. Include relevant medical details but keep language accessible. Format in HTML for a blog post.",
+            testimonial: "You are helping create realistic patient testimonial templates for Ginger Healthcare. Make them sound authentic, emotional, and specific about the medical tourism experience. Include details about savings, hospital quality, and care.",
+            hospital: "You are writing hospital descriptions for Ginger Healthcare. Focus on accreditations, specialties, facilities, and what makes each hospital stand out for international patients.",
+            doctor: "You are writing doctor profiles for Ginger Healthcare. Highlight qualifications, experience, specialties, and patient care philosophy.",
+            page: "You are a copywriter for Ginger Healthcare's website. Write compelling, conversion-focused copy for medical tourism pages.",
+            general: "You are an AI assistant for Ginger Healthcare's admin team. Help with content creation, editing, SEO optimization, and medical tourism industry knowledge."
+        };
+
+        const { Anthropic } = require('@anthropic-ai/sdk');
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+        const message = await client.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: systemPrompts[type] || systemPrompts.general,
+            messages: [
+                { role: "user", content: context ? `Context: ${context}\n\nRequest: ${prompt}` : prompt }
+            ]
+        });
+
+        const responseText = message.content[0].text;
+        await logActivity(req.user.id, 'ai_generate', 'ai', null, `Type: ${type}, Prompt: ${prompt.substring(0, 100)}`);
+        res.json({ content: responseText });
+    } catch (err) {
+        console.error('Claude API error:', err);
+        res.status(500).json({ error: 'AI generation failed: ' + err.message });
+    }
+});
+
+
+};

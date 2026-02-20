@@ -1,0 +1,95 @@
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage }) {
+
+// ============== TREATMENTS CRUD ==============
+app.get('/treatments', authRequired, (req, res) => {
+    servePage(res, 'treatments');
+});
+app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    servePage(res, 'treatment-studio');
+});
+app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    servePage(res, 'treatment-studio');
+});
+
+app.get('/api/treatments', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT t.*, s.name as specialty_name FROM treatments t
+             LEFT JOIN specialties s ON t.specialty_id = s.id
+             ORDER BY s.name ASC, t.name ASC`
+        );
+        res.json(result.rows);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/treatments/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT t.*, s.name as specialty_name FROM treatments t
+             LEFT JOIN specialties s ON t.specialty_id = s.id
+             WHERE t.id = $1`, [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/treatments', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status } = req.body;
+        const result = await pool.query(
+            `INSERT INTO treatments (name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+            [name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured || false, meta_title, meta_description, status || 'draft']
+        );
+        await logActivity(req.user.id, 'create', 'treatment', result.rows[0].id, `Created: ${name}`);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status } = req.body;
+        const result = await pool.query(
+            `UPDATE treatments SET name=$1, slug=$2, specialty_id=$3, description=$4, long_description=$5, duration=$6, recovery_time=$7, success_rate=$8, cost_range_usd=$9, image=$10, is_featured=$11, meta_title=$12, meta_description=$13, status=$14, updated_at=NOW()
+             WHERE id=$15 RETURNING *`,
+            [name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status, req.params.id]
+        );
+        await logActivity(req.user.id, 'update', 'treatment', req.params.id, `Updated: ${name}`);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Treatments bulk actions
+app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM treatments WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_delete', 'treatment', null, `Bulk deleted ${count} treatments`);
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE treatments SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_publish', 'treatment', null, `Bulk published ${count} treatments`);
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE treatments SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+            await logActivity(req.user.id, 'bulk_draft', 'treatment', null, `Bulk set ${count} treatments to draft`);
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
+    try {
+        await pool.query('DELETE FROM treatments WHERE id = $1', [req.params.id]);
+        await logActivity(req.user.id, 'delete', 'treatment', parseInt(req.params.id), 'Deleted treatment');
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+
+};
