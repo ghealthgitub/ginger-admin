@@ -104,7 +104,7 @@ const Studio = {
         </div>
         <div class="studio-progress" id="studioProgress">
             <div class="studio-progress__bar" id="studioProgressBar"></div>
-        </div>\`;
+        </div>`;
     },
 
     _tplEditorPanel() {
