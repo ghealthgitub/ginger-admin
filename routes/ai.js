@@ -153,7 +153,26 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
         res.json({ content: responseText });
     } catch (err) {
         console.error('Claude API error:', err);
-        res.status(500).json({ error: 'AI generation failed: ' + err.message });
+
+        // Human-friendly messages for common Anthropic API errors
+        const msg = err.message || '';
+        let friendly = 'AI generation failed. Please try again.';
+
+        if (!process.env.ANTHROPIC_API_KEY) {
+            friendly = 'ANTHROPIC_API_KEY is not set. Add it to your Render environment variables.';
+        } else if (msg.includes('529') || msg.toLowerCase().includes('overloaded')) {
+            friendly = 'Claude is temporarily busy. Please wait 30 seconds and try again.';
+        } else if (msg.includes('401') || msg.toLowerCase().includes('authentication')) {
+            friendly = 'AI authentication failed. Check that ANTHROPIC_API_KEY is correct in Render.';
+        } else if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+            friendly = 'AI rate limit reached. Please wait a moment and try again.';
+        } else if (msg.includes('400')) {
+            friendly = 'Content may be too long for AI. Try with a shorter selection.';
+        } else if (msg.match(/5[0-9]{2}/)) {
+            friendly = 'Anthropic API is temporarily unavailable. Please try again in a minute.';
+        }
+
+        res.status(500).json({ error: friendly });
     }
 });
 
