@@ -4,6 +4,30 @@ const multer = require('multer');
 
 module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, rootDir }) {
 
+// Upload directory helper (same as media.js)
+function getUploadDir() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const subdir = path.join('uploads', year, month);
+    const fullPath = path.join(rootDir, subdir);
+    if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
+    return { subdir, fullPath };
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => { const { fullPath } = getUploadDir(); cb(null, fullPath); },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const base = path.basename(file.originalname, ext).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').substring(0, 80) || 'file';
+        cb(null, base + '-' + Date.now().toString(36) + ext);
+    }
+});
+const docUpload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+    const allowed = /docx|doc|txt|md/;
+    cb(null, allowed.test(path.extname(file.originalname).toLowerCase()));
+}});
+
 // ============== CLAUDE AI ASSISTANT ==============
 app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     servePage(res, 'ai-assistant');
