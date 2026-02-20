@@ -101,7 +101,10 @@ const Studio = {
                 <button class="studio-topbar__btn studio-topbar__btn--save" onclick="Studio.saveItem('draft')">Save Draft</button>
                 <button class="studio-topbar__btn studio-topbar__btn--publish" id="topPublishBtn" onclick="Studio.saveItem('published')">🚀 Publish</button>
             </div>
-        </div>`;
+        </div>
+        <div class="studio-progress" id="studioProgress">
+            <div class="studio-progress__bar" id="studioProgressBar"></div>
+        </div>\`;
     },
 
     _tplEditorPanel() {
@@ -1144,15 +1147,29 @@ const Studio = {
     // ── AI ACTIONS ──────────────────────────────────────────
     async aiAction(type) {
         const btns = document.querySelectorAll('.ai-btn');
-        btns.forEach(b => b.disabled = true);
+        const clickedBtn = document.querySelector(`.ai-btn[onclick*="'${type}'"]`) || document.querySelector(`.ai-btn[onclick*='"${type}"']`);
+        const labels = { seo: '🏷 Auto SEO', optimize: '🎯 Optimize', grammar: '✏ Grammar', headings: '📑 Headings' };
+        const workingLabels = { seo: '🏷 Generating...', optimize: '🎯 Optimising...', grammar: '✏ Fixing...', headings: '📑 Assigning...' };
+
+        // Disable all buttons, transform clicked one
+        btns.forEach(b => { b.disabled = true; b.style.opacity = '0.45'; });
+        if (clickedBtn) {
+            clickedBtn.style.opacity = '1';
+            clickedBtn.innerHTML = '<span class="ai-spinner"></span>' + (workingLabels[type] || '🤖 Working...');
+            clickedBtn.style.background = 'var(--teal)';
+            clickedBtn.style.color = '#fff';
+            clickedBtn.style.borderColor = 'var(--teal)';
+        }
+
+        // Start progress bar
+        this._progressStart();
+        this.showToast(workingLabels[type] || '🤖 Working...', 0); // 0 = stay until dismissed
+
         const name = document.getElementById('studioName').value || ('this ' + this._cptLabel().toLowerCase());
         const html = this.quill.root.innerHTML;
         const text = this.quill.getText().trim();
         const aiType = this.cfg.aiType || this.cfg.cpt || 'general';
-
         let prompt = '';
-        const toastMsg = { seo: '🏷 Generating SEO...', optimize: '🎯 Optimising...', grammar: '✏ Fixing grammar...', headings: '📑 Assigning headings...' };
-        this.showToast(toastMsg[type] || '🤖 Working...');
 
         if (type === 'seo') {
             prompt = `Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for "${name}". Return ONLY these three plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...`;
@@ -1180,18 +1197,29 @@ const Studio = {
                     if (line.toLowerCase().startsWith('meta description:')) { const v = line.replace(/.*?:\s*/i,'').trim(); if (v) { document.getElementById('studioMetaDesc').value   = v; this.updateCharCount('studioMetaDesc','metaDescCount',160); } }
                     if (line.toLowerCase().startsWith('short description:')){ const v = line.replace(/.*?:\s*/i,'').trim(); if (v && v.length < 250) document.getElementById('studioDescription').value = v; }
                 });
-                this.analyzeSEO(); this.showToast('✅ SEO tags generated');
+                this.analyzeSEO();
+                this.showToast('✅ SEO tags generated!');
             } else {
                 const cleaned = result.replace(/^```html?\n?/i,'').replace(/```$/m,'').trim();
                 this.quill.root.innerHTML = cleaned;
                 this.updateStats(); this.analyzeSEO();
-                this.showToast(type === 'headings' ? '✅ Headings assigned!' : '✅ Content updated');
+                this.showToast(type === 'headings' ? '✅ Headings assigned!' : '✅ Content updated!');
             }
         } catch(e) {
-            this.showToast('❌ AI error: ' + e.message);
+            this.showToast('❌ ' + e.message);
             console.error('AI error:', e);
+        } finally {
+            // Always restore buttons and stop progress
+            this._progressDone();
+            btns.forEach(b => {
+                b.disabled = false;
+                b.style.opacity = '';
+                b.style.background = '';
+                b.style.color = '';
+                b.style.borderColor = '';
+            });
+            if (clickedBtn) clickedBtn.innerHTML = labels[type] || type;
         }
-        btns.forEach(b => b.disabled = false);
     },
 
     // ── UI HELPERS ──────────────────────────────────────────
@@ -1260,11 +1288,55 @@ const Studio = {
         e.style.color = l > max ? '#EF4444' : l > max * .8 ? '#F59E0B' : '';
     },
 
-    showToast(msg) {
+    showToast(msg, duration) {
         const t = document.getElementById('studioToast');
         t.textContent = msg; t.style.display = 'block';
         clearTimeout(t._hide);
-        t._hide = setTimeout(() => t.style.display = 'none', 2500);
+        // duration=0 means stay visible until explicitly hidden
+        if (duration !== 0) {
+            t._hide = setTimeout(() => t.style.display = 'none', duration || 2800);
+        }
+    },
+
+    hideToast() {
+        const t = document.getElementById('studioToast');
+        clearTimeout(t._hide);
+        t.style.display = 'none';
+    },
+
+    // ── PROGRESS BAR ────────────────────────────────────────
+    _progressStart() {
+        const bar = document.getElementById('studioProgressBar');
+        const wrap = document.getElementById('studioProgress');
+        if (!bar || !wrap) return;
+        wrap.style.display = 'block';
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        // Fake progress: animate to 85% over ~25s (covers most AI responses)
+        requestAnimationFrame(() => {
+            bar.style.transition = 'width 25s cubic-bezier(0.1, 0.4, 0.6, 1)';
+            bar.style.width = '85%';
+        });
+    },
+
+    _progressDone() {
+        const bar = document.getElementById('studioProgressBar');
+        const wrap = document.getElementById('studioProgress');
+        if (!bar || !wrap) return;
+        // Snap to 100% then fade out
+        bar.style.transition = 'width 0.2s ease';
+        bar.style.width = '100%';
+        setTimeout(() => {
+            wrap.style.opacity = '0';
+            wrap.style.transition = 'opacity 0.4s ease';
+            setTimeout(() => {
+                wrap.style.display = 'none';
+                wrap.style.opacity = '1';
+                wrap.style.transition = '';
+                bar.style.width = '0%';
+            }, 400);
+        }, 200);
+        this.hideToast();
     },
 
     _resetAutoSave() {

@@ -498,3 +498,41 @@ body {
     box-shadow: 0 4px 15px rgba(0,0,0,.2);
     white-space: nowrap;
 }
+
+/* ── PROGRESS BAR ── */
+.studio-progress {
+    display: none;
+    height: 3px;
+    background: var(--gray-100);
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.studio-progress__bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--teal), #0dd4ce, var(--teal));
+    background-size: 200% 100%;
+    animation: progressShimmer 1.5s linear infinite;
+    border-radius: 0 2px 2px 0;
+}
+@keyframes progressShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── AI BUTTON SPINNER ── */
+.ai-spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
