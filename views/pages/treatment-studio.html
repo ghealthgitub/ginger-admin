@@ -262,8 +262,32 @@ let currentEditImg = null; // reference to image being edited
 // === QUILL SETUP ===
 const quill = new Quill('#editor', {
     theme: 'snow', placeholder: 'Paste content from Word, or start writing...',
-    modules: { toolbar: [[{header:[1,2,3,false]}],['bold','italic','underline','strike'],[{color:[]},{background:[]}],[{list:'ordered'},{list:'bullet'}],['blockquote','code-block'],['link','image'],[{align:[]}],['clean']],
-    clipboard: { matchVisual: false }  // Better Word paste handling
+    modules: { toolbar: { container: [[{header:[1,2,3,false]}],['bold','italic','underline','strike'],[{color:[]},{background:[]}],[{list:'ordered'},{list:'bullet'}],['blockquote','code-block'],['link','image'],[{align:[]}],['clean']],
+        handlers: {
+            image: function() {
+                // Override default Quill image button — open file picker instead of URL prompt
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async () => {
+                    const file = input.files[0];
+                    if (!file) return;
+                    showToast('📤 Uploading ' + file.name + '...');
+                    const url = await uploadImageToServer(file);
+                    if (url) {
+                        const range = quill.getSelection(true);
+                        quill.insertEmbed(range?.index || quill.getLength(), 'image', url);
+                        quill.insertText((range?.index || quill.getLength()) + 1, '\n');
+                        showToast('✅ Image inserted');
+                    } else {
+                        showToast('❌ Upload failed');
+                    }
+                };
+                input.click();
+            }
+        }
+    },
+    clipboard: { matchVisual: false }
     }
 });
 quill.on('text-change', () => { updateStats(); analyzeSEO(); resetAutoSave(); });
@@ -429,7 +453,22 @@ async function importImages(input) {
 
 async function uploadImageToServer(file) {
     const fd = new FormData(); fd.append('file', file);
-    try { const r = await fetch('/api/media/upload', { method: 'POST', body: fd }); if (r.ok) { const d = await r.json(); return d.url; } } catch(e) {} return null;
+    try {
+        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (r.ok) {
+            const d = await r.json();
+            console.log('Upload success:', d);
+            return d.url;
+        } else {
+            const err = await r.text();
+            console.error('Upload failed:', r.status, err);
+            showToast('❌ Upload failed: ' + r.status);
+        }
+    } catch(e) {
+        console.error('Upload error:', e);
+        showToast('❌ Upload error: ' + e.message);
+    }
+    return null;
 }
 
 // === HELPERS ===
