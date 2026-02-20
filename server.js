@@ -15,8 +15,15 @@ const PORT = process.env.PORT || 3000;
 // Security headers
 app.use(helmet({
     contentSecurityPolicy: false,         // Admin uses inline scripts/styles
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false      // Allow website to load images from /uploads/
 }));
+
+// Explicitly set CORP header for uploads to allow cross-origin access
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+});
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
