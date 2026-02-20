@@ -62,6 +62,17 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-editor img{max-width:100%;height:auto;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border .15s}
 .editor-wrap .ql-editor img:hover{border-color:var(--teal)}
 .editor-wrap .ql-editor img.ql-img-selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2)}
+/* Image alignment classes */
+.editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
+.editor-wrap .ql-editor img.img-align-right{float:right;margin:0 0 12px 16px}
+.editor-wrap .ql-editor img.img-align-center{display:block;margin:12px auto;float:none}
+.editor-wrap .ql-editor img.img-align-none{float:none;display:inline;margin:0}
+/* Resize wrapper shown when image is selected */
+.img-resize-wrap{position:absolute;border:2px solid var(--teal);pointer-events:none;z-index:5}
+.img-resize-handle{position:absolute;width:12px;height:12px;background:var(--teal);border:2px solid #fff;border-radius:2px;pointer-events:all;cursor:nwse-resize;z-index:6;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.img-resize-handle.tl{top:-6px;left:-6px;cursor:nwse-resize}.img-resize-handle.tr{top:-6px;right:-6px;cursor:nesw-resize}
+.img-resize-handle.bl{bottom:-6px;left:-6px;cursor:nesw-resize}.img-resize-handle.br{bottom:-6px;right:-6px;cursor:nwse-resize}
+.img-resize-info{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;white-space:nowrap;pointer-events:none}
 .preview-pane{flex:1;overflow-y:auto;display:none;padding:20px 32px;font-size:.95rem;line-height:1.85}
 .preview-pane.active{display:block}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy)}
@@ -138,7 +149,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
 /* === IMAGE EDIT MODAL (click image in editor) === */
 .img-edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}.img-edit-overlay.active{display:flex}
-.img-edit-modal{background:#fff;border-radius:12px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.img-edit-modal{background:#fff;border-radius:12px;width:100%;max-width:640px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
 .img-edit-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
 .img-edit-header h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);margin:0}
 .img-edit-body{padding:20px;max-height:70vh;overflow-y:auto}
@@ -148,6 +159,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .img-edit-field input,.img-edit-field textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit}.img-edit-field input:focus,.img-edit-field textarea:focus{outline:none;border-color:var(--teal)}
 .img-edit-field textarea{resize:vertical;min-height:50px}
 .img-edit-field .hint{font-size:.72rem;color:var(--gray-400);margin-top:2px}
+/* Display Settings */
+.img-edit-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)}
+.img-edit-section h4{font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:10px}
+.align-btns{display:flex;gap:0;border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.align-btn{flex:1;padding:7px;text-align:center;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:var(--white);color:var(--gray-500);font-family:inherit;border-right:1px solid var(--gray-200);transition:all .15s}
+.align-btn:last-child{border-right:none}
+.align-btn:hover{background:var(--gray-50);color:var(--gray-700)}
+.align-btn.active{background:var(--teal);color:#fff}
+.size-presets{display:flex;gap:6px;margin-bottom:12px}
+.size-preset{padding:5px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .15s}
+.size-preset:hover{border-color:var(--teal);color:var(--teal)}.size-preset.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.size-inputs{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.size-inputs input{width:80px;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;text-align:center}.size-inputs input:focus{outline:none;border-color:var(--teal)}
+.size-inputs .sep{color:var(--gray-400);font-weight:600}
+.size-inputs .lock-btn{width:30px;height:30px;border:1px solid var(--gray-200);border-radius:6px;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
+.size-inputs .lock-btn.locked{background:rgba(14,165,160,.08);border-color:var(--teal);color:var(--teal)}
+.size-inputs .lock-btn:hover{border-color:var(--teal)}
 .img-edit-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--gray-100);margin-top:16px}
 .img-edit-actions .btn{padding:7px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);transition:all .15s}
 .img-edit-actions .btn:hover{border-color:var(--teal);color:var(--teal)}
@@ -310,6 +338,31 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <img class="img-edit-preview" id="imgEditPreview">
         <div class="img-edit-field"><label>Alt Text (for SEO & accessibility)</label><input type="text" id="imgEditAlt" placeholder="Describe the image..."><div class="hint">Describe the purpose of the image. Leave empty if decorative.</div></div>
         <div class="img-edit-field"><label>Caption (shown below image)</label><input type="text" id="imgEditCaption" placeholder="Optional caption..."></div>
+        <!-- Display Settings (WordPress-style) -->
+        <div class="img-edit-section">
+            <h4>Display Settings</h4>
+            <label style="font-size:.78rem;font-weight:600;color:var(--gray-500);margin-bottom:6px;display:block">Alignment</label>
+            <div class="align-btns">
+                <button class="align-btn" data-align="left" onclick="setImgAlign('left',this)">◧ Left</button>
+                <button class="align-btn" data-align="center" onclick="setImgAlign('center',this)">◻ Center</button>
+                <button class="align-btn" data-align="right" onclick="setImgAlign('right',this)">◨ Right</button>
+                <button class="align-btn active" data-align="none" onclick="setImgAlign('none',this)">▬ None</button>
+            </div>
+            <label style="font-size:.78rem;font-weight:600;color:var(--gray-500);margin-bottom:6px;display:block">Size</label>
+            <div class="size-presets">
+                <button class="size-preset" onclick="setImgSizePreset(25,this)">25%</button>
+                <button class="size-preset" onclick="setImgSizePreset(50,this)">50%</button>
+                <button class="size-preset" onclick="setImgSizePreset(75,this)">75%</button>
+                <button class="size-preset active" onclick="setImgSizePreset(100,this)">100%</button>
+            </div>
+            <div class="size-inputs">
+                <div><label style="font-size:.7rem;color:var(--gray-400);display:block;margin-bottom:2px">Width</label><input type="number" id="imgEditW" min="20" step="1" oninput="onImgDimChange('w')"></div>
+                <span class="sep" style="margin-top:14px">×</span>
+                <div><label style="font-size:.7rem;color:var(--gray-400);display:block;margin-bottom:2px">Height</label><input type="number" id="imgEditH" min="20" step="1" oninput="onImgDimChange('h')"></div>
+                <button class="lock-btn locked" id="imgAspectLock" onclick="toggleAspectLock()" title="Lock aspect ratio" style="margin-top:14px">🔗</button>
+                <span style="font-size:.7rem;color:var(--gray-400);margin-top:14px">px</span>
+            </div>
+        </div>
         <div class="img-edit-actions">
             <label class="btn btn-replace">🔄 Replace<input type="file" accept="image/*" onchange="replaceEditorImage(this)"></label>
             <button class="btn btn-remove" onclick="removeEditorImage()">🗑 Remove</button>
@@ -388,10 +441,24 @@ quill.root.addEventListener('drop', function(e) {
     }
 });
 
-// Click image in editor → open edit modal
+// Click image in editor → show resize handles + open edit on double-click
 quill.root.addEventListener('click', function(e) {
     if (e.target.tagName === 'IMG') {
+        // Remove previous selection
+        quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
         e.target.classList.add('ql-img-selected');
+        currentEditImg = e.target;
+        showResizeHandles(e.target);
+    } else {
+        // Clicked elsewhere — deselect
+        quill.root.querySelectorAll('.ql-img-selected').forEach(i => i.classList.remove('ql-img-selected'));
+        removeResizeHandles();
+        currentEditImg = null;
+    }
+});
+// Double-click image → open full Image Details modal
+quill.root.addEventListener('dblclick', function(e) {
+    if (e.target.tagName === 'IMG') {
         currentEditImg = e.target;
         openImgEdit(e.target);
     }
@@ -589,26 +656,101 @@ async function mpUploadFiles(input) {
     zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); if (e.dataTransfer.files.length) { document.getElementById('mpFileInput').files = e.dataTransfer.files; mpUploadFiles(document.getElementById('mpFileInput')); }});
 })();
 
-// === IMAGE EDIT MODAL (click image in editor) ===
+// === IMAGE EDIT MODAL (click image in editor — WordPress-style) ===
+let imgOrigW = 0, imgOrigH = 0, imgAspectLocked = true;
+
 function openImgEdit(img) {
     document.getElementById('imgEditPreview').src = img.src;
     document.getElementById('imgEditAlt').value = img.alt || '';
-    document.getElementById('imgEditCaption').value = ''; // Quill doesn't natively support captions, but we store in data attr
-    if (img.dataset.caption) document.getElementById('imgEditCaption').value = img.dataset.caption;
+    document.getElementById('imgEditCaption').value = img.dataset.caption || '';
+    // Get current dimensions
+    imgOrigW = img.naturalWidth || img.width;
+    imgOrigH = img.naturalHeight || img.height;
+    document.getElementById('imgEditW').value = img.width || imgOrigW;
+    document.getElementById('imgEditH').value = img.height || imgOrigH;
+    imgAspectLocked = true;
+    document.getElementById('imgAspectLock').classList.add('locked');
+    // Set current alignment
+    const align = ['left','center','right'].find(a => img.classList.contains('img-align-'+a)) || 'none';
+    document.querySelectorAll('.align-btn').forEach(b => b.classList.toggle('active', b.dataset.align === align));
+    // Set active size preset
+    const pct = img.width && imgOrigW ? Math.round(img.width / imgOrigW * 100) : 100;
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.remove('active'));
+    const matchPreset = document.querySelector('.size-preset[onclick*="'+([25,50,75,100].find(p => Math.abs(p-pct)<8) || 0)+'"]');
+    if (matchPreset) matchPreset.classList.add('active');
     document.getElementById('imgEditOverlay').classList.add('active');
 }
+
 function closeImgEdit() {
     document.getElementById('imgEditOverlay').classList.remove('active');
     if (currentEditImg) currentEditImg.classList.remove('ql-img-selected');
+    removeResizeHandles();
     currentEditImg = null;
 }
+
+function setImgAlign(align, btn) {
+    document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function setImgSizePreset(pct, btn) {
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (!currentEditImg || !imgOrigW) return;
+    const newW = Math.round(imgOrigW * pct / 100);
+    const newH = Math.round(imgOrigH * pct / 100);
+    document.getElementById('imgEditW').value = newW;
+    document.getElementById('imgEditH').value = newH;
+}
+
+function onImgDimChange(which) {
+    if (!imgAspectLocked || !imgOrigW || !imgOrigH) return;
+    const ratio = imgOrigW / imgOrigH;
+    if (which === 'w') {
+        const w = parseInt(document.getElementById('imgEditW').value) || 0;
+        document.getElementById('imgEditH').value = Math.round(w / ratio);
+    } else {
+        const h = parseInt(document.getElementById('imgEditH').value) || 0;
+        document.getElementById('imgEditW').value = Math.round(h * ratio);
+    }
+    // Update preset highlight
+    const newW = parseInt(document.getElementById('imgEditW').value);
+    const pct = imgOrigW ? Math.round(newW / imgOrigW * 100) : 100;
+    document.querySelectorAll('.size-preset').forEach(b => b.classList.remove('active'));
+    const match = [25,50,75,100].find(p => Math.abs(p-pct) < 5);
+    if (match) { const mb = document.querySelector('.size-preset[onclick*="'+match+'"]'); if (mb) mb.classList.add('active'); }
+}
+
+function toggleAspectLock() {
+    imgAspectLocked = !imgAspectLocked;
+    document.getElementById('imgAspectLock').classList.toggle('locked', imgAspectLocked);
+    document.getElementById('imgAspectLock').textContent = imgAspectLocked ? '🔗' : '🔓';
+}
+
 function applyImgEdit() {
     if (currentEditImg) {
         currentEditImg.alt = document.getElementById('imgEditAlt').value;
         currentEditImg.dataset.caption = document.getElementById('imgEditCaption').value;
+        // Apply size
+        const w = parseInt(document.getElementById('imgEditW').value);
+        const h = parseInt(document.getElementById('imgEditH').value);
+        if (w > 0) { currentEditImg.style.width = w + 'px'; currentEditImg.setAttribute('width', w); }
+        if (h > 0) { currentEditImg.style.height = h + 'px'; currentEditImg.setAttribute('height', h); }
+        // Apply alignment
+        const activeAlign = document.querySelector('.align-btn.active');
+        const align = activeAlign ? activeAlign.dataset.align : 'none';
+        currentEditImg.classList.remove('img-align-left','img-align-center','img-align-right','img-align-none');
+        currentEditImg.classList.add('img-align-' + align);
+        // Clear float after image if needed for left/right alignment
+        if (align === 'left' || align === 'right') {
+            currentEditImg.style.maxWidth = currentEditImg.style.width || '50%';
+        } else {
+            currentEditImg.style.maxWidth = '100%';
+        }
     }
     closeImgEdit();
 }
+
 async function replaceEditorImage(input) {
     const file = input.files[0]; if (!file || !currentEditImg) return; input.value = '';
     showToast('📤 Uploading replacement...');
@@ -622,6 +764,67 @@ function removeEditorImage() {
         closeImgEdit();
         showToast('Image removed');
     }
+}
+
+// === DRAG-RESIZE IN EDITOR (corner handles) ===
+let resizeWrap = null;
+function showResizeHandles(img) {
+    removeResizeHandles();
+    const editor = document.querySelector('.ql-editor');
+    const editorRect = editor.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    resizeWrap = document.createElement('div');
+    resizeWrap.className = 'img-resize-wrap';
+    resizeWrap.style.cssText = 'position:absolute;top:'+(imgRect.top - editorRect.top + editor.scrollTop)+'px;left:'+(imgRect.left - editorRect.left)+'px;width:'+img.width+'px;height:'+img.height+'px;';
+    const info = document.createElement('div');
+    info.className = 'img-resize-info';
+    info.textContent = img.width + ' × ' + img.height;
+    resizeWrap.appendChild(info);
+    ['br','bl','tr','tl'].forEach(pos => {
+        const h = document.createElement('div');
+        h.className = 'img-resize-handle ' + pos;
+        h.addEventListener('mousedown', (e) => startResize(e, img, pos, info));
+        resizeWrap.appendChild(h);
+    });
+    // Place in the ql-container (which has position relative via Quill)
+    const container = document.querySelector('.ql-container');
+    container.style.position = 'relative';
+    container.appendChild(resizeWrap);
+}
+
+function removeResizeHandles() {
+    if (resizeWrap && resizeWrap.parentNode) resizeWrap.parentNode.removeChild(resizeWrap);
+    resizeWrap = null;
+}
+
+function startResize(e, img, corner, infoEl) {
+    e.preventDefault(); e.stopPropagation();
+    const startX = e.clientX, startY = e.clientY;
+    const startW = img.width, startH = img.height;
+    const ratio = startW / startH;
+    const onMove = (ev) => {
+        let dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (corner === 'tl') { dx = -dx; dy = -dy; }
+        else if (corner === 'tr') { dy = -dy; }
+        else if (corner === 'bl') { dx = -dx; }
+        let newW = Math.max(40, startW + dx);
+        let newH = Math.round(newW / ratio);
+        img.style.width = newW + 'px';
+        img.style.height = newH + 'px';
+        img.setAttribute('width', newW);
+        img.setAttribute('height', newH);
+        if (resizeWrap) {
+            resizeWrap.style.width = newW + 'px';
+            resizeWrap.style.height = newH + 'px';
+        }
+        if (infoEl) infoEl.textContent = newW + ' × ' + newH;
+    };
+    const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
 }
 
 // === FEATURED IMAGE ===
@@ -790,7 +993,22 @@ async function aiAction(type) {
 
 // === KEYBOARD SHORTCUTS ===
 window.addEventListener('beforeunload', e => { if (document.getElementById('name').value) { e.preventDefault(); e.returnValue = ''; }});
-document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(editId ? 'auto' : null); }});
+document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveItem(editId ? 'auto' : null); }
+    if (e.key === 'Escape') { removeResizeHandles(); closeImgEdit(); closeMediaPicker(); }
+    // Delete key removes selected image
+    if ((e.key === 'Delete' || e.key === 'Backspace') && currentEditImg && document.activeElement === quill.root) {
+        // Only if not in a text input
+        if (!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
+            currentEditImg.parentNode.removeChild(currentEditImg);
+            removeResizeHandles(); currentEditImg = null;
+        }
+    }
+});
+// Reposition handles on scroll
+document.querySelector('.ql-editor').addEventListener('scroll', () => {
+    if (currentEditImg && resizeWrap) showResizeHandles(currentEditImg);
+});
 
 // === INIT ===
 loadSpecialties().then(() => { if (editId) loadItem(); });
