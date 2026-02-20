@@ -67,8 +67,22 @@ app.post('/api/hospitals/bulk', apiAuth, roleRequired('super_admin', 'editor'), 
 
 app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        await pool.query('DELETE FROM hospitals WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'hospital', parseInt(req.params.id), 'Deleted hospital');
+        const id = req.params.id;
+        const deps = [];
+        const d = await pool.query('SELECT COUNT(*) FROM doctors WHERE hospital_id = $1', [id]);
+        if (+d.rows[0].count > 0) deps.push(`${d.rows[0].count} doctor(s)`);
+        const v = await pool.query('SELECT COUNT(*) FROM videos WHERE hospital_id = $1', [id]);
+        if (+v.rows[0].count > 0) deps.push(`${v.rows[0].count} video(s)`);
+        const t = await pool.query('SELECT COUNT(*) FROM testimonials WHERE hospital_id = $1', [id]);
+        if (+t.rows[0].count > 0) deps.push(`${t.rows[0].count} testimonial(s)`);
+        if (deps.length > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        }
+        // Clean up junction tables first
+        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id = $1', [id]);
+        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id = $1', [id]);
+        await pool.query('DELETE FROM hospitals WHERE id = $1', [id]);
+        await logActivity(req.user.id, 'delete', 'hospital', parseInt(id), 'Deleted hospital');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
@@ -129,7 +143,13 @@ app.put('/api/accreditations/:id', apiAuth, roleRequired('super_admin', 'editor'
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 app.delete('/api/accreditations/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
-    try { await pool.query('DELETE FROM accreditations WHERE id = $1', [req.params.id]); res.json({ success: true }); }
+    try {
+        const ha = await pool.query('SELECT COUNT(*) FROM hospital_accreditations WHERE accreditation_id = $1', [req.params.id]);
+        if (+ha.rows[0].count > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${ha.rows[0].count} hospital(s). Remove them first.` });
+        }
+        await pool.query('DELETE FROM accreditations WHERE id = $1', [req.params.id]); res.json({ success: true });
+    }
     catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 

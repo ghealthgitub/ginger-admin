@@ -85,8 +85,19 @@ app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'),
 
 app.delete('/api/treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        await pool.query('DELETE FROM treatments WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'treatment', parseInt(req.params.id), 'Deleted treatment');
+        const id = req.params.id;
+        const deps = [];
+        const dt = await pool.query('SELECT COUNT(*) FROM doctor_treatments WHERE treatment_id = $1', [id]);
+        if (+dt.rows[0].count > 0) deps.push(`${dt.rows[0].count} doctor(s)`);
+        const dst = await pool.query('SELECT COUNT(*) FROM destination_treatments WHERE treatment_id = $1', [id]);
+        if (+dst.rows[0].count > 0) deps.push(`${dst.rows[0].count} destination treatment page(s)`);
+        const tc = await pool.query('SELECT COUNT(*) FROM treatment_costs WHERE treatment_id = $1', [id]);
+        if (+tc.rows[0].count > 0) deps.push(`${tc.rows[0].count} cost record(s)`);
+        if (deps.length > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        }
+        await pool.query('DELETE FROM treatments WHERE id = $1', [id]);
+        await logActivity(req.user.id, 'delete', 'treatment', parseInt(id), 'Deleted treatment');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });

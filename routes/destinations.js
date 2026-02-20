@@ -64,8 +64,22 @@ app.post('/api/destinations/bulk', apiAuth, roleRequired('super_admin', 'editor'
 
 app.delete('/api/destinations/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        await pool.query('DELETE FROM destinations WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'destination', parseInt(req.params.id), 'Deleted destination');
+        const id = req.params.id;
+        // Check for dependent records
+        const deps = [];
+        const h = await pool.query('SELECT COUNT(*) FROM hospitals WHERE destination_id = $1', [id]);
+        if (+h.rows[0].count > 0) deps.push(`${h.rows[0].count} hospital(s)`);
+        const d = await pool.query('SELECT COUNT(*) FROM doctors WHERE destination_id = $1', [id]);
+        if (+d.rows[0].count > 0) deps.push(`${d.rows[0].count} doctor(s)`);
+        const ds = await pool.query('SELECT COUNT(*) FROM destination_specialties WHERE destination_id = $1', [id]);
+        if (+ds.rows[0].count > 0) deps.push(`${ds.rows[0].count} destination specialty page(s)`);
+        const dt = await pool.query('SELECT COUNT(*) FROM destination_treatments WHERE destination_id = $1', [id]);
+        if (+dt.rows[0].count > 0) deps.push(`${dt.rows[0].count} destination treatment page(s)`);
+        if (deps.length > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        }
+        await pool.query('DELETE FROM destinations WHERE id = $1', [id]);
+        await logActivity(req.user.id, 'delete', 'destination', parseInt(id), 'Deleted destination');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });

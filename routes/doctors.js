@@ -70,8 +70,19 @@ app.post('/api/doctors/bulk', apiAuth, roleRequired('super_admin', 'editor'), as
 
 app.delete('/api/doctors/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        await pool.query('DELETE FROM doctors WHERE id = $1', [req.params.id]);
-        await logActivity(req.user.id, 'delete', 'doctor', parseInt(req.params.id), 'Deleted doctor');
+        const id = req.params.id;
+        const deps = [];
+        const v = await pool.query('SELECT COUNT(*) FROM videos WHERE doctor_id = $1', [id]);
+        if (+v.rows[0].count > 0) deps.push(`${v.rows[0].count} video(s)`);
+        const t = await pool.query('SELECT COUNT(*) FROM testimonials WHERE doctor_id = $1', [id]);
+        if (+t.rows[0].count > 0) deps.push(`${t.rows[0].count} testimonial(s)`);
+        if (deps.length > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        }
+        // Clean up junction table first
+        await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = $1', [id]);
+        await pool.query('DELETE FROM doctors WHERE id = $1', [id]);
+        await logActivity(req.user.id, 'delete', 'doctor', parseInt(id), 'Deleted doctor');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
