@@ -83,7 +83,7 @@ tr:hover .row-actions{opacity:1}
 <script src="/js/sidebar.js" defer></script>
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Treatments</h1><div class="topbar__actions"><a href="/treatments/new" class="btn-new">+ Add Treatment</a></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Treatments</h1><div class="topbar__actions"><a href="/treatments/new" class="btn-new" target="_blank">+ Add Treatment</a></div></header>
 <div class="content">
     <div class="status-tabs">
         <button class="status-tab active" onclick="setTab('')" data-status="">All <span class="count" id="cAll"></span></button><span class="tab-sep">|</span>
@@ -197,10 +197,10 @@ function render(list){
         return `<tr id="row-${t.id}" class="${sc}">
             <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${t.id},this.checked)"></td>
             <td class="item-title-cell">
-                <strong><a href="/treatments/edit/${t.id}">${esc(t.name)}</a></strong>
+                <strong><a href="/treatments/edit/${t.id}" target="_blank">${esc(t.name)}</a></strong>
                 <span class="item-slug">/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/</span>
                 <div class="row-actions">
-                    <a href="/treatments/edit/${t.id}">Edit</a><span class="sep">|</span>
+                    <a href="/treatments/edit/${t.id}" target="_blank">Edit</a><span class="sep">|</span>
                     <button onclick="toggleQE(${t.id})">Quick Edit</button><span class="sep">|</span>
                     <a href="https://ginger.healthcare/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/" target="_blank">View</a><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${t.id})">Trash</button>
