@@ -32,23 +32,31 @@ app.get('/api/backup/status', apiAuth, roleRequired('super_admin'), async (req, 
 
 app.get('/api/backup/download', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        const tables = [
+        const ALLOWED_TABLES = new Set([
             'users', 'blog_posts', 'specialties', 'treatments', 'destinations',
             'hospitals', 'doctors', 'testimonials', 'submissions', 'page_content',
             'media', 'activity_log', 'treatment_costs', 'static_pages',
-            'hospital_specialties', 'doctor_treatments'
-        ];
+            'hospital_specialties', 'doctor_treatments', 'accreditations',
+            'hospital_accreditations', 'airports', 'destination_specialties',
+            'destination_treatments', 'videos'
+        ]);
+        const tables = Array.from(ALLOWED_TABLES);
         const backup = {
             metadata: {
                 created_at: new Date().toISOString(),
                 created_by: req.user.name,
-                version: '1.0',
+                version: '1.1',
                 tables: tables.length
             }
         };
         for (const table of tables) {
+            if (!ALLOWED_TABLES.has(table)) continue;
             try {
-                const result = await pool.query(`SELECT * FROM ${table} ORDER BY id`);
+                // Exclude password hashes from users table
+                const query = table === 'users'
+                    ? 'SELECT id, name, email, role, is_active, avatar, last_login, created_at, updated_at FROM users ORDER BY id'
+                    : `SELECT * FROM "${table}" ORDER BY id`;
+                const result = await pool.query(query);
                 backup[table] = {
                     count: result.rows.length,
                     rows: result.rows

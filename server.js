@@ -3,6 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const { pool, initDB } = require('./config/database');
 const { authRequired, roleRequired, apiAuth, logActivity } = require('./middleware/auth');
 const bcrypt = require('bcryptjs');
@@ -10,6 +11,12 @@ const bcrypt = require('bcryptjs');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
+
+// Security headers
+app.use(helmet({
+    contentSecurityPolicy: false,         // Admin uses inline scripts/styles
+    crossOriginEmbedderPolicy: false
+}));
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
