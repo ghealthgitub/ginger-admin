@@ -439,12 +439,17 @@ quill.root.addEventListener('drop', function(e) {
 });
 
 // Click image in editor → select it (single click), edit details (double click)
+// First click selects. Mousedown on already-selected image starts drag (handled in drag IIFE below).
 quill.root.addEventListener('mousedown', function(e) {
     if (e.target.tagName === 'IMG') {
-        e.preventDefault(); // prevent Quill cursor jump
-        clearImageSelection();
-        e.target.classList.add('ql-img-selected');
-        currentEditImg = e.target;
+        if (!e.target.classList.contains('ql-img-selected')) {
+            // First click — just select it
+            e.preventDefault();
+            clearImageSelection();
+            e.target.classList.add('ql-img-selected');
+            currentEditImg = e.target;
+        }
+        // If already selected, let the drag handler (below) take over
     } else {
         clearImageSelection();
     }
@@ -473,59 +478,119 @@ function clearImageSelection() {
 }
 
 // === IMAGE DRAG TO REPOSITION ===
-// Let user drag a selected image to move it to a different place in the content
+// Manual drag using mousedown (HTML5 drag doesn't work in contenteditable)
 (function() {
-    let dragImg = null, dragGhost = null, dropMarker = null;
+    let dragImg = null, dropMarker = null, clone = null, offsetX = 0, offsetY = 0, isDragging = false;
 
-    quill.root.addEventListener('dragstart', function(e) {
-        if (e.target.tagName === 'IMG') {
-            dragImg = e.target;
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', ''); // required for Firefox
-            // Create drop marker
-            dropMarker = document.createElement('div');
-            dropMarker.style.cssText = 'height:3px;background:var(--teal);border-radius:2px;margin:4px 0;transition:all .1s;';
-            setTimeout(() => { if(dragImg) dragImg.style.opacity = '0.4'; }, 0);
-        }
-    });
+    quill.root.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'IMG' && e.target.classList.contains('ql-img-selected')) {
+            // Start drag after a small delay to distinguish from click
+            const img = e.target;
+            const startX = e.clientX, startY = e.clientY;
+            let moved = false;
 
-    quill.root.addEventListener('dragover', function(e) {
-        if (!dragImg) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        // Find nearest block element to show drop marker
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        if (target && target !== dragImg && target !== dropMarker) {
-            const block = target.closest('p, h1, h2, h3, li, blockquote, div') || target;
-            if (block && block.parentNode === quill.root) {
-                const rect = block.getBoundingClientRect();
-                const mid = rect.top + rect.height / 2;
-                if (dropMarker.parentNode) dropMarker.parentNode.removeChild(dropMarker);
-                if (e.clientY < mid) {
-                    block.parentNode.insertBefore(dropMarker, block);
-                } else {
-                    block.parentNode.insertBefore(dropMarker, block.nextSibling);
+            const onMouseMove = function(ev) {
+                const dx = ev.clientX - startX, dy = ev.clientY - startY;
+                if (!moved && Math.abs(dx) + Math.abs(dy) < 8) return; // threshold
+                
+                if (!moved) {
+                    // Init drag
+                    moved = true;
+                    isDragging = true;
+                    dragImg = img;
+                    img.style.opacity = '0.3';
+                    
+                    // Floating clone follows cursor
+                    clone = img.cloneNode(true);
+                    clone.style.cssText = 'position:fixed;pointer-events:none;z-index:99999;opacity:0.8;border-radius:6px;box-shadow:0 8px 25px rgba(0,0,0,.3);max-width:200px;max-height:150px;';
+                    document.body.appendChild(clone);
+                    
+                    // Drop marker
+                    dropMarker = document.createElement('div');
+                    dropMarker.style.cssText = 'height:3px;background:#0EA5A0;border-radius:2px;margin:4px 0;pointer-events:none;';
                 }
-            }
+
+                // Move clone with cursor
+                if (clone) {
+                    clone.style.left = (ev.clientX + 10) + 'px';
+                    clone.style.top = (ev.clientY + 10) + 'px';
+                }
+
+                // Position drop marker
+                const el = document.elementFromPoint(ev.clientX, ev.clientY);
+                if (el && el.closest('.ql-editor')) {
+                    const block = el.closest('p, h1, h2, h3, h4, li, blockquote') || el;
+                    if (block && block.parentNode === quill.root && block !== dropMarker) {
+                        const rect = block.getBoundingClientRect();
+                        const mid = rect.top + rect.height / 2;
+                        if (dropMarker.parentNode) dropMarker.remove();
+                        if (ev.clientY < mid) {
+                            quill.root.insertBefore(dropMarker, block);
+                        } else if (block.nextSibling) {
+                            quill.root.insertBefore(dropMarker, block.nextSibling);
+                        } else {
+                            quill.root.appendChild(dropMarker);
+                        }
+                    }
+                }
+            };
+
+            const onMouseUp = function(ev) {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                
+                if (moved && dragImg && dropMarker && dropMarker.parentNode) {
+                    // Get image attributes before removing
+                    const src = dragImg.src;
+                    const alt = dragImg.alt || '';
+                    const width = dragImg.getAttribute('width') || '';
+                    const height = dragImg.getAttribute('height') || '';
+                    const classes = dragImg.className.replace('ql-img-selected','').trim();
+                    const styleW = dragImg.style.width;
+                    const styleH = dragImg.style.height;
+                    
+                    // Create a wrapper paragraph for the image at drop location
+                    const newP = document.createElement('p');
+                    const newImg = document.createElement('img');
+                    newImg.src = src;
+                    if (alt) newImg.alt = alt;
+                    if (width) newImg.setAttribute('width', width);
+                    if (height) newImg.setAttribute('height', height);
+                    if (classes) newImg.className = classes;
+                    if (styleW) newImg.style.width = styleW;
+                    if (styleH) newImg.style.height = styleH;
+                    newP.appendChild(newImg);
+                    
+                    // Insert at marker position and remove original
+                    dropMarker.parentNode.insertBefore(newP, dropMarker);
+                    dragImg.closest('p, div')?.remove() || dragImg.remove();
+                    dropMarker.remove();
+                    
+                    // Select the newly placed image
+                    setTimeout(() => {
+                        newImg.classList.add('ql-img-selected');
+                        currentEditImg = newImg;
+                    }, 50);
+                } else {
+                    // No valid drop — restore
+                    if (dropMarker && dropMarker.parentNode) dropMarker.remove();
+                }
+                
+                // Cleanup
+                if (dragImg) dragImg.style.opacity = '1';
+                if (clone) clone.remove();
+                dragImg = null; clone = null; dropMarker = null;
+                setTimeout(() => { isDragging = false; }, 50);
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
         }
     });
 
-    quill.root.addEventListener('drop', function(e) {
-        if (!dragImg) return;
-        e.preventDefault();
-        dragImg.style.opacity = '1';
-        if (dropMarker && dropMarker.parentNode) {
-            // Move image to drop location
-            dropMarker.parentNode.insertBefore(dragImg, dropMarker);
-            dropMarker.parentNode.removeChild(dropMarker);
-        }
-        dragImg = null; dropMarker = null;
-    });
-
-    quill.root.addEventListener('dragend', function(e) {
-        if (dragImg) dragImg.style.opacity = '1';
-        if (dropMarker && dropMarker.parentNode) dropMarker.parentNode.removeChild(dropMarker);
-        dragImg = null; dropMarker = null;
+    // Prevent default drag behavior on images in editor
+    quill.root.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') e.preventDefault();
     });
 })();
 
