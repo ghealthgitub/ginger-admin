@@ -1070,14 +1070,14 @@ const Studio = {
             // Let CPT handle anything custom (junction tables, galleries, etc.)
             if (cfg.onLoad) cfg.onLoad(item, this);
 
-            // If redirected here after first publish, show View link immediately
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('published') === '1' && item.status === 'published') {
+            // Show View link for any published item (on load or after redirect)
+            if (item.status === 'published') {
                 const viewUrl = cfg.viewUrl ? cfg.viewUrl(item) : '';
-                this._setTopbarViewLink(viewUrl);
-                // Clean up the URL without reloading
-                const cleanUrl = window.location.pathname;
-                window.history.replaceState({}, '', cleanUrl);
+                if (viewUrl) this._setTopbarViewLink(viewUrl);
+            }
+            // Clean up ?published=1 from URL if present
+            if (new URLSearchParams(window.location.search).get('published') === '1') {
+                window.history.replaceState({}, '', window.location.pathname);
             }
 
             // Page just loaded — not dirty yet
