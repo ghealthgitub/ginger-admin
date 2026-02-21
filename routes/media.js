@@ -10,7 +10,11 @@ app.get('/media', authRequired, (req, res) => {
 });
 
 // ============== WORDPRESS-STYLE MEDIA SYSTEM ==============
-const sharp = require('sharp');
+// sharp is optional — image resizing degrades gracefully if not installed
+let sharp = null;
+try { sharp = require('sharp'); } catch(e) {
+    console.warn('[media.js] sharp not installed — image subsizes/WebP will be skipped. Run: npm install sharp');
+}
 
 // Image sizes (like WordPress registered sizes)
 const IMAGE_SIZES = {
@@ -57,6 +61,7 @@ function uniqueFilename(dir, base, ext) {
 
 // Generate image subsizes + WebP versions (like wp_create_image_subsizes)
 async function createImageSubsizes(filePath, dir, base, ext) {
+    if (!sharp) return { width: null, height: null, sizes: {} }; // sharp not installed
     const sizes = {};
     try {
         const image = sharp(filePath);
