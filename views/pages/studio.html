@@ -825,7 +825,7 @@ async function aiAction(type) {
     else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+content.substring(0,4000);
     else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
     else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
-    else if (type==='spacing') prompt='Clean up spacing and formatting of this medical content. Remove excessive blank lines, ensure consistent paragraphs, fix list formatting. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
+    else if (type==='spacing') prompt='Clean up this HTML medical content. Rules:\n1. Remove ALL empty paragraphs — delete any <p><br></p> or <p></p> or <p> </p> tags completely\n2. Remove consecutive blank lines — maximum one blank line between sections\n3. Ensure exactly one blank line between paragraphs\n4. Ensure exactly one blank line after each heading before content starts\n5. Fix any inconsistent list formatting\n6. Do NOT change any text content, only fix spacing/structure\nReturn the complete cleaned HTML with no extra blank lines:\n\n'+quill.root.innerHTML.substring(0,6000);
     try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
@@ -838,7 +838,16 @@ async function aiAction(type) {
                 if (line.toLowerCase().includes('short description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v&&v.length<250) setFieldVal('description',v); }
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
-        } else { quill.root.innerHTML=result; updateStats(); analyzeSEO(); showToast('✅ Content updated'); }
+        } else {
+            // Client-side cleanup: strip empty paragraphs the AI may have missed
+            if (type === 'spacing') {
+                result = result.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '');
+                result = result.replace(/<p>\s*<\/p>/gi, '');
+                // Collapse 3+ consecutive newlines to max 1
+                result = result.replace(/(\n\s*){3,}/g, '\n');
+            }
+            quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
+        }
     } catch(e) { showToast('❌ AI error: '+e.message); }
     aiHideProgress();
     btns.forEach(b => b.disabled=false);

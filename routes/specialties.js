@@ -33,6 +33,11 @@ app.get('/specialties/edit/:id', authRequired, roleRequired('super_admin', 'edit
     serveStudio(res, SPECIALTY_CONFIG);
 });
 
+// ─── LEGACY REDIRECTS (old route names) ──────────────────────
+app.get('/specialties-mgmt', authRequired, (req, res) => {
+    res.redirect(301, '/specialties');
+});
+
 // ─── LISTING ──────────────────────────────────────────────────
 app.get('/specialties', authRequired, (req, res) => {
     servePage(res, 'specialties');
