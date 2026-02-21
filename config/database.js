@@ -447,6 +447,10 @@ async function initDB() {
         await client.query(`ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS patient_image VARCHAR(500)`);
         await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS testimonials_slug_unique ON testimonials(slug) WHERE slug IS NOT NULL`);
 
+        // Hospitals — SEO columns
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS meta_title VARCHAR(500)`);
+        await client.query(`ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS meta_description TEXT`);
+
         // Treatment Costs — USA comparison price (Session 30 — Cost Calculator)
         await client.query(`ALTER TABLE treatment_costs ADD COLUMN IF NOT EXISTS usa_cost INTEGER`);
 
