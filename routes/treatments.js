@@ -30,7 +30,6 @@ const TREATMENT_CONFIG = {
             { id: 'description',    label: 'Short Description',type: 'text', placeholder: 'Brief overview...',    flex: 1 }
         ]
     ]
-};
 
 // ─── STUDIO ROUTES ────────────────────────────────────────────
 app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
@@ -74,14 +73,14 @@ app.post('/api/treatments', apiAuth, roleRequired('super_admin', 'editor'), asyn
     try {
         const { name, slug, specialty_id, description, long_description, duration,
                 recovery_time, success_rate, cost_range_usd, image, is_featured,
-                display_order, meta_title, meta_description, status } = req.body;
+                meta_title, meta_description, status } = req.body;
         const result = await pool.query(
             `INSERT INTO treatments (name, slug, specialty_id, description, long_description,
              duration, recovery_time, success_rate, cost_range_usd, image, is_featured,
-             display_order, meta_title, meta_description, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+             meta_title, meta_description, status)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
             [name, slug, specialty_id, description, long_description, duration, recovery_time,
-             success_rate, cost_range_usd, image, is_featured||false, display_order||0,
+             success_rate, cost_range_usd, image, is_featured||false,
              meta_title, meta_description, status||'draft']
         );
         await logActivity(req.user.id, 'create', 'treatment', result.rows[0].id, `Created: ${name}`);
@@ -93,15 +92,15 @@ app.put('/api/treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), a
     try {
         const { name, slug, specialty_id, description, long_description, duration,
                 recovery_time, success_rate, cost_range_usd, image, is_featured,
-                display_order, meta_title, meta_description, status } = req.body;
+                meta_title, meta_description, status } = req.body;
         const result = await pool.query(
             `UPDATE treatments SET name=$1, slug=$2, specialty_id=$3, description=$4,
              long_description=$5, duration=$6, recovery_time=$7, success_rate=$8,
-             cost_range_usd=$9, image=$10, is_featured=$11, display_order=$12,
-             meta_title=$13, meta_description=$14, status=$15, updated_at=NOW()
-             WHERE id=$16 RETURNING *`,
+             cost_range_usd=$9, image=$10, is_featured=$11,
+             meta_title=$12, meta_description=$13, status=$14, updated_at=NOW()
+             WHERE id=$15 RETURNING *`,
             [name, slug, specialty_id, description, long_description, duration, recovery_time,
-             success_rate, cost_range_usd, image, is_featured, display_order||0,
+             success_rate, cost_range_usd, image, is_featured,
              meta_title, meta_description, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'treatment', req.params.id, `Updated: ${name}`);

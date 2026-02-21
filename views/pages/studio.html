@@ -42,7 +42,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-tab{padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray-500);background:var(--white);transition:all .15s}
 .editor-tab.active{background:var(--teal);color:#fff}
 .editor-stats{font-size:.75rem;color:var(--gray-400)}
-.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
 .editor-wrap .ql-toolbar{border:none;border-bottom:1px solid var(--gray-100);padding:6px 32px;flex-shrink:0}
 .editor-wrap .ql-container{border:none;flex:1;overflow:auto;font-family:'DM Sans',sans-serif;font-size:15px}
 .editor-wrap .ql-editor{padding:20px 32px;min-height:100%}
@@ -154,6 +154,13 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .img-edit-actions .btn-remove{color:#EF4444;border-color:#FCA5A5}.img-edit-actions .btn-remove:hover{background:#FEE2E2;border-color:#EF4444;color:#DC2626}
 .img-edit-actions .btn-done{background:var(--teal);color:#fff;border-color:var(--teal);margin-left:auto}.img-edit-actions .btn-done:hover{background:#0c918c}
 .autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.ai-progress{position:absolute;inset:0;background:rgba(255,255,255,.92);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:4px}
+.ai-progress.active{display:flex}
+.ai-progress__label{font-size:.9rem;font-weight:600;color:var(--navy)}
+.ai-progress__bar-wrap{width:260px;height:6px;background:var(--gray-200);border-radius:50px;overflow:hidden}
+.ai-progress__bar{height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--ginger));border-radius:50px;transition:width .4s ease;animation:ai-pulse 1.8s ease-in-out infinite}
+@keyframes ai-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.ai-progress__sub{font-size:.75rem;color:var(--gray-400)}
 </style></head>
 <body>
 
@@ -186,7 +193,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="editor-tabs"><div class="editor-tab active" id="tabWrite" onclick="showTab('write')">✏ Write</div><div class="editor-tab" id="tabPreview" onclick="showTab('preview')">👁 Preview</div></div>
         <div class="editor-stats"><span id="wordCount">0 words</span></div>
     </div>
-    <div class="editor-wrap" id="editorWrap"><div id="editor"></div></div>
+    <div class="editor-wrap" id="editorWrap">
+        <div id="editor"></div>
+        <div class="ai-progress" id="aiProgress">
+            <div class="ai-progress__label" id="aiProgressLabel">✨ AI is working...</div>
+            <div class="ai-progress__bar-wrap"><div class="ai-progress__bar" id="aiProgressBar"></div></div>
+            <div class="ai-progress__sub" id="aiProgressSub">This usually takes 10–20 seconds</div>
+        </div>
+    </div>
     <div class="preview-pane" id="previewPane"></div>
 </div>
 
@@ -770,31 +784,64 @@ async function loadItem() {
 // ─────────────────────────────────────────────
 // AI HELPERS
 // ─────────────────────────────────────────────
+const AI_LABELS = {
+    seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
+    optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
+    grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
+    headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
+    spacing:  { label: '🧹 Cleaning up formatting...',    sub: 'Fixing spacing and paragraph structure'  }
+};
+
+function aiShowProgress(type) {
+    const info = AI_LABELS[type] || { label: '✨ AI is working...', sub: 'This usually takes 10–20 seconds' };
+    document.getElementById('aiProgressLabel').textContent = info.label;
+    document.getElementById('aiProgressSub').textContent = info.sub;
+    const bar = document.getElementById('aiProgressBar');
+    const overlay = document.getElementById('aiProgress');
+    bar.style.width = '0%';
+    overlay.classList.add('active');
+    // Animate bar to ~85% over 15s — leaves room for the final snap to 100%
+    setTimeout(() => bar.style.transition = 'width 15s cubic-bezier(.1,0,.2,1)', 50);
+    setTimeout(() => bar.style.width = '85%', 100);
+}
+function aiHideProgress() {
+    const bar = document.getElementById('aiProgressBar');
+    bar.style.transition = 'width .3s ease';
+    bar.style.width = '100%';
+    setTimeout(() => {
+        document.getElementById('aiProgress').classList.remove('active');
+        bar.style.width = '0%';
+        bar.style.transition = '';
+    }, 350);
+}
+
 async function aiAction(type) {
-    const btns=document.querySelectorAll('.ai-btn'); btns.forEach(b=>b.disabled=true);
-    const itemName=document.getElementById('name').value||('this '+(C.label||'item').toLowerCase());
-    const content=quill.getText().trim();
-    let prompt='';
+    const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled=true);
+    aiShowProgress(type);
+    const itemName = document.getElementById('name').value || ('this ' + (C.label||'item').toLowerCase());
+    const content = quill.getText().trim();
+    let prompt = '';
     if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
     else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+content.substring(0,4000);
     else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
     else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
     else if (type==='spacing') prompt='Clean up spacing and formatting of this medical content. Remove excessive blank lines, ensure consistent paragraphs, fix list formatting. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
     try {
-        const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,type:C.cpt||'item',context:(C.label||'Item')+': '+itemName})});
-        if(!r.ok) throw new Error('AI request failed');
-        const d=await r.json(); let result=d.content||'';
-        const match=result.match(/```html?\n?([\s\S]*?)```/); if(match) result=match[1].trim();
+        const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
+        if (!r.ok) throw new Error('AI request failed');
+        const d = await r.json(); let result = d.content || '';
+        const match = result.match(/```html?\n?([\s\S]*?)```/); if (match) result = match[1].trim();
         if (type==='seo') {
-            result.split('\n').forEach(line=>{
-                if(line.toLowerCase().includes('meta title')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_title').value=v;}
-                if(line.toLowerCase().includes('meta description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_description').value=v;}
-                if(line.toLowerCase().includes('short description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v&&v.length<250)setFieldVal('description',v);}
+            result.split('\n').forEach(line => {
+                if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value=v; }
+                if (line.toLowerCase().includes('meta description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_description').value=v; }
+                if (line.toLowerCase().includes('short description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v&&v.length<250) setFieldVal('description',v); }
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else { quill.root.innerHTML=result; updateStats(); analyzeSEO(); showToast('✅ Content updated'); }
     } catch(e) { showToast('❌ AI error: '+e.message); }
-    btns.forEach(b=>b.disabled=false);
+    aiHideProgress();
+    btns.forEach(b => b.disabled=false);
 }
 
 // ─────────────────────────────────────────────
