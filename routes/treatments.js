@@ -14,7 +14,7 @@ app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'edito
 app.get('/api/treatments', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name FROM treatments t
+            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
              ORDER BY s.name ASC, t.name ASC`
         );
@@ -25,7 +25,7 @@ app.get('/api/treatments', apiAuth, async (req, res) => {
 app.get('/api/treatments/:id', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name FROM treatments t
+            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
              WHERE t.id = $1`, [req.params.id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });

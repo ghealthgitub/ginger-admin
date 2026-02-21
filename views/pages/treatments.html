@@ -1,308 +1,86 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Treatments | Ginger Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/admin.css">
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-<style>
-:root{--navy:#0B2545;--teal:#0EA5A0;--ginger:#F26522;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563}
-.status-tabs{display:flex;gap:4px;margin-bottom:16px;font-size:.85rem}
-.status-tab{padding:4px 0;color:var(--gray-500);cursor:pointer;border:none;background:none;font-family:inherit;font-size:.85rem;transition:color .2s}
-.status-tab:hover{color:var(--navy)}.status-tab.active{color:var(--navy);font-weight:700}
-.status-tab .count{color:var(--gray-400);font-weight:400}.status-tab.active .count{color:var(--teal)}
-.tab-sep{color:var(--gray-300);padding:0 6px;user-select:none}
-.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
-.bulk-bar{display:flex;gap:8px;align-items:center}
-.bulk-bar select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
-.bulk-bar .btn-apply{padding:5px 14px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;cursor:pointer;background:var(--gray-50);font-family:inherit;font-weight:600;color:var(--gray-600);transition:all .2s}
-.bulk-bar .btn-apply:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
-.search-wrap{flex:1;max-width:260px;position:relative}
-.search-wrap input{width:100%;padding:6px 10px 6px 30px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit}
-.search-wrap input:focus{outline:none;border-color:var(--teal)}
-.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:.75rem}
-.filter-group select{padding:5px 10px;border:1px solid var(--gray-300);border-radius:5px;font-size:.82rem;font-family:inherit;background:#fff}
-.pagination-info{margin-left:auto;font-size:.82rem;color:var(--gray-500);display:flex;align-items:center;gap:8px}
-.pagination-info select{padding:3px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:.78rem;font-family:inherit}
-.pag-btn{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;background:#fff;font-size:.78rem;font-family:inherit;color:var(--gray-500)}
-.pag-btn:hover:not(:disabled){background:var(--teal);color:#fff;border-color:var(--teal)}
-.pag-btn:disabled{opacity:.4;cursor:not-allowed}
-.selected-bar{background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.2);border-radius:6px;padding:8px 14px;margin-bottom:10px;display:none;align-items:center;gap:12px;font-size:.82rem;color:var(--teal);font-weight:600}
-.selected-bar .btn-clear{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.78rem;font-family:inherit;text-decoration:underline}
-.data-table{width:100%;border-collapse:collapse}
-.data-table th{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-500);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--gray-200);text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
-.data-table th:hover{color:var(--navy)}
-.data-table th .sort-icon{font-size:.6rem;margin-left:3px;opacity:.4}
-.data-table td{padding:8px 10px;border-bottom:1px solid var(--gray-100);font-size:.85rem;vertical-align:middle}
-.data-table tr:hover td{background:var(--gray-50)}
-.data-table tr.selected td{background:rgba(14,165,160,.04)}
-.cb-cell{width:36px;text-align:center}
-.cb-cell input{width:15px;height:15px;cursor:pointer;accent-color:var(--teal)}
-.item-title-cell{min-width:200px}
-.item-title-cell strong{display:block;color:var(--navy);font-size:.88rem;line-height:1.3}
-.item-title-cell strong a{color:inherit;text-decoration:none}.item-title-cell strong a:hover{color:var(--teal)}
-.item-title-cell .item-slug{font-size:.7rem;color:var(--gray-400);font-family:'DM Sans',monospace;margin-top:1px}
-.row-actions{display:flex;gap:4px;margin-top:4px;opacity:0;transition:opacity .15s}
-tr:hover .row-actions{opacity:1}
-.row-actions a,.row-actions button{font-size:.72rem;padding:2px 7px;border-radius:3px;cursor:pointer;font-family:inherit;text-decoration:none;border:none;background:none;color:var(--gray-500)}
-.row-actions a:hover,.row-actions button:hover{color:var(--teal)}
-.row-actions .act-del{color:#EF4444}.row-actions .act-del:hover{color:#DC2626;text-decoration:underline}
-.row-actions .sep{color:var(--gray-300)}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
-.badge--published{background:#D1FAE5;color:#059669}.badge--draft{background:#FEF3C7;color:#D97706}
-.spec-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600;background:#EDE9FE;color:#7C3AED}
-.date-cell{font-size:.78rem;color:var(--gray-500);white-space:nowrap}
-.empty-state{text-align:center;padding:40px;color:var(--gray-400);font-size:.92rem}
-.btn-new{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;transition:background .2s}
-.btn-new:hover{background:#0c918c}
-.quick-edit-row td{background:#F0F5FF!important;border-top:2px solid var(--teal)!important;border-bottom:2px solid var(--teal)!important}
-.quick-edit{padding:16px 20px}
-.quick-edit__title{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--teal)}
-.quick-edit__grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.quick-edit .form-group{margin-bottom:0}
-.quick-edit .form-label{font-size:.75rem;font-weight:700;margin-bottom:3px;color:var(--navy);display:block}
-.quick-edit .form-input,.quick-edit .form-select{font-size:.82rem;padding:6px 10px;background:#fff;border:1.5px solid var(--gray-300);border-radius:5px;width:100%;font-family:inherit;box-sizing:border-box}
-.quick-edit .form-input:focus,.quick-edit .form-select:focus{border-color:var(--teal);outline:none}
-.quick-edit__actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(14,165,160,.2)}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:12px;width:100%;max-width:740px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.modal__header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--gray-200)}
-.modal__header h3{font-family:'Playfair Display',serif;color:var(--navy);font-size:1.1rem;margin:0}
-.modal__close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
-.modal__close:hover{background:var(--gray-100);color:var(--navy)}
-.modal__body{padding:20px 24px}
-.modal__footer{display:flex;gap:8px;justify-content:flex-end;padding:16px 24px;border-top:1px solid var(--gray-200)}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
-.form-group{margin-bottom:14px}
-.form-label{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px;display:block}
-.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.85rem;box-sizing:border-box}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal);outline:none}
-.form-textarea{resize:vertical;min-height:60px}
-.ql-editor{min-height:120px;font-size:.88rem;line-height:1.7;font-family:"DM Sans",sans-serif}
-.ql-toolbar{border-color:var(--gray-200)!important;background:var(--gray-50);border-radius:8px 8px 0 0}
-.ql-container{border-color:var(--gray-200)!important;border-radius:0 0 8px 8px}
-</style>
-<script src="/js/sidebar.js" defer></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatments | Ginger Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/listing.css">
 </head>
-<body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Treatments</h1><div class="topbar__actions"><a href="/treatments/new" class="btn-new" target="_blank">+ Add Treatment</a></div></header>
-<div class="content">
-    <div class="status-tabs">
-        <button class="status-tab active" onclick="setTab('')" data-status="">All <span class="count" id="cAll"></span></button><span class="tab-sep">|</span>
-        <button class="status-tab" onclick="setTab('published')" data-status="published">Published <span class="count" id="cPub"></span></button><span class="tab-sep">|</span>
-        <button class="status-tab" onclick="setTab('draft')" data-status="draft">Drafts <span class="count" id="cDra"></span></button>
-    </div>
-    <div class="selected-bar" id="selectedBar"><span id="selectedCount">0 selected</span><button class="btn-clear" onclick="clearSel()">Clear</button></div>
-    <div class="toolbar">
-        <div class="bulk-bar">
-            <select id="bulkAction"><option value="">Bulk Actions</option><option value="publish">Set Published</option><option value="draft">Set Draft</option><option value="delete">Move to Trash</option></select>
-            <button class="btn-apply" onclick="applyBulk()">Apply</button>
+<body>
+<div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+        <header class="topbar">
+            <button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+            <h1 class="topbar__title" id="pageTitle">Treatments</h1>
+            <div class="topbar__actions"></div>
+        </header>
+        <div class="content">
+            <div class="status-tabs" id="statusTabs"></div>
+            <div class="selected-bar" id="selectedBar">
+                <span id="selectedCount">0 selected</span>
+                <button class="btn-clear" onclick="Listing.clearSel()">✕ Clear selection</button>
+            </div>
+            <div class="toolbar" id="filterToolbar"></div>
+            <div class="card">
+                <div class="card__body" style="padding:0;overflow-x:auto">
+                    <table class="data-table" id="listTable">
+                        <thead><tr></tr></thead>
+                        <tbody id="list">
+                            <tr><td colspan="10" class="empty-state loading-state">
+                                <div class="loading-spinner"></div> Loading...
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        <div class="filter-group">
-            <select id="specFilter" onchange="doFilter()"><option value="">All Specialties</option></select>
-        </div>
-        <div class="search-wrap"><input type="text" placeholder="Search treatments..." id="searchInput" oninput="doFilter()"></div>
-        <div class="pagination-info">
-            <span id="pageInfo"></span>
-            <button class="pag-btn" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
-            <button class="pag-btn" id="nextBtn" onclick="changePage(1)" disabled>›</button>
-            <select id="perPage" onchange="perPage=+this.value;curPage=1;doFilter()"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
-        </div>
-    </div>
-    <div class="card"><div class="card__body" style="padding:0;overflow-x:auto">
-        <table class="data-table"><thead><tr>
-            <th class="cb-cell"><input type="checkbox" id="selAll" onchange="toggleAll(this.checked)"></th>
-            <th onclick="sortBy('name')">Treatment <span class="sort-icon">↕</span></th>
-            <th onclick="sortBy('specialty')">Specialty <span class="sort-icon">↕</span></th>
-            <th>Duration</th>
-            <th>Cost (USD)</th>
-            <th>Featured</th>
-            <th onclick="sortBy('status')">Status <span class="sort-icon">↕</span></th>
-            <th onclick="sortBy('date')">Date <span class="sort-icon">↕</span></th>
-        </tr></thead><tbody id="list"><tr><td colspan="8" class="empty-state">Loading...</td></tr></tbody></table>
-    </div></div>
-</div></main></div>
+    </main>
+</div>
+<div class="listing-toast" id="listingToast"></div>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modal">
-<div class="modal">
-    <div class="modal__header"><h3 id="modalTitle">Add Treatment</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
-    <div class="modal__body">
-        <div class="form-row"><div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="f_name" oninput="if(!editId)document.getElementById('f_slug').value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')"></div><div class="form-group"><label class="form-label">Slug *</label><input class="form-input" id="f_slug"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Specialty</label><select class="form-select" id="f_specialty_id"><option value="">Select specialty...</option></select></div><div class="form-group"><label class="form-label">Duration</label><input class="form-input" id="f_duration" placeholder="e.g. 2-4 hours"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Recovery Time</label><input class="form-input" id="f_recovery" placeholder="e.g. 1-2 weeks"></div><div class="form-group"><label class="form-label">Success Rate</label><input class="form-input" id="f_success" placeholder="e.g. 95%"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Cost Range (USD)</label><input class="form-input" id="f_cost" placeholder="$5,000 - $15,000"></div><div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="f_image" placeholder="https://..."></div></div>
-        <div class="form-group"><label class="form-label">Short Description</label><textarea class="form-textarea" id="f_desc" placeholder="Brief summary (1-2 sentences)"></textarea></div>
-        <div class="form-group"><label class="form-label">Detailed Description</label><div id="quillEditor"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Meta Title (SEO)</label><input class="form-input" id="f_meta_title"></div><div class="form-group"><label class="form-label">Meta Description (SEO)</label><input class="form-input" id="f_meta_desc"></div></div>
-        <div class="form-row"><div class="form-group"><label class="form-label">Is Featured</label><select class="form-select" id="f_featured"><option value="false">No</option><option value="true">Yes</option></select></div><div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_status"><option value="draft">Draft</option><option value="published">Published</option></select></div></div>
-    </div>
-    <div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">Save Treatment</button></div>
-</div></div>
-
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="/js/sidebar.js" defer></script>
+<script src="/js/listing.js"></script>
 <script>
-let items=[],specs=[],sel=new Set(),curPage=1,perPage=20,sortField='date',sortDir='desc',activeTab='',editId=null,quill=null;
-const API='/api/treatments';
-
-async function safeFetch(u,o){for(let i=0;i<3;i++){try{const r=await fetch(u,o);if(r.status===429){await new Promise(ok=>setTimeout(ok,1000*(i+1)));continue;}return r;}catch(e){if(i===2)throw e;await new Promise(ok=>setTimeout(ok,1000));}}};
-
-async function loadSpecs(){
-    try{const r=await safeFetch('/api/specialties');if(r&&r.ok){specs=await r.json();
-    const sel1=document.getElementById('specFilter'),sel2=document.getElementById('f_specialty_id');
-    specs.forEach(s=>{sel1.innerHTML+='<option value="'+s.id+'">'+s.name+'</option>';sel2.innerHTML+='<option value="'+s.id+'">'+s.name+'</option>';});
-    }}catch(e){}
-}
-
-async function load(){try{const r=await safeFetch(API);if(!r||!r.ok)return;items=await r.json();updateCounts();doFilter();}catch(e){document.getElementById('list').innerHTML='<tr><td colspan="8" class="empty-state">Error loading. Refresh page.</td></tr>';}}
-
-function updateCounts(){
-    const pub=items.filter(i=>i.status==='published').length,dra=items.filter(i=>i.status==='draft').length;
-    document.getElementById('cAll').textContent='('+items.length+')';
-    document.getElementById('cPub').textContent='('+pub+')';
-    document.getElementById('cDra').textContent='('+dra+')';
-    document.getElementById('pageTitle').textContent='Treatments ('+items.length+')';
-}
-
-function setTab(s){activeTab=s;curPage=1;document.querySelectorAll('.status-tab').forEach(t=>t.classList.toggle('active',t.dataset.status===s));doFilter();}
-
-function doFilter(){
-    const q=document.getElementById('searchInput').value.toLowerCase();
-    const sf=document.getElementById('specFilter').value;
-    let f=items.filter(i=>(!activeTab||i.status===activeTab)&&(!q||i.name.toLowerCase().includes(q)||(i.description||'').toLowerCase().includes(q)||(i.specialty_name||'').toLowerCase().includes(q))&&(!sf||String(i.specialty_id)===sf));
-    f.sort((a,b)=>{let va,vb;
-        if(sortField==='name'){va=a.name.toLowerCase();vb=b.name.toLowerCase();}
-        else if(sortField==='specialty'){va=(a.specialty_name||'').toLowerCase();vb=(b.specialty_name||'').toLowerCase();}
-        else if(sortField==='status'){va=a.status;vb=b.status;}
-        else{va=a.created_at||'';vb=b.created_at||'';}
-        return sortDir==='asc'?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
-    });
-    const total=f.length,tp=Math.max(1,Math.ceil(total/perPage));
-    if(curPage>tp)curPage=tp;
-    const start=(curPage-1)*perPage,page=f.slice(start,start+perPage);
-    document.getElementById('pageInfo').textContent=total+' items · page '+curPage+' of '+tp;
-    document.getElementById('prevBtn').disabled=curPage<=1;
-    document.getElementById('nextBtn').disabled=curPage>=tp;
-    render(page);
-}
-
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-
-function render(list){
-    const tb=document.getElementById('list');
-    if(!list.length){tb.innerHTML='<tr><td colspan="8" class="empty-state">No treatments found</td></tr>';return;}
-    tb.innerHTML=list.map(t=>{
-        const ck=sel.has(t.id)?'checked':'',sc=sel.has(t.id)?' selected':'';
-        const dt=new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        // Build specialty options for quick edit
-        const specOpts=specs.map(s=>'<option value="'+s.id+'"'+(t.specialty_id===s.id?' selected':'')+'>'+esc(s.name)+'</option>').join('');
-        return `<tr id="row-${t.id}" class="${sc}">
-            <td class="cb-cell"><input type="checkbox" ${ck} onchange="toggleSel(${t.id},this.checked)"></td>
-            <td class="item-title-cell">
-                <strong><a href="/treatments/edit/${t.id}" target="_blank">${esc(t.name)}</a></strong>
-                <span class="item-slug">/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/</span>
-                <div class="row-actions">
-                    <a href="/treatments/edit/${t.id}" target="_blank">Edit</a><span class="sep">|</span>
-                    <button onclick="toggleQE(${t.id})">Quick Edit</button><span class="sep">|</span>
-                    <a href="https://ginger.healthcare/specialties/${t.specialty_slug?esc(t.specialty_slug)+'/':''}${esc(t.slug)}/" target="_blank">View</a><span class="sep">|</span>
-                    <button class="act-del" onclick="deleteItem(${t.id})">Trash</button>
-                </div>
-            </td>
-            <td>${t.specialty_name?'<span class="spec-badge">'+esc(t.specialty_name)+'</span>':'—'}</td>
-            <td>${esc(t.duration||'—')}</td>
-            <td>${esc(t.cost_range_usd||'—')}</td>
-            <td style="text-align:center">${t.is_featured?'<span style="color:#F59E0B;font-size:.9rem">★</span>':'—'}</td>
-            <td><span class="badge badge--${t.status}">${t.status}</span></td>
-            <td class="date-cell">${dt}</td>
-        </tr>
-        <tr class="quick-edit-row" id="qe-${t.id}" style="display:none"><td colspan="8" style="padding:0;border:none"><div class="quick-edit">
-            <div class="quick-edit__title">QUICK EDIT — ${esc(t.name)}</div>
-            <div class="quick-edit__grid">
-                <div>
-                    <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="qn-${t.id}" value="${esc(t.name)}"></div>
-                    <div class="form-group" style="margin-top:10px"><label class="form-label">Slug</label><input class="form-input" id="qs-${t.id}" value="${esc(t.slug)}"></div>
-                </div>
-                <div>
-                    <div class="form-group"><label class="form-label">Specialty</label><select class="form-select" id="qp-${t.id}"><option value="">None</option>${specOpts}</select></div>
-                    <div class="form-group" style="margin-top:10px"><label class="form-label">Status</label><select class="form-select" id="qt-${t.id}"><option value="draft" ${t.status==='draft'?'selected':''}>Draft</option><option value="published" ${t.status==='published'?'selected':''}>Published</option></select></div>
-                </div>
-                <div>
-                    <div class="form-group"><label class="form-label">Duration</label><input class="form-input" id="qd-${t.id}" value="${esc(t.duration||'')}"></div>
-                    <div class="form-group" style="margin-top:10px"><label class="form-label">Cost Range</label><input class="form-input" id="qr-${t.id}" value="${esc(t.cost_range_usd||'')}"></div>
-                </div>
-            </div>
-            <div class="quick-edit__actions">
-                <button class="btn btn--primary btn--sm" onclick="quickSave(${t.id})" style="padding:6px 16px;font-size:.82rem">💾 Update</button>
-                <button class="btn btn--outline btn--sm" onclick="toggleQE(${t.id})" style="padding:6px 16px;font-size:.82rem">Cancel</button>
-            </div>
-        </div></td></tr>`;
-    }).join('');
-    document.getElementById('selAll').checked=false;
-}
-
-// Selection
-function toggleSel(id,c){if(c)sel.add(id);else sel.delete(id);updateSelUI();const r=document.getElementById('row-'+id);if(r)r.classList.toggle('selected',c);}
-function toggleAll(c){document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=c;const tr=cb.closest('tr');const id=+tr.id.replace('row-','');if(id){if(c)sel.add(id);else sel.delete(id);tr.classList.toggle('selected',c);}});updateSelUI();}
-function updateSelUI(){const b=document.getElementById('selectedBar');if(sel.size){b.style.display='flex';document.getElementById('selectedCount').textContent=sel.size+' selected';}else b.style.display='none';}
-function clearSel(){sel.clear();document.querySelectorAll('#list input[type="checkbox"]').forEach(cb=>{cb.checked=false;cb.closest('tr').classList.remove('selected');});document.getElementById('selAll').checked=false;updateSelUI();}
-
-// Bulk
-async function applyBulk(){
-    const action=document.getElementById('bulkAction').value;
-    if(!action)return alert('Select a bulk action');if(!sel.size)return alert('Select items first');
-    if(!confirm(action+' '+sel.size+' item(s)?'))return;
-    try{const r=await fetch(API+'/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:[...sel],action})});
-    const d=await r.json();if(r.ok){alert('✅ '+d.count+' item(s) updated');sel.clear();document.getElementById('bulkAction').value='';load();}else alert(d.error||'Failed');}catch(e){alert(e.message);}
-}
-
-function sortBy(f){if(sortField===f)sortDir=sortDir==='asc'?'desc':'asc';else{sortField=f;sortDir=f==='date'?'desc':'asc';}doFilter();}
-function changePage(d){curPage+=d;doFilter();window.scrollTo({top:0,behavior:'smooth'});}
-function toggleQE(id){const r=document.getElementById('qe-'+id);r.style.display=r.style.display==='none'?'':'none';}
-
-async function quickSave(id){
-    const data={name:document.getElementById('qn-'+id).value,slug:document.getElementById('qs-'+id).value,specialty_id:+document.getElementById('qp-'+id).value||null,status:document.getElementById('qt-'+id).value,duration:document.getElementById('qd-'+id).value,cost_range_usd:document.getElementById('qr-'+id).value};
-    try{const r=await fetch(API+'/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(r.ok)load();else alert('Save failed');}catch(e){alert('Save failed');}
-}
-
-async function deleteItem(id){if(!confirm('Delete permanently?'))return;try{await fetch(API+'/'+id,{method:'DELETE'});sel.delete(id);load();}catch(e){alert('Failed');}}
-
-// Modal
-function initQuill(){if(quill)return;quill=new Quill('#quillEditor',{theme:'snow',placeholder:'Detailed description...',modules:{toolbar:[['bold','italic','underline'],[{'header':[2,3,false]}],[{'list':'ordered'},{'list':'bullet'}],['link','image'],['clean']]}});}
-
-function openModal(){
-    editId=null;document.getElementById('modalTitle').textContent='Add Treatment';
-    document.getElementById('modal').classList.add('open');
-    ['f_name','f_slug','f_duration','f_recovery','f_success','f_cost','f_image','f_desc','f_meta_title','f_meta_desc'].forEach(f=>document.getElementById(f).value='');
-    document.getElementById('f_specialty_id').value='';document.getElementById('f_status').value='draft';document.getElementById('f_featured').value='false';
-    initQuill();quill.root.innerHTML='';
-}
-
-function editItem(id){
-    const t=items.find(i=>i.id===id);if(!t)return;editId=id;
-    document.getElementById('modalTitle').textContent='Edit Treatment';
-    document.getElementById('modal').classList.add('open');
-    document.getElementById('f_name').value=t.name||'';document.getElementById('f_slug').value=t.slug||'';
-    document.getElementById('f_specialty_id').value=t.specialty_id||'';document.getElementById('f_duration').value=t.duration||'';
-    document.getElementById('f_recovery').value=t.recovery_time||'';document.getElementById('f_success').value=t.success_rate||'';
-    document.getElementById('f_cost').value=t.cost_range_usd||'';document.getElementById('f_image').value=t.image||'';
-    document.getElementById('f_desc').value=t.description||'';
-    document.getElementById('f_meta_title').value=t.meta_title||'';document.getElementById('f_meta_desc').value=t.meta_description||'';
-    document.getElementById('f_featured').value=t.is_featured?'true':'false';document.getElementById('f_status').value=t.status||'draft';
-    initQuill();quill.root.innerHTML=t.long_description||'';
-}
-
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-
-async function saveItem(){
-    const data={name:document.getElementById('f_name').value,slug:document.getElementById('f_slug').value,specialty_id:+document.getElementById('f_specialty_id').value||null,description:document.getElementById('f_desc').value,long_description:quill?quill.root.innerHTML:'',duration:document.getElementById('f_duration').value,recovery_time:document.getElementById('f_recovery').value,success_rate:document.getElementById('f_success').value,cost_range_usd:document.getElementById('f_cost').value,image:document.getElementById('f_image').value,meta_title:document.getElementById('f_meta_title').value,meta_description:document.getElementById('f_meta_desc').value,is_featured:document.getElementById('f_featured').value==='true',status:document.getElementById('f_status').value};
-    if(!data.name)return alert('Name is required');
-    if(!data.slug)data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    try{
-        const url=editId?API+'/'+editId:API;
-        const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-        if(r.ok){closeModal();load();}else{const e=await r.json();alert(e.error||'Save failed');}
-    }catch(e){alert('Save failed');}
-}
-
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){clearSel();closeModal();}});
-loadSpecs().then(()=>load());
+window.LISTING = {
+    cpt: 'treatment',
+    apiEndpoint: '/api/treatments',
+    newUrl: '/treatments/new',
+    editUrl: (item) => '/treatments/edit/' + item.id,
+    viewUrl: (item) => item.specialty_slug && item.slug && item.status === 'published'
+        ? 'https://ginger.healthcare/specialties/' + item.specialty_slug + '/' + item.slug + '/'
+        : null,
+    slugDisplay: (item) => '/specialties/' + (item.specialty_slug || '...') + '/' + (item.slug || '') + '/',
+    imageField: 'image',
+    columns: [
+        { key: 'specialty_name', label: 'Specialty',  badge: 'purple',
+          sortKey: 'specialty' },
+        { key: 'duration',       label: 'Duration' },
+        { key: 'cost_range_usd', label: 'Cost (USD)' },
+    ],
+    filters: [
+        {
+            id: 'specFilter',
+            apiSource: '/api/specialties',
+            placeholder: 'All Specialties',
+            filterFn: (item, val) => !val || String(item.specialty_id) === val
+        }
+    ],
+    quickEditFields: [
+        { id: 'name',           label: 'Name',          type: 'text' },
+        { id: 'slug',           label: 'Slug',          type: 'text' },
+        { id: 'specialty_id',   label: 'Specialty',     type: 'select', source: 'specFilter' },
+        { id: 'status',         label: 'Status',        type: 'status' },
+        { id: 'duration',       label: 'Duration',      type: 'text' },
+        { id: 'recovery_time',  label: 'Recovery Time', type: 'text' },
+        { id: 'success_rate',   label: 'Success Rate',  type: 'text' },
+        { id: 'cost_range_usd', label: 'Cost (USD)',    type: 'text' },
+    ],
+    defaultSort: 'date',
+    defaultDir: 'desc',
+};
 </script>
-</body></html>
+</body>
+</html>
