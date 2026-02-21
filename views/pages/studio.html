@@ -571,7 +571,8 @@ if (C.noQuill) {
     const ib = document.getElementById('editorImportBar');
     if (tb) tb.style.display = 'none';
     if (ib) ib.style.display = 'none';
-    quill = { root:{ innerHTML:'' }, getLength:()=>0, on:()=>{}, getSelection:()=>null,
+    quill = { root:{ innerHTML:'', addEventListener:()=>{}, querySelectorAll:()=>[], querySelector:()=>null, classList:{} },
+              getLength:()=>0, on:()=>{}, getSelection:()=>null, getText:()=>'',
               insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{} };
 } else {
 quill = new Quill('#editor', {
@@ -923,12 +924,9 @@ async function saveItem(status) {
     };
     // D. Treatment: cost fields are in fieldRows (cost_min_usd, cost_max_usd, hospital_stay)
     // hero_bg not used — featured image serves as hero background
-    // Video: collect auto-extracted thumbnail
+    // Video: API expects 'title' (not generic 'name'), and thumbnail from hidden field
     if (C.cpt === 'video') {
-        data.thumbnail = document.getElementById('thumbnail')?.value || '';
-    }
-    // Video: collect thumbnail from hidden field
-    if (C.cpt === 'video') {
+        data.title = data.name;
         data.thumbnail = document.getElementById('thumbnail')?.value || '';
     }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
@@ -963,7 +961,7 @@ async function loadItem() {
     if (!editId) return;
     try {
         const r=await fetch(C.api+'/'+editId); if(!r.ok) return; const item=await r.json();
-        document.getElementById('name').value=item.name||'';
+        document.getElementById('name').value=item.name||item.title||'';
         document.getElementById('slug').value=item.slug||''; slugEdited=true;
         quill.root.innerHTML=item.long_description||'';
         document.getElementById('status').value=item.status||'draft';
@@ -1002,28 +1000,22 @@ async function loadItem() {
         if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
             // D. Specialty: restore hero_bg if it has its own field
             if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
-            // Video: restore thumbnail hidden field then fire preview
-            if (C.cpt === 'video') setTimeout(() => {
-                if (item.thumbnail) {
-                    const th = document.getElementById('thumbnail');
-                    if (th) th.value = item.thumbnail;
-                    const img = document.getElementById('videoThumbImg');
-                    if (img) { img.src = item.thumbnail; }
-                    const tr = document.getElementById('videoThumbRow');
-                    if (tr) tr.style.display = 'block';
-                }
-                if (item.youtube_url) extractYTThumb();
-            }, 300);
             // Video: restore thumbnail + fire preview
             if (C.cpt === 'video') setTimeout(() => {
                 if (item.thumbnail) {
                     const th = document.getElementById('thumbnail');
                     const img = document.getElementById('videoThumbImg');
+                    const tr = document.getElementById('videoThumbRow');
                     if (th) th.value = item.thumbnail;
-                    if (img) { img.src = item.thumbnail; document.getElementById('videoThumbRow').style.display = 'block'; }
+                    if (img) img.src = item.thumbnail;
+                    if (tr) tr.style.display = 'block';
                 }
-                if (item.youtube_url) extractYTThumb();
-            }, 200);
+                if (item.youtube_url) {
+                    const el = document.getElementById('youtube_url');
+                    if (el) el.value = item.youtube_url;
+                    extractYTThumb();
+                }
+            }, 300);
     } catch(e) { console.error(e); }
 }
 
@@ -1354,56 +1346,6 @@ function loadCitiesForDest(forceSlug, forceCity) {
     }
 }
 
-
-// ─────────────────────────────────────────────
-// VIDEO CPT — YouTube thumbnail extraction + preview
-// ─────────────────────────────────────────────
-function extractYTThumb() {
-    const urlEl = document.getElementById('youtube_url');
-    if (!urlEl) return;
-    const url = urlEl.value.trim();
-    const videoId = getYTVideoId(url);
-    if (!videoId) {
-        document.getElementById('videoPreviewBox').innerHTML = 'Enter a YouTube URL above to preview';
-        document.getElementById('videoThumbRow').style.display = 'none';
-        return;
-    }
-    // Show embed preview
-    document.getElementById('videoPreviewBox').innerHTML =
-        `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}"
-         frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
-         allowfullscreen style="display:block;border:none"></iframe>`;
-    // Set thumbnail
-    const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    const thumbEl = document.getElementById('videoThumbImg');
-    const hiddenThumb = document.getElementById('thumbnail');
-    if (thumbEl) thumbEl.src = thumbUrl;
-    if (hiddenThumb) hiddenThumb.value = thumbUrl;
-    document.getElementById('videoThumbRow').style.display = 'block';
-    // Auto-generate slug from title if empty
-    if (!slugEdited) {
-        const titleEl = document.getElementById('name');
-        if (titleEl && titleEl.value) {
-            document.getElementById('slug').value = titleEl.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-        }
-    }
-    isDirty = true;
-}
-
-function getYTVideoId(url) {
-    if (!url) return null;
-    const patterns = [
-        /youtube\.com\/watch\?v=([^&]+)/,
-        /youtu\.be\/([^?&]+)/,
-        /youtube\.com\/embed\/([^?&]+)/,
-        /youtube\.com\/shorts\/([^?&]+)/,
-    ];
-    for (const p of patterns) {
-        const m = url.match(p);
-        if (m) return m[1];
-    }
-    return null;
-}
 
 // ─────────────────────────────────────────────
 // VIDEO CPT — YouTube extraction + preview
