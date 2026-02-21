@@ -217,12 +217,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)" id="permalinkBase"></span><input type="text" id="slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
     </div>
     <div id="cptFields"></div>
-    <div class="import-bar">
+    <div class="import-bar" id="editorImportBar">
         <button class="import-btn import-btn--primary" onclick="openMediaPicker('insert')">🖼 Add Media</button>
         <label class="import-btn"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importFile(this)">📄 Import from Word</label>
         <span class="import-hint">Tip: Paste images directly into the editor</span>
     </div>
-    <div class="editor-toolbar-area">
+    <div class="editor-toolbar-area" id="editorToolbarArea">
         <div class="editor-tabs"><div class="editor-tab active" id="tabWrite" onclick="showTab('write')">✏ Write</div><div class="editor-tab" id="tabPreview" onclick="showTab('preview')">👁 Preview</div></div>
         <div class="editor-stats"><span id="wordCount">0 words</span></div>
     </div>
@@ -230,7 +230,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div id="videoPreviewPanel" style="display:none;flex-direction:column;flex:1;overflow-y:auto;padding:24px;gap:24px">
         <div>
             <div style="font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">▶ Video Preview</div>
-            <div id="videoPreviewBox" style="background:var(--gray-900,#111);border-radius:12px;overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--gray-500);font-size:.88rem;text-align:center;padding:20px">
+            <div id="videoPreviewBox" style="background:var(--gray-100,#F3F4F6);border-radius:12px;overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--gray-500);font-size:.88rem;text-align:center;padding:20px">
                 Enter a YouTube URL above to preview
             </div>
         </div>
@@ -433,6 +433,9 @@ function renderFields() {
                 </div>`;
                 window._langSelectFields = window._langSelectFields || [];
                 window._langSelectFields.push(f.id);
+            } else if (f.type === 'textarea') {
+                const rows = f.rows || 3;
+                input = `<textarea id="${f.id}" placeholder="${f.placeholder||''}" rows="${rows}" style="width:100%;resize:vertical;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.88rem;line-height:1.5">${f.default||''}</textarea>`;
             } else {
                 input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
             }
@@ -564,6 +567,10 @@ let quill;
 if (C.noQuill) {
     document.getElementById('editorWrap').style.display = 'none';
     document.getElementById('videoPreviewPanel').style.display = 'flex';
+    const tb = document.getElementById('editorToolbarArea');
+    const ib = document.getElementById('editorImportBar');
+    if (tb) tb.style.display = 'none';
+    if (ib) ib.style.display = 'none';
     quill = { root:{ innerHTML:'' }, getLength:()=>0, on:()=>{}, getSelection:()=>null,
               insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{} };
 } else {
