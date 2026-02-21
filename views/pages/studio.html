@@ -241,11 +241,30 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <div class="sb-box" id="doctorTreatsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">💊 Treatments</div><span class="sb-box__toggle">▾</span></div>
+    <div class="sb-box" id="doctorTreatsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">💊 Treatments Performed</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
-            <div class="treat-count"><span id="treatSelectedCount">0</span> selected</div>
+            <div class="treat-tags" id="treatTags"></div>
+            <div class="treat-header">
+                <span class="treat-count"><span id="treatSelectedCount">0</span> selected</span>
+                <button class="treat-clear" onclick="treatClearAll()">Clear all</button>
+            </div>
             <input type="text" class="treat-search" id="treatSearch" placeholder="Search treatments..." oninput="treatFilter()">
             <div class="treat-list" id="treatList"><div style="padding:12px;text-align:center;color:var(--gray-400);font-size:.8rem">Loading...</div></div>
+            <div style="font-size:.7rem;color:var(--gray-400);margin-top:6px">Filtered by selected specialty. Search to find any treatment.</div>
+        </div>
+    </div>
+    <div class="sb-box" id="doctorDetailsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Doctor Details</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label">Qualifications <span style="font-weight:400;color:var(--gray-400)">(press Enter to add)</span></div>
+            <div class="chips-wrap" id="qualWrap" onclick="document.getElementById('qualInput').focus()">
+                <input class="chip-input" id="qualInput" placeholder="e.g. MBBS, MD, FRCS..." onkeydown="handleChipKey(event,'qual')">
+            </div>
+            <div class="chip-hint" style="margin-bottom:10px">Degrees, boards, fellowships</div>
+            <div class="sb-label">Languages Spoken <span style="font-weight:400;color:var(--gray-400)">(press Enter to add)</span></div>
+            <div class="chips-wrap" id="langWrap" onclick="document.getElementById('langInput').focus()">
+                <input class="chip-input" id="langInput" placeholder="e.g. English, Hindi, Arabic..." onkeydown="handleChipKey(event,'lang')">
+            </div>
+            <div class="chip-hint">Languages the doctor speaks</div>
         </div>
     </div>
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
@@ -737,6 +756,11 @@ async function saveItem(status) {
             cptData.specialty = specSel.options[specSel.selectedIndex].text.trim() || null;
         }
     }
+    // Doctor-specific array fields
+    if (C.cpt === 'doctor') {
+        cptData.qualifications = doctorQualifications;
+        cptData.languages = doctorLanguages;
+    }
     const data = {
         name: document.getElementById('name').value,
         slug: document.getElementById('slug').value,
@@ -792,7 +816,16 @@ async function loadItem() {
         document.getElementById('image').value=item.image||'';
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
-        const restoreFields=()=>{ allFields.forEach(f=>setFieldVal(f.id,item[f.id])); updatePermalink(); };
+        const restoreFields=()=>{
+            allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
+            updatePermalink();
+            // Doctor: restore qualifications + languages chips, then re-render treatments
+            if (C.cpt === 'doctor') {
+                if (item.qualifications && item.qualifications.length) { doctorQualifications=[...item.qualifications]; renderChips('qual'); }
+                if (item.languages && item.languages.length) { doctorLanguages=[...item.languages]; renderChips('lang'); }
+                setTimeout(()=>treatRender(), 100); // re-filter after specialty loaded
+            }
+        };
         // Wait briefly for async select sources to populate, then restore values
         setTimeout(restoreFields,300);
         updateTopTitle(); updatePublishUI(); updateStats(); analyzeSEO();
@@ -892,13 +925,15 @@ document.getElementById('name').addEventListener('input',()=>isDirty=true);
 
 
 // ─────────────────────────────────────────────
-// DOCTOR TREATMENTS PANEL
+// DOCTOR TREATMENTS + DETAILS PANEL
 // ─────────────────────────────────────────────
 let allTreatments = [], selectedTreatIds = new Set();
+let doctorQualifications = [], doctorLanguages = [];
 
 async function initDoctorTreats() {
     if (C.cpt !== 'doctor') return;
     document.getElementById('doctorTreatsBox').style.display = '';
+    document.getElementById('doctorDetailsBox').style.display = '';
     // Load all treatments
     try {
         const r = await fetch('/api/treatments');
@@ -915,29 +950,67 @@ async function initDoctorTreats() {
     treatRender();
 }
 
-function treatRender() {
-    const q = (document.getElementById('treatSearch')?.value || '').toLowerCase();
-    const filtered = allTreatments.filter(t => !q || t.name.toLowerCase().includes(q));
-    const list = document.getElementById('treatList');
-    if (!filtered.length) { list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gray-400);font-size:.8rem">No treatments found</div>'; return; }
-    list.innerHTML = filtered.map(t => `
-        <div class="treat-item" onclick="treatToggle(${t.id})">
-            <input type="checkbox" id="tc_${t.id}" ${selectedTreatIds.has(t.id) ? 'checked' : ''} onclick="event.stopPropagation();treatToggle(${t.id})">
-            <label for="tc_${t.id}">${t.name}</label>
-        </div>`).join('');
-    document.getElementById('treatSelectedCount').textContent = selectedTreatIds.size;
+function treatGetSpecialtyId() {
+    const sel = document.getElementById('specialty_id');
+    return sel ? (parseInt(sel.value) || null) : null;
 }
 
 function treatFilter() { treatRender(); }
 
-function treatToggle(id) {
+function treatRender() {
+    const q = (document.getElementById('treatSearch')?.value || '').toLowerCase();
+    const specId = treatGetSpecialtyId();
+    let filtered = allTreatments;
+    // Filter by specialty if one is selected and no search query
+    if (specId && !q) filtered = filtered.filter(t => t.specialty_id === specId);
+    // Apply search
+    if (q) filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
+    const list = document.getElementById('treatList');
+    if (!filtered.length) {
+        list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gray-400);font-size:.8rem">' +
+            (q ? 'No treatments match your search' : 'No treatments for this specialty') + '</div>';
+    } else {
+        list.innerHTML = filtered.map(t => {
+            const sel = selectedTreatIds.has(t.id);
+            return `<div class="treat-item${sel?' selected':''}" onclick="treatToggle(${t.id},this)">
+                <input type="checkbox" id="tc_${t.id}" ${sel?'checked':''} onclick="event.stopPropagation();treatToggle(${t.id},this.closest('.treat-item'))">
+                <label for="tc_${t.id}">${t.name}</label>
+            </div>`;
+        }).join('');
+    }
+    treatRenderTags();
+}
+
+function treatRenderTags() {
+    const tags = document.getElementById('treatTags');
+    const selected = allTreatments.filter(t => selectedTreatIds.has(t.id));
+    tags.innerHTML = selected.map(t =>
+        `<span class="treat-tag">${t.name}<button onclick="treatToggle(${t.id});event.stopPropagation()" title="Remove">×</button></span>`
+    ).join('');
+    document.getElementById('treatSelectedCount').textContent = selectedTreatIds.size;
+}
+
+function treatToggle(id, rowEl) {
     if (selectedTreatIds.has(id)) selectedTreatIds.delete(id);
     else selectedTreatIds.add(id);
-    // Update checkbox visually
     const cb = document.getElementById('tc_' + id);
     if (cb) cb.checked = selectedTreatIds.has(id);
-    document.getElementById('treatSelectedCount').textContent = selectedTreatIds.size;
+    if (rowEl) rowEl.classList.toggle('selected', selectedTreatIds.has(id));
+    treatRenderTags();
     isDirty = true;
+}
+
+function treatClearAll() {
+    selectedTreatIds.clear();
+    treatRender();
+    isDirty = true;
+}
+
+// Re-filter when specialty changes
+const _origUpdatePermalink = window.updatePermalink;
+function updatePermalinkWithTreats() {
+    if (typeof _origUpdatePermalink === 'function') _origUpdatePermalink();
+    if (C.cpt === 'doctor') treatRender();
 }
 
 async function saveDoctorTreats(doctorId) {
@@ -951,11 +1024,57 @@ async function saveDoctorTreats(doctorId) {
     } catch(e) { console.error('Failed to save doctor treatments:', e); }
 }
 
+// ─── Qualifications + Languages chips ────────
+function handleChipKey(e, type) {
+    if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const val = e.target.value.trim().replace(/,$/, '');
+        if (!val) return;
+        if (type === 'qual' && !doctorQualifications.includes(val)) {
+            doctorQualifications.push(val);
+            renderChips('qual');
+        } else if (type === 'lang' && !doctorLanguages.includes(val)) {
+            doctorLanguages.push(val);
+            renderChips('lang');
+        }
+        e.target.value = '';
+        isDirty = true;
+    }
+}
+
+function renderChips(type) {
+    const arr = type === 'qual' ? doctorQualifications : doctorLanguages;
+    const wrapId = type === 'qual' ? 'qualWrap' : 'langWrap';
+    const inputId = type === 'qual' ? 'qualInput' : 'langInput';
+    const wrap = document.getElementById(wrapId);
+    if (!wrap) return;
+    // Remove all chips (not the input)
+    wrap.querySelectorAll('.chip').forEach(c => c.remove());
+    const input = document.getElementById(inputId);
+    arr.forEach((val, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = `${val}<button onclick="removeChip(${i},'${type}')" title="Remove">×</button>`;
+        wrap.insertBefore(chip, input);
+    });
+}
+
+function removeChip(i, type) {
+    if (type === 'qual') doctorQualifications.splice(i, 1);
+    else doctorLanguages.splice(i, 1);
+    renderChips(type);
+    isDirty = true;
+}
+
 // ─────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────
 initPage();
 initDoctorTreats();
 if (editId) loadItem();
+// Re-filter treatments when specialty changes
+document.addEventListener('change', function(e) {
+    if (e.target.id === 'specialty_id' && C.cpt === 'doctor') treatRender();
+});
 </script>
 </body></html>
