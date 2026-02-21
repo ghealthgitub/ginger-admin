@@ -14,6 +14,11 @@ const DOCTOR_CONFIG = {
         withSlug: 'ginger.healthcare/destinations/{slug}/doctors/',
         withoutSlug: 'ginger.healthcare/destinations/.../doctors/'
     },
+    viewUrlBuilder: {
+        selectId: 'destination_id',
+        withParent: 'https://ginger.healthcare/destinations/{parent}/doctors/{slug}/',
+        withoutParent: null
+    },
     fieldRows: [
         [
             { id: 'destination_id', label: 'Destination *', type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink()' },
