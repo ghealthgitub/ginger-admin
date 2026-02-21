@@ -287,6 +287,30 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
+    <!-- D. Specialty: Why Choose + Hero BG -->
+    <div class="sb-box" id="dsWhyBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">✅ Why Choose Section</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label" style="margin-top:0">Why Choose Content</div>
+            <div style="font-size:.72rem;color:var(--gray-400);margin-bottom:6px">Short richtext shown in the "Why Choose" section of the page</div>
+            <div id="dsWhyEditor" style="border:1px solid var(--gray-200);border-radius:6px;min-height:80px;font-size:.82rem"></div>
+        </div>
+    </div>
+    <div class="sb-box" id="dsHeroBgBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🌄 Hero Background Image</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div id="heroBgImgBox" style="cursor:pointer" onclick="openMediaPicker('hero_bg')">
+                <img class="feat-img-preview" id="heroBgPreview" style="display:none">
+                <div class="feat-img-empty" id="heroBgEmpty"><div style="font-size:1.5rem;margin-bottom:4px">🌄</div>Click to set hero background</div>
+            </div>
+            <div id="heroBgActions" style="display:none;margin-top:6px">
+                <div class="feat-img-btns">
+                    <button class="feat-img-btn" onclick="openMediaPicker('hero_bg')">Change</button>
+                    <button class="feat-img-btn" onclick="removeHeroBg()" style="color:#EF4444">Remove</button>
+                </div>
+            </div>
+            <input type="hidden" id="hero_bg">
+        </div>
+    </div>
+
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
     </div>
@@ -487,6 +511,21 @@ function updatePermalink() {
     document.getElementById('permalinkBase').textContent = parentSlug
         ? C.permalinkDynamic.withSlug.replace('{slug}', parentSlug)
         : C.permalinkDynamic.withoutSlug;
+    // D. Specialty: auto-fill name from destination + specialty
+    if (C.cpt === 'd-specialty' && !editId) {
+        const destOpt = document.getElementById('destination_id')?.options[document.getElementById('destination_id')?.selectedIndex];
+        const specOpt = document.getElementById('specialty_id')?.options[document.getElementById('specialty_id')?.selectedIndex];
+        const destName = destOpt?.value ? destOpt.text.replace(/^[\p{So}\p{Cn}\s]+/u,'').trim() : '';
+        const specName = specOpt?.value ? specOpt.text.replace(/^[\p{So}\p{Cn}\s]+/u,'').trim() : '';
+        if (destName && specName) {
+            const autoName = specName + ' in ' + destName;
+            document.getElementById('name').value = autoName;
+            document.getElementById('topTitle').textContent = autoName;
+            if (!slugEdited) {
+                document.getElementById('slug').value = specName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+            }
+        }
+    }
 }
 
 function buildViewUrl(itemSlug) {
@@ -659,6 +698,7 @@ function mpConfirm() {
     if (!mpSelected) return;
     const url = (window.ADMIN_URL||'') + mpSelected.url;
     if (mpMode==='featured') { setFeatImage(url); closeMediaPicker(); return; }
+    if (mpMode==='hero_bg') { setHeroBg(url); closeMediaPicker(); return; }
     const idx = quill.getSelection(true)?.index||quill.getLength();
     quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); closeMediaPicker();
 }
@@ -847,6 +887,11 @@ async function saveItem(status) {
         status: status||document.getElementById('status').value,
         ...cptData
     };
+    // D. Specialty: collect why_choose + hero_bg
+    if (C.cpt === 'd-specialty') {
+        data.why_choose = dsWhyQuill ? (dsWhyQuill.root.innerHTML === '<p><br></p>' ? '' : dsWhyQuill.root.innerHTML) : '';
+        data.hero_bg = document.getElementById('hero_bg')?.value || '';
+    }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try {
@@ -916,6 +961,11 @@ async function loadItem() {
         updateCharCount('meta_title','metaTitleCount',60);
         updateCharCount('meta_description','metaDescCount',160);
         if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
+            // D. Specialty: restore why_choose + hero_bg
+            if (C.cpt === 'd-specialty') {
+                if (item.why_choose) setTimeout(()=>{ if(dsWhyQuill) dsWhyQuill.root.innerHTML = item.why_choose; }, 250);
+                if (item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
+            }
     } catch(e) { console.error(e); }
 }
 
@@ -1246,15 +1296,56 @@ function loadCitiesForDest(forceSlug, forceCity) {
     }
 }
 
+
+// ─────────────────────────────────────────────
+// D. SPECIALTY PANELS (why_choose + hero_bg)
+// ─────────────────────────────────────────────
+let dsWhyQuill = null;
+
+function initDSpecialtyPanels() {
+    if (C.cpt !== 'd-specialty') return;
+    document.getElementById('dsWhyBox').style.display = '';
+    document.getElementById('dsHeroBgBox').style.display = '';
+    // Init why_choose mini Quill
+    if (!dsWhyQuill) {
+        dsWhyQuill = new Quill('#dsWhyEditor', {
+            theme: 'snow',
+            placeholder: 'Why choose this destination for this specialty...',
+            modules: { toolbar: [['bold','italic','underline'],[{list:'ordered'},{list:'bullet'}],['clean']] }
+        });
+        dsWhyQuill.on('text-change', () => { isDirty = true; });
+    }
+}
+
+function setHeroBg(url) {
+    document.getElementById('hero_bg').value = url;
+    const full = url.startsWith('http') ? url : (window.ADMIN_URL||'') + url;
+    const p = document.getElementById('heroBgPreview');
+    p.src = full; p.style.display = 'block';
+    document.getElementById('heroBgEmpty').style.display = 'none';
+    document.getElementById('heroBgActions').style.display = 'block';
+    isDirty = true;
+}
+
+function removeHeroBg() {
+    document.getElementById('hero_bg').value = '';
+    document.getElementById('heroBgPreview').style.display = 'none';
+    document.getElementById('heroBgEmpty').style.display = 'block';
+    document.getElementById('heroBgActions').style.display = 'none';
+    isDirty = true;
+}
+
 // ─────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────
 initPage();
 initDoctorTreats();
+initDSpecialtyPanels();
 if (editId) loadItem();
 // Re-filter treatments when specialty changes
 document.addEventListener('change', function(e) {
     if (e.target.id === 'specialty_id' && C.cpt === 'doctor') treatRender();
+    if (e.target.id === 'specialty_id' && C.cpt === 'd-specialty') updatePermalink();
 });
 </script>
 </body></html>

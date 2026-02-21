@@ -1,16 +1,49 @@
-module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage }) {
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, serveStudio }) {
 
-// ============== D. SPECIALTIES CRUD (Page A — Destination + Specialty combos) ==============
+// ─── CPT CONFIG ───────────────────────────────────────────────
+const DS_CONFIG = {
+    cpt: 'd-specialty',
+    label: 'D. Specialty',
+    api: '/api/d-specialties',
+    editBase: '/d-specialty-studio/edit/',
+    listUrl: '/d-specialties',
+    placeholder: 'e.g. Cardiac Surgery in India...',
+    permalinkPrefix: 'ginger.healthcare/destinations/',
+    permalinkDynamic: {
+        selectId: 'destination_id',
+        withSlug: 'ginger.healthcare/destinations/{slug}/',
+        withoutSlug: 'ginger.healthcare/destinations/.../'
+    },
+    viewUrlBuilder: {
+        selectId: 'destination_id',
+        withParent: 'https://ginger.healthcare/destinations/{parent}/{slug}/',
+        withoutParent: null
+    },
+    fieldRows: [
+        [
+            { id: 'destination_id', label: 'Destination *', type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink()' },
+            { id: 'specialty_id',   label: 'Specialty *',   type: 'select', source: '/api/specialties',  flex: 2 },
+        ],
+        [
+            { id: 'description', label: 'Short Description', type: 'text', placeholder: 'Brief overview for listings and meta...', flex: 1 },
+        ]
+    ]
+};
+
+// ─── STUDIO ROUTES ────────────────────────────────────────────
+app.get('/d-specialty-studio', authRequired, (req, res) => {
+    serveStudio(res, DS_CONFIG);
+});
+app.get('/d-specialty-studio/edit/:id', authRequired, (req, res) => {
+    serveStudio(res, DS_CONFIG);
+});
+
+// ─── LISTING PAGE ─────────────────────────────────────────────
 app.get('/d-specialties', authRequired, (req, res) => {
     servePage(res, 'd-specialties');
 });
-app.get('/d-specialty-studio', authRequired, (req, res) => {
-    servePage(res, 'd-specialty-studio');
-});
-app.get('/d-specialty-studio/edit/:id', authRequired, (req, res) => {
-    servePage(res, 'd-specialty-studio');
-});
 
+// ─── API ──────────────────────────────────────────────────────
 app.get('/api/d-specialties', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
@@ -42,14 +75,29 @@ app.get('/api/d-specialties/:id', apiAuth, async (req, res) => {
 
 app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
+        const { destination_id, specialty_id, name, slug, description, long_description, why_choose,
+                image, hero_bg, meta_title, meta_description, status, display_order, is_featured } = req.body;
         if (!destination_id || !specialty_id) return res.status(400).json({ error: 'Destination and Specialty required' });
+        // Auto-generate name and slug if not provided
+        let finalName = name, finalSlug = slug;
+        if (!finalName || !finalSlug) {
+            const dest = await pool.query('SELECT name FROM destinations WHERE id=$1', [destination_id]);
+            const spec = await pool.query('SELECT name, slug FROM specialties WHERE id=$1', [specialty_id]);
+            const dName = dest.rows[0]?.name || '';
+            const sName = spec.rows[0]?.name || '';
+            const sSlug = spec.rows[0]?.slug || '';
+            finalName = finalName || (sName + ' in ' + dName);
+            finalSlug = finalSlug || sSlug;
+        }
         const result = await pool.query(
-            `INSERT INTO destination_specialties (destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status || 'draft', display_order || 0]
+            `INSERT INTO destination_specialties
+             (destination_id, specialty_id, name, slug, description, long_description, why_choose,
+              image, hero_bg, meta_title, meta_description, status, display_order, is_featured)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+            [destination_id, specialty_id, finalName, finalSlug, description, long_description, why_choose,
+             image, hero_bg, meta_title, meta_description, status || 'draft', display_order || 0, is_featured || false]
         );
-        await logActivity(req.user.id, 'create', 'd-specialty', result.rows[0].id, `Created: ${name}`);
+        await logActivity(req.user.id, 'create', 'd-specialty', result.rows[0].id, `Created: ${finalName}`);
         res.json(result.rows[0]);
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: 'This destination + specialty combination already exists' });
@@ -59,11 +107,18 @@ app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), a
 
 app.put('/api/d-specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
+        const { destination_id, specialty_id, name, slug, description, long_description, why_choose,
+                image, hero_bg, meta_title, meta_description, status, display_order, is_featured } = req.body;
         const result = await pool.query(
-            `UPDATE destination_specialties SET destination_id=$1, specialty_id=$2, name=$3, slug=$4, description=$5, long_description=$6, why_choose=$7, image=$8, hero_bg=$9, meta_title=$10, meta_description=$11, status=$12, display_order=$13
-             WHERE id=$14 RETURNING *`,
-            [destination_id, specialty_id, name, slug, description, long_description, why_choose, image, hero_bg, meta_title, meta_description, status, display_order || 0, req.params.id]
+            `UPDATE destination_specialties
+             SET destination_id=$1, specialty_id=$2, name=$3, slug=$4, description=$5,
+                 long_description=$6, why_choose=$7, image=$8, hero_bg=$9,
+                 meta_title=$10, meta_description=$11, status=$12, display_order=$13, is_featured=$14,
+                 updated_at=NOW()
+             WHERE id=$15 RETURNING *`,
+            [destination_id, specialty_id, name, slug, description, long_description, why_choose,
+             image, hero_bg, meta_title, meta_description, status, display_order || 0, is_featured || false,
+             req.params.id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
         await logActivity(req.user.id, 'update', 'd-specialty', parseInt(req.params.id), `Updated: ${name}`);
@@ -74,26 +129,6 @@ app.put('/api/d-specialties/:id', apiAuth, roleRequired('super_admin', 'editor')
     }
 });
 
-app.post('/api/d-specialties/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
-    try {
-        const { ids, action } = req.body;
-        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
-        let count = 0;
-        if (action === 'delete') {
-            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
-            const result = await pool.query('DELETE FROM destination_specialties WHERE id = ANY($1) RETURNING id', [ids]);
-            count = result.rowCount; await logActivity(req.user.id, 'bulk_delete', 'd-specialty', null, `Bulk deleted ${count} d-specialties`);
-        } else if (action === 'publish') {
-            const result = await pool.query("UPDATE destination_specialties SET status='published' WHERE id = ANY($1) RETURNING id", [ids]);
-            count = result.rowCount; await logActivity(req.user.id, 'bulk_publish', 'd-specialty', null, `Bulk published ${count} d-specialties`);
-        } else if (action === 'draft') {
-            const result = await pool.query("UPDATE destination_specialties SET status='draft' WHERE id = ANY($1) RETURNING id", [ids]);
-            count = result.rowCount; await logActivity(req.user.id, 'bulk_draft', 'd-specialty', null, `Bulk set ${count} d-specialties to draft`);
-        } else { return res.status(400).json({ error: 'Invalid action' }); }
-        res.json({ success: true, count });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 app.delete('/api/d-specialties/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
         await pool.query('DELETE FROM destination_specialties WHERE id = $1', [req.params.id]);
@@ -102,5 +137,25 @@ app.delete('/api/d-specialties/:id', apiAuth, roleRequired('super_admin'), async
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.post('/api/d-specialties/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!ids || !ids.length) return res.status(400).json({ error: 'No items selected' });
+        let count = 0;
+        if (action === 'delete') {
+            if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
+            const result = await pool.query('DELETE FROM destination_specialties WHERE id = ANY($1) RETURNING id', [ids]);
+            count = result.rowCount;
+        } else if (action === 'publish') {
+            const result = await pool.query("UPDATE destination_specialties SET status='published' WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+        } else if (action === 'draft') {
+            const result = await pool.query("UPDATE destination_specialties SET status='draft' WHERE id = ANY($1) RETURNING id", [ids]);
+            count = result.rowCount;
+        } else return res.status(400).json({ error: 'Invalid action' });
+        await logActivity(req.user.id, action, 'd-specialty', null, `Bulk ${action}: ${count} items`);
+        res.json({ success: true, count });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 };

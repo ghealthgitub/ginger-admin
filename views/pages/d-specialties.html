@@ -83,7 +83,7 @@ tr:hover .row-actions{opacity:1}
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">D. Specialties</h1><div class="topbar__actions"><a href="/d-specialty-studio" class="btn-new" style="text-decoration:none">+ New in Studio</a><button class="btn-new" style="background:var(--teal)" onclick="openAddModal()">+ Quick Add</button></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">D. Specialties</h1><div class="topbar__actions"><a href="/d-specialty-studio" class="btn-new" style="text-decoration:none">+ New in Studio</a><a class="btn-new" style="background:var(--teal)" href="/d-specialty-studio" target="_blank">+ New D. Specialty</a></div></header>
 <div class="content">
     <div class="status-tabs">
         <button class="status-tab active" onclick="setStatusTab('')" data-status="">All <span class="count" id="countAll"></span></button><span class="tab-sep">|</span>
@@ -223,7 +223,7 @@ function renderTable(f){
                 <span class="post-slug">/destinations/${esc(i.destination_slug||'')}/${esc(i.specialty_slug||i.slug)}/</span>
                 <div class="row-actions">
                     <a href="/d-specialty-studio/edit/${i.id}" style="color:var(--teal);font-weight:700">Edit</a><span class="sep">|</span>
-                    <a href="#" onclick="openEditModal(${i.id});return false">Quick Edit</a><span class="sep">|</span>
+                    <a href="/d-specialty-studio/edit/${i.id}" target="_blank">Edit in Studio</a><span class="sep">|</span>
                     <button onclick="toggleQE(${i.id})">Inline Edit</button><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${i.id})">Trash</button>
                     ${i.status==='published'?'<span class="sep">|</span><a href="'+viewUrl+'" target="_blank">View</a>':''}
