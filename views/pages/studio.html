@@ -287,14 +287,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <!-- D. Specialty: Why Choose + Hero BG -->
-    <div class="sb-box" id="dsWhyBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">✅ Why Choose Section</div><span class="sb-box__toggle">▾</span></div>
-        <div class="sb-box__body">
-            <div class="sb-label" style="margin-top:0">Why Choose Content</div>
-            <div style="font-size:.72rem;color:var(--gray-400);margin-bottom:6px">Short richtext shown in the "Why Choose" section of the page</div>
-            <div id="dsWhyEditor" style="border:1px solid var(--gray-200);border-radius:6px;min-height:80px;font-size:.82rem"></div>
-        </div>
-    </div>
+    <!-- D. Specialty: Hero BG -->
     <div class="sb-box" id="dsHeroBgBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🌄 Hero Background Image</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
             <div id="heroBgImgBox" style="cursor:pointer" onclick="openMediaPicker('hero_bg')">
@@ -1304,17 +1297,8 @@ let dsWhyQuill = null;
 
 function initDSpecialtyPanels() {
     if (C.cpt !== 'd-specialty') return;
-    document.getElementById('dsWhyBox').style.display = '';
     document.getElementById('dsHeroBgBox').style.display = '';
-    // Init why_choose mini Quill
-    if (!dsWhyQuill) {
-        dsWhyQuill = new Quill('#dsWhyEditor', {
-            theme: 'snow',
-            placeholder: 'Why choose this destination for this specialty...',
-            modules: { toolbar: [['bold','italic','underline'],[{list:'ordered'},{list:'bullet'}],['clean']] }
-        });
-        dsWhyQuill.on('text-change', () => { isDirty = true; });
-    }
+
 }
 
 function setHeroBg(url) {
