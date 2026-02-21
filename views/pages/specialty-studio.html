@@ -18,6 +18,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
 .topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}.topbar__btn--save:hover{background:var(--gray-200)}
 .topbar__btn--publish{background:var(--teal);color:#fff}.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--view{background:var(--white);color:var(--teal);border:1px solid var(--teal);text-decoration:none}.topbar__btn--view:hover{background:rgba(14,165,160,.08)}
 
 /* === 2-PANEL LAYOUT === */
 .studio{display:flex;height:calc(100vh - 48px)}
@@ -101,9 +102,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .feat-img-btn{padding:4px 10px;border-radius:5px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-family:inherit}.feat-img-btn:hover{border-color:var(--teal);color:var(--teal)}
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 /* AI helper buttons */
-.ai-helpers{display:flex;flex-wrap:wrap;gap:4px;padding-top:8px}
-.ai-btn{padding:5px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--gray-500);font-family:inherit;transition:all .15s}
+.ai-helpers{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ai-btn{padding:6px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--gray-500);font-family:inherit;transition:all .15s;text-align:center}
 .ai-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}.ai-btn:disabled{opacity:.4;cursor:not-allowed}
+.ai-helpers .ai-btn:last-child:nth-child(odd){grid-column:1/-1}
 
 /* === MEDIA PICKER (WordPress-inspired) === */
 .mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}.mp-overlay.active{display:flex}
@@ -188,11 +190,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
 <!-- TOPBAR -->
 <div class="topbar">
-    <a href="/specialties" class="topbar__back">← Back</a>
+    <a href="/specialties" class="topbar__back" id="backBtn">← Back</a>
     <div class="topbar__title" id="topTitle">New Specialty</div>
     <span class="topbar__status topbar__status--draft" id="topStatus">DRAFT</span>
     <span class="topbar__saved" id="topSaved">✓ Saved</span>
     <div class="topbar__actions">
+        <a class="topbar__btn topbar__btn--view" id="viewBtn" href="#" target="_blank" style="display:none">View →</a>
         <button class="topbar__btn topbar__btn--save" onclick="saveItem('draft')">Save Draft</button>
         <button class="topbar__btn topbar__btn--publish" onclick="saveItem('published')">🚀 Publish</button>
     </div>
@@ -205,12 +208,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <input type="text" class="title-input" id="name" placeholder="Specialty name..." oninput="autoSlug();updateTopTitle()">
         <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)">ginger.healthcare/specialties/</span><input type="text" id="slug" placeholder="specialty-slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
     </div>
+    <!-- ═══ CPT-SPECIFIC FIELDS — Specialty ═══ -->
     <div class="spec-fields">
         <div class="spec-field"><label>Icon</label><input type="text" id="icon" placeholder="🫀" style="width:56px;text-align:center;font-size:1.2rem"></div>
         <div class="spec-field"><label>Category</label><select id="category"><option value="">None</option><option value="surgical">Surgical</option><option value="medical">Medical</option><option value="oncology">Oncology</option><option value="super_specialty">Super Specialty</option></select></div>
         <div class="spec-field"><label>Treatment Count</label><input type="number" id="treatment_count" value="0" style="width:100px"></div>
         <div class="spec-field" style="flex:1"><label>Short Description</label><input type="text" id="description" placeholder="Brief overview for listings..." style="width:100%"></div>
     </div>
+    <!-- ═══ END CPT-SPECIFIC FIELDS ═══ -->
     <!-- WordPress-style "Add Media" bar -->
     <div class="import-bar">
         <button class="import-btn import-btn--primary" onclick="openMediaPicker('insert')">🖼 Add Media</button>
@@ -253,10 +258,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <input class="sb-input" id="meta_title" placeholder="SEO title" oninput="updateCharCount('meta_title','metaTitleCount',60);analyzeSEO()">
             <div class="sb-label">Meta Description <span class="char-count" id="metaDescCount">0/160</span></div>
             <textarea class="sb-textarea" id="meta_description" placeholder="SEO description" oninput="updateCharCount('meta_description','metaDescCount',160);analyzeSEO()"></textarea>
-            <div class="ai-helpers">
-                <button class="ai-btn" id="aiBtnSeo" onclick="aiAction('seo')">🏷 Auto SEO Tags</button>
-                <button class="ai-btn" id="aiBtnOptimize" onclick="aiAction('optimize')">🎯 Optimize Content</button>
-                <button class="ai-btn" id="aiBtnGrammar" onclick="aiAction('grammar')">✏ Fix Grammar</button>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
+                <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
+                <div class="ai-helpers">
+                    <button class="ai-btn" id="aiBtnSeo" onclick="aiAction('seo')">🏷 Auto SEO</button>
+                    <button class="ai-btn" id="aiBtnOptimize" onclick="aiAction('optimize')">🎯 Optimize</button>
+                    <button class="ai-btn" id="aiBtnGrammar" onclick="aiAction('grammar')">✏ Grammar</button>
+                    <button class="ai-btn" id="aiBtnHeadings" onclick="aiAction('headings')">📑 Headings</button>
+                    <button class="ai-btn" id="aiBtnSpacing" onclick="aiAction('spacing')">🧹 Clean Spacing</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1000,6 +1010,10 @@ function updatePublishUI() {
     document.querySelectorAll('.topbar__btn--publish').forEach(b => b.textContent = pub ? '✅ Update' : '🚀 Publish');
 }
 function showToast(msg) { const t = document.getElementById('autoToast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500); }
+function setViewBtn(url) { const b = document.getElementById('viewBtn'); b.href = url; b.style.display = 'flex'; }
+
+// ═══ CPT CONFIG — Specialty ═══
+const CPT = { api: '/api/specialties', editBase: '/specialties/edit/', viewBase: 'https://ginger.healthcare/specialties/', itemLabel: 'specialty' };
 
 // === SAVE ===
 async function saveItem(status) {
@@ -1007,32 +1021,35 @@ async function saveItem(status) {
     const data = {
         name: document.getElementById('name').value,
         slug: document.getElementById('slug').value,
-        icon: document.getElementById('icon').value,
-        category: document.getElementById('category').value,
         description: document.getElementById('description').value,
         long_description: quill.root.innerHTML === '<p><br></p>' ? '' : quill.root.innerHTML,
-        treatment_count: parseInt(document.getElementById('treatment_count').value) || 0,
         image: document.getElementById('image').value,
         is_featured: document.getElementById('is_featured').value === 'true',
         display_order: parseInt(document.getElementById('display_order').value) || 0,
         meta_title: document.getElementById('meta_title').value,
         meta_description: document.getElementById('meta_description').value,
-        status: status || document.getElementById('status').value
+        status: status || document.getElementById('status').value,
+        // ═══ CPT-SPECIFIC FIELDS — Specialty ═══
+        icon: document.getElementById('icon').value,
+        category: document.getElementById('category').value,
+        treatment_count: parseInt(document.getElementById('treatment_count').value) || 0,
     };
     if (!data.name) { if (!isAuto) alert('Name is required'); return; }
     if (!data.slug) data.slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     try {
-        const url = editId ? '/api/specialties/' + editId : '/api/specialties';
+        const url = editId ? CPT.api + '/' + editId : CPT.api;
         const r = await fetch(url, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
         if (r.ok) {
             const result = await r.json();
-            if (!editId && result.id) { window.location.href = '/specialties/edit/' + result.id; return; }
+            if (!editId && result.id) { window.location.href = CPT.editBase + result.id; return; }
             document.getElementById('status').value = result.status || status; updatePublishUI();
             if (isAuto) { showToast('✓ Auto-saved'); }
             else {
                 const sv = document.getElementById('topSaved'); sv.style.display = 'inline';
                 if (result.status === 'published' && result.slug) {
-                    sv.innerHTML = '✅ Published! <a href="https://ginger.healthcare/specialties/' + result.slug + '/" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';
+                    const viewUrl = CPT.viewBase + result.slug + '/';
+                    setViewBtn(viewUrl);
+                    sv.innerHTML = '✅ Published! <a href="' + viewUrl + '" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';
                     setTimeout(() => sv.style.display = 'none', 8000);
                 } else { sv.innerHTML = '✅ Saved!'; setTimeout(() => sv.style.display = 'none', 3000); }
             }
@@ -1044,38 +1061,42 @@ async function saveItem(status) {
 async function loadItem() {
     if (!editId) return;
     try {
-        const r = await fetch('/api/specialties/' + editId); if (!r.ok) return; const s = await r.json();
-        document.getElementById('name').value = s.name || '';
-        document.getElementById('slug').value = s.slug || ''; slugEdited = true;
-        document.getElementById('icon').value = s.icon || '';
-        document.getElementById('category').value = s.category || '';
-        document.getElementById('description').value = s.description || '';
-        document.getElementById('treatment_count').value = s.treatment_count || 0;
-        quill.root.innerHTML = s.long_description || '';
-        document.getElementById('status').value = s.status || 'draft';
-        document.getElementById('is_featured').value = s.is_featured ? 'true' : 'false';
-        document.getElementById('display_order').value = s.display_order || 0;
-        document.getElementById('meta_title').value = s.meta_title || '';
-        document.getElementById('meta_description').value = s.meta_description || '';
-        document.getElementById('image').value = s.image || '';
+        const r = await fetch(CPT.api + '/' + editId); if (!r.ok) return; const item = await r.json();
+        document.getElementById('name').value = item.name || '';
+        document.getElementById('slug').value = item.slug || ''; slugEdited = true;
+        document.getElementById('description').value = item.description || '';
+        quill.root.innerHTML = item.long_description || '';
+        document.getElementById('status').value = item.status || 'draft';
+        document.getElementById('is_featured').value = item.is_featured ? 'true' : 'false';
+        document.getElementById('display_order').value = item.display_order || 0;
+        document.getElementById('meta_title').value = item.meta_title || '';
+        document.getElementById('meta_description').value = item.meta_description || '';
+        document.getElementById('image').value = item.image || '';
+        // ═══ CPT-SPECIFIC LOAD — Specialty ═══
+        document.getElementById('icon').value = item.icon || '';
+        document.getElementById('category').value = item.category || '';
+        document.getElementById('treatment_count').value = item.treatment_count || 0;
         updateTopTitle(); updatePublishUI(); updateStats(); analyzeSEO();
-        document.getElementById('pubFeatured').textContent = s.is_featured ? 'Yes ⭐' : 'No';
-        if (s.image) setFeatImage(s.image);
+        document.getElementById('pubFeatured').textContent = item.is_featured ? 'Yes ⭐' : 'No';
+        if (item.image) setFeatImage(item.image);
         updateCharCount('meta_title', 'metaTitleCount', 60); updateCharCount('meta_description', 'metaDescCount', 160);
+        if (item.status === 'published' && item.slug) setViewBtn(CPT.viewBase + item.slug + '/');
     } catch(e) { console.error(e); }
 }
 
-// === AI HELPERS (sidebar) ===
+// === AI HELPERS ===
 async function aiAction(type) {
     const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled = true);
-    const specName = document.getElementById('name').value || 'this specialty';
+    const itemName = document.getElementById('name').value || 'this specialty';
     const content = quill.getText().trim();
     let prompt = '';
-    if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical specialty "' + specName + '". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
-    else if (type === 'optimize') prompt = 'Improve and expand the following medical specialty content. Make it more detailed and engaging. Keep HTML formatting (h2, h3, p, ul, ol).\n\n' + content.substring(0, 4000);
-    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this medical specialty content. Return clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
+    if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "' + itemName + '". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
+    else if (type === 'optimize') prompt = 'Improve and expand the following medical content. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol).\n\n' + content.substring(0, 4000);
+    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this medical content. Return clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
+    else if (type === 'headings') prompt = 'Review the following medical content and improve the heading structure. Ensure clear H2 section headings and H3 sub-headings where appropriate. Keep all existing content but restructure headings for better readability and SEO. Return complete clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
+    else if (type === 'spacing') prompt = 'Clean up the spacing and formatting of this medical content. Remove excessive blank lines, ensure consistent paragraph spacing, fix formatting inconsistencies, and ensure lists are properly structured. Return complete clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
     try {
-        const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: 'specialty', context: 'Specialty: ' + specName }) });
+        const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: CPT.itemLabel, context: CPT.itemLabel + ': ' + itemName }) });
         if (!r.ok) throw new Error('AI request failed'); const data = await r.json(); const result = data.content || '';
         if (type === 'seo') {
             result.split('\n').forEach(line => {
@@ -1091,11 +1112,8 @@ async function aiAction(type) {
 
 // === NATIVE IMAGE SELECTION (WordPress/TinyMCE approach) ===
 function nativeSelectNode(node) {
-    const sel = window.getSelection();
-    const range = document.createRange();
-    range.selectNode(node);
-    sel.removeAllRanges();
-    sel.addRange(range);
+    const sel = window.getSelection(); const range = document.createRange();
+    range.selectNode(node); sel.removeAllRanges(); sel.addRange(range);
 }
 
 // === KEYBOARD SHORTCUTS ===
@@ -1114,5 +1132,6 @@ quill.root.addEventListener('keydown', function(e) {
 
 // === INIT ===
 if (editId) loadItem();
+
 </script>
 </body></html>
