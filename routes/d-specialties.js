@@ -76,7 +76,7 @@ app.get('/api/d-specialties/:id', apiAuth, async (req, res) => {
 app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { destination_id, specialty_id, name, slug, description, long_description, why_choose,
-                image, hero_bg, meta_title, meta_description, status, display_order, is_featured } = req.body;
+                image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
         if (!destination_id || !specialty_id) return res.status(400).json({ error: 'Destination and Specialty required' });
         // Auto-generate name and slug if not provided
         let finalName = name, finalSlug = slug;
@@ -92,10 +92,10 @@ app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), a
         const result = await pool.query(
             `INSERT INTO destination_specialties
              (destination_id, specialty_id, name, slug, description, long_description, why_choose,
-              image, hero_bg, meta_title, meta_description, status, display_order, is_featured)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+              image, hero_bg, meta_title, meta_description, status, display_order)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
             [destination_id, specialty_id, finalName, finalSlug, description, long_description, why_choose,
-             image, hero_bg, meta_title, meta_description, status || 'draft', display_order || 0, is_featured || false]
+             image, hero_bg, meta_title, meta_description, status || 'draft', display_order || 0]
         );
         await logActivity(req.user.id, 'create', 'd-specialty', result.rows[0].id, `Created: ${finalName}`);
         res.json(result.rows[0]);
@@ -108,16 +108,16 @@ app.post('/api/d-specialties', apiAuth, roleRequired('super_admin', 'editor'), a
 app.put('/api/d-specialties/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { destination_id, specialty_id, name, slug, description, long_description, why_choose,
-                image, hero_bg, meta_title, meta_description, status, display_order, is_featured } = req.body;
+                image, hero_bg, meta_title, meta_description, status, display_order } = req.body;
         const result = await pool.query(
             `UPDATE destination_specialties
              SET destination_id=$1, specialty_id=$2, name=$3, slug=$4, description=$5,
                  long_description=$6, why_choose=$7, image=$8, hero_bg=$9,
-                 meta_title=$10, meta_description=$11, status=$12, display_order=$13, is_featured=$14,
+                 meta_title=$10, meta_description=$11, status=$12, display_order=$13,
                  updated_at=NOW()
-             WHERE id=$15 RETURNING *`,
+             WHERE id=$14 RETURNING *`,
             [destination_id, specialty_id, name, slug, description, long_description, why_choose,
-             image, hero_bg, meta_title, meta_description, status, display_order || 0, is_featured || false,
+             image, hero_bg, meta_title, meta_description, status, display_order || 0,
              req.params.id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
