@@ -440,9 +440,11 @@ function renderFields() {
                 window._langSelectFields.push(f.id);
             } else if (f.type === 'textarea') {
                 const rows = f.rows || 3;
-                input = `<textarea id="${f.id}" placeholder="${f.placeholder||''}" rows="${rows}" style="width:100%;resize:vertical;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.88rem;line-height:1.5">${f.default||''}</textarea>`;
+                const onch3 = f.onchange ? ` oninput="${f.onchange}"` : '';
+                input = `<textarea id="${f.id}" placeholder="${f.placeholder||''}" rows="${rows}" style="width:100%;resize:vertical;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.88rem;line-height:1.5"${onch3}>${f.default||''}</textarea>`;
             } else {
-                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
+                const onch2 = f.onchange ? ` oninput="${f.onchange}"` : '';
+                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}"${onch2}>`;
             }
             return `<div class="spec-field"${flex}><label>${f.label}</label>${input}</div>`;
         }).join('');
@@ -811,14 +813,14 @@ function removeEditorImage() {
 // FEATURED IMAGE
 // ─────────────────────────────────────────────
 function setFeatImage(url) {
-    document.getElementById('image').value=url;
+    document.getElementById('image').value =url;
     const full = url.startsWith('http') ? url : (window.ADMIN_URL||'')+url;
     const p=document.getElementById('featImgPreview'); p.src=full; p.style.display='block';
     document.getElementById('featImgEmpty').style.display='none';
     document.getElementById('featImgActions').style.display='block';
 }
 function removeFeatImage() {
-    document.getElementById('image').value='';
+    document.getElementById('image').value ='';
     document.getElementById('featImgPreview').style.display='none';
     document.getElementById('featImgEmpty').style.display='block';
     document.getElementById('featImgActions').style.display='none';
@@ -840,8 +842,8 @@ async function importFile(input) {
 // UI HELPERS
 // ─────────────────────────────────────────────
 function resetAutoSave() { isDirty=true; clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(()=>{if(editId)saveItem('auto');},15000); }
-function updateTopTitle() { document.getElementById('topTitle').textContent=document.getElementById('name').value||('New '+(C.label||'Item')); }
-function autoSlug() { if(!slugEdited&&!editId){const n=document.getElementById('name').value;document.getElementById('slug').value=n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');} }
+function updateTopTitle() { document.getElementById('topTitle').textContent=document.getElementById('name')?.value||('New '+(C.label||'Item')); }
+function autoSlug() { if(!slugEdited&&!editId){const n=document.getElementById('name')?.value;document.getElementById('slug').value =n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');} }
 function showTab(t) {
     document.getElementById('tabWrite').classList.toggle('active',t==='write');
     document.getElementById('tabPreview').classList.toggle('active',t==='preview');
@@ -857,8 +859,8 @@ function updateStats() {
 }
 function analyzeSEO() {
     let score=0; const items=[];
-    const title=document.getElementById('meta_title').value||'';
-    const desc=document.getElementById('meta_description').value||'';
+    const title=document.getElementById('meta_title')?.value||'';
+    const desc=document.getElementById('meta_description')?.value||'';
     const words=(quill.getText().trim()||'').split(/\s+/).filter(w=>w).length;
     const h2s=quill.root.querySelectorAll('h2').length;
     const imgs=quill.root.querySelectorAll('img').length;
@@ -874,7 +876,7 @@ function analyzeSEO() {
     document.getElementById('contentAnalysis').innerHTML=items.map(i=>`<div class="analysis-item">${i}</div>`).join('')||'<div class="analysis-item">Start writing...</div>';
 }
 function updatePublishUI() {
-    const s=document.getElementById('status').value;
+    const s=document.getElementById('status')?.value;
     document.getElementById('pubStatus').textContent=s.charAt(0).toUpperCase()+s.slice(1);
     document.getElementById('topStatus').textContent=s.toUpperCase();
     document.getElementById('topStatus').className='topbar__status topbar__status--'+s;
@@ -888,7 +890,7 @@ function nativeSelectNode(node) { const sel=window.getSelection(),range=document
 // SAVE
 // ─────────────────────────────────────────────
 async function saveItem(status) {
-    const isAuto=status==='auto'; if(isAuto) status=document.getElementById('status').value;
+    const isAuto=status==='auto'; if(isAuto) status=document.getElementById('status')?.value;
     // Collect all CPT fields from config
     const allFields = (C.fieldRows||[]).flat();
     const cptData = {};
@@ -916,15 +918,15 @@ async function saveItem(status) {
         cptData[f.id] = [...(langData[f.id] || new Set())];
     });
     const data = {
-        name: document.getElementById('name').value,
-        slug: document.getElementById('slug').value,
+        name: document.getElementById('name')?.value,
+        slug: document.getElementById('slug')?.value,
         long_description: quill.root.innerHTML==='<p><br></p>' ? '' : quill.root.innerHTML,
-        image: document.getElementById('image').value,
-        is_featured: document.getElementById('is_featured').value==='true',
-        display_order: parseInt(document.getElementById('display_order').value)||0,
-        meta_title: document.getElementById('meta_title').value,
-        meta_description: document.getElementById('meta_description').value,
-        status: status||document.getElementById('status').value,
+        image: document.getElementById('image')?.value,
+        is_featured: document.getElementById('is_featured').value ==='true',
+        display_order: parseInt(document.getElementById('display_order')?.value)||0,
+        meta_title: document.getElementById('meta_title')?.value,
+        meta_description: document.getElementById('meta_description')?.value,
+        status: status||document.getElementById('status')?.value,
         ...cptData
     };
     // D. Treatment: cost fields are in fieldRows (cost_min_usd, cost_max_usd, hospital_stay)
@@ -942,7 +944,7 @@ async function saveItem(status) {
         if (r.ok) {
             const result=await r.json();
             if (!editId&&result.id) { await saveDoctorTreats(result.id); isDirty=false; window.location.href=C.editBase+result.id; return; }
-            document.getElementById('status').value=result.status||status; updatePublishUI();
+            document.getElementById('status').value =result.status||status; updatePublishUI();
             await saveDoctorTreats(editId);
             isDirty=false;
             if (isAuto) showToast('✓ Auto-saved');
@@ -968,15 +970,15 @@ async function loadItem() {
     if (!editId) return;
     try {
         const r=await fetch(C.api+'/'+editId); if(!r.ok) return; const item=await r.json();
-        document.getElementById('name').value=item.name||item.title||'';
-        document.getElementById('slug').value=item.slug||''; slugEdited=true;
+        document.getElementById('name').value =item.name||item.title||'';
+        document.getElementById('slug').value =item.slug||''; slugEdited=true;
         quill.root.innerHTML=item.long_description||'';
-        document.getElementById('status').value=item.status||'draft';
-        document.getElementById('is_featured').value=item.is_featured?'true':'false';
-        document.getElementById('display_order').value=item.display_order||0;
-        document.getElementById('meta_title').value=item.meta_title||'';
-        document.getElementById('meta_description').value=item.meta_description||'';
-        document.getElementById('image').value=item.image||'';
+        document.getElementById('status').value =item.status||'draft';
+        document.getElementById('is_featured').value =item.is_featured?'true':'false';
+        const _do=document.getElementById('display_order'); if(_do) _do.value=item.display_order||0;
+        document.getElementById('meta_title').value =item.meta_title||'';
+        document.getElementById('meta_description').value =item.meta_description||'';
+        document.getElementById('image').value =item.image||'';
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
         // Store pending dest+city so loadSelectSource can pre-select on async load
@@ -1072,7 +1074,7 @@ function aiHideProgress() {
 async function aiAction(type) {
     const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled=true);
     aiShowProgress(type);
-    const itemName = document.getElementById('name').value || ('this ' + (C.label||'item').toLowerCase());
+    const itemName = document.getElementById('name')?.value || ('this ' + (C.label||'item').toLowerCase());
     const content = quill.getText().trim();
     let prompt = '';
     if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
@@ -1087,8 +1089,8 @@ async function aiAction(type) {
         const match = result.match(/```html?\n?([\s\S]*?)```/); if (match) result = match[1].trim();
         if (type==='seo') {
             result.split('\n').forEach(line => {
-                if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value=v; }
-                if (line.toLowerCase().includes('meta description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_description').value=v; }
+                if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value =v; }
+                if (line.toLowerCase().includes('meta description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_description').value =v; }
                 if (line.toLowerCase().includes('short description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v&&v.length<250) setFieldVal('description',v); }
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
