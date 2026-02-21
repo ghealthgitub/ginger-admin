@@ -182,6 +182,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .chip button{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.8rem;padding:0;line-height:1}.chip button:hover{color:#EF4444}
 .chip-input{border:none;outline:none;font-family:inherit;font-size:.78rem;flex:1;min-width:80px;padding:2px 0;background:transparent}
 .chip-hint{font-size:.7rem;color:var(--gray-400);margin-top:2px;margin-bottom:10px}
+
+/* ── Field-level chips (qualifications / languages in editor area) ── */
+.field-chips-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:4px 7px;border:1px solid var(--gray-200);border-radius:6px;min-height:32px;cursor:text;background:#fff;box-sizing:border-box;width:100%}.field-chips-wrap:focus-within{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.08)}
+.field-chip{background:rgba(14,165,160,.1);color:var(--teal);padding:2px 8px;border-radius:4px;font-size:.74rem;font-weight:600;display:inline-flex;align-items:center;gap:3px;line-height:1.5;white-space:nowrap}
+.field-chip button{background:none;border:none;color:rgba(14,165,160,.5);cursor:pointer;font-size:.82rem;padding:0;line-height:1}.field-chip button:hover{color:#EF4444}
+.field-chips-input{border:none;outline:none;font-family:inherit;font-size:.8rem;padding:2px 0;background:transparent;flex:1;min-width:100px}
 </style></head>
 <body>
 
@@ -274,20 +280,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div style="font-size:.7rem;color:var(--gray-400);margin-top:6px">Filtered by selected specialty. Search to find any treatment.</div>
         </div>
     </div>
-    <div class="sb-box" id="doctorDetailsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Doctor Details</div><span class="sb-box__toggle">▾</span></div>
-        <div class="sb-box__body">
-            <div class="sb-label">Qualifications <span style="font-weight:400;color:var(--gray-400)">(press Enter to add)</span></div>
-            <div class="chips-wrap" id="qualWrap" onclick="document.getElementById('qualInput').focus()">
-                <input class="chip-input" id="qualInput" placeholder="e.g. MBBS, MD, FRCS..." onkeydown="handleChipKey(event,'qual')">
-            </div>
-            <div class="chip-hint" style="margin-bottom:10px">Degrees, boards, fellowships</div>
-            <div class="sb-label">Languages Spoken <span style="font-weight:400;color:var(--gray-400)">(press Enter to add)</span></div>
-            <div class="chips-wrap" id="langWrap" onclick="document.getElementById('langInput').focus()">
-                <input class="chip-input" id="langInput" placeholder="e.g. English, Hindi, Arabic..." onkeydown="handleChipKey(event,'lang')">
-            </div>
-            <div class="chip-hint">Languages the doctor speaks</div>
-        </div>
-    </div>
+
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
     </div>
@@ -400,6 +393,11 @@ function renderFields() {
                 input = `<input type="number" id="${f.id}" value="${f.default||0}" style="width:${f.width||'80px'}">`;
             } else if (f.type === 'emoji') {
                 input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:56px;text-align:center;font-size:1.2rem">`;
+            } else if (f.type === 'chips') {
+                input = `<div class="field-chips-wrap" id="${f.id}_wrap" onclick="document.getElementById('${f.id}_input').focus()">
+                    <input class="field-chips-input" id="${f.id}_input" placeholder="${f.placeholder||'Type and press Enter...'}"
+                        onkeydown="fieldChipKey(event,'${f.id}')" style="min-width:120px">
+                </div>`;
             } else {
                 input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
             }
@@ -426,8 +424,20 @@ async function loadSelectSource(f) {
     } catch(e) { console.error('Select source failed:', f.source); }
 }
 
-function getFieldVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function setFieldVal(id, val) { const el = document.getElementById(id); if (el) el.value = (val === null || val === undefined) ? '' : val; }
+function getFieldVal(id) {
+    // chips field — return array
+    if (fieldChipsData.hasOwnProperty(id)) return fieldChipsData[id] || [];
+    const el = document.getElementById(id); return el ? el.value : '';
+}
+function setFieldVal(id, val) {
+    // chips field — populate array
+    if (document.getElementById(id + '_wrap')) {
+        fieldChipsData[id] = Array.isArray(val) ? [...val] : (val ? [val] : []);
+        renderFieldChips(id);
+        return;
+    }
+    const el = document.getElementById(id); if (el) el.value = (val === null || val === undefined) ? '' : val;
+}
 
 function updatePermalink() {
     if (!C.permalinkDynamic) return;
@@ -777,11 +787,10 @@ async function saveItem(status) {
             cptData.specialty = specSel.options[specSel.selectedIndex].text.trim() || null;
         }
     }
-    // Doctor-specific array fields
-    if (C.cpt === 'doctor') {
-        cptData.qualifications = doctorQualifications;
-        cptData.languages = doctorLanguages;
-    }
+    // Chips fields — collect from fieldChipsData for any chips-type fields
+    (C.fieldRows||[]).flat().filter(f => f.type === 'chips').forEach(f => {
+        cptData[f.id] = fieldChipsData[f.id] || [];
+    });
     const data = {
         name: document.getElementById('name').value,
         slug: document.getElementById('slug').value,
@@ -840,12 +849,8 @@ async function loadItem() {
         const restoreFields=()=>{
             allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
             updatePermalink();
-            // Doctor: restore qualifications + languages chips, then re-render treatments
-            if (C.cpt === 'doctor') {
-                if (item.qualifications && item.qualifications.length) { doctorQualifications=[...item.qualifications]; renderChips('qual'); }
-                if (item.languages && item.languages.length) { doctorLanguages=[...item.languages]; renderChips('lang'); }
-                setTimeout(()=>treatRender(), 100); // re-filter after specialty loaded
-            }
+            // Re-filter treatments after specialty is populated
+            if (C.cpt === 'doctor') setTimeout(()=>treatRender(), 100);
         };
         // Wait briefly for async select sources to populate, then restore values
         setTimeout(restoreFields,300);
@@ -954,7 +959,6 @@ let doctorQualifications = [], doctorLanguages = [];
 async function initDoctorTreats() {
     if (C.cpt !== 'doctor') return;
     document.getElementById('doctorTreatsBox').style.display = '';
-    document.getElementById('doctorDetailsBox').style.display = '';
     // Load all treatments
     try {
         const r = await fetch('/api/treatments');
@@ -1045,47 +1049,50 @@ async function saveDoctorTreats(doctorId) {
     } catch(e) { console.error('Failed to save doctor treatments:', e); }
 }
 
-// ─── Qualifications + Languages chips ────────
-function handleChipKey(e, type) {
+// ─── Field chips (generic — used for qualifications, languages, etc.) ───
+// fieldChipsData: { fieldId: [...values] }
+const fieldChipsData = {};
+
+function fieldChipKey(e, fieldId) {
     if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
         const val = e.target.value.trim().replace(/,$/, '');
         if (!val) return;
-        if (type === 'qual' && !doctorQualifications.includes(val)) {
-            doctorQualifications.push(val);
-            renderChips('qual');
-        } else if (type === 'lang' && !doctorLanguages.includes(val)) {
-            doctorLanguages.push(val);
-            renderChips('lang');
+        if (!fieldChipsData[fieldId]) fieldChipsData[fieldId] = [];
+        if (!fieldChipsData[fieldId].includes(val)) {
+            fieldChipsData[fieldId].push(val);
+            renderFieldChips(fieldId);
         }
         e.target.value = '';
         isDirty = true;
     }
 }
 
-function renderChips(type) {
-    const arr = type === 'qual' ? doctorQualifications : doctorLanguages;
-    const wrapId = type === 'qual' ? 'qualWrap' : 'langWrap';
-    const inputId = type === 'qual' ? 'qualInput' : 'langInput';
-    const wrap = document.getElementById(wrapId);
+function renderFieldChips(fieldId) {
+    const wrap = document.getElementById(fieldId + '_wrap');
     if (!wrap) return;
-    // Remove all chips (not the input)
-    wrap.querySelectorAll('.chip').forEach(c => c.remove());
-    const input = document.getElementById(inputId);
+    wrap.querySelectorAll('.field-chip').forEach(c => c.remove());
+    const input = document.getElementById(fieldId + '_input');
+    const arr = fieldChipsData[fieldId] || [];
     arr.forEach((val, i) => {
         const chip = document.createElement('span');
-        chip.className = 'chip';
-        chip.innerHTML = `${val}<button onclick="removeChip(${i},'${type}')" title="Remove">×</button>`;
+        chip.className = 'field-chip';
+        chip.innerHTML = val + '<button onclick="removeFieldChip('' + fieldId + '',' + i + ')" title="Remove">×</button>';
         wrap.insertBefore(chip, input);
     });
 }
 
-function removeChip(i, type) {
-    if (type === 'qual') doctorQualifications.splice(i, 1);
-    else doctorLanguages.splice(i, 1);
-    renderChips(type);
+function removeFieldChip(fieldId, i) {
+    if (fieldChipsData[fieldId]) fieldChipsData[fieldId].splice(i, 1);
+    renderFieldChips(fieldId);
     isDirty = true;
 }
+
+// Keep legacy aliases for any code still referencing doctorQualifications/doctorLanguages
+let doctorQualifications = [], doctorLanguages = [];
+function handleChipKey(e, type) {}
+function renderChips(type) {}
+function removeChip(i, type) {}
 
 // ─────────────────────────────────────────────
 // BOOT

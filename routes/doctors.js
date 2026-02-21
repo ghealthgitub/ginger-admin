@@ -21,15 +21,21 @@ const DOCTOR_CONFIG = {
     },
     fieldRows: [
         [
-            { id: 'destination_id', label: 'Destination *', type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink()' },
-            { id: 'hospital_id',    label: 'Hospital',      type: 'select', source: '/api/hospitals',    flex: 3 },
-            { id: 'specialty_id',   label: 'Specialty',     type: 'select', source: '/api/specialties',  flex: 2 },
+            { id: 'destination_id', label: 'Country *',   type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink()' },
+            { id: 'city',           label: 'City',         type: 'text',   placeholder: 'e.g. Mumbai, Delhi...', flex: 2 },
         ],
         [
-            { id: 'title',            label: 'Title',       type: 'text',   placeholder: 'Dr.',    width: '70px'  },
-            { id: 'experience_years', label: 'Experience',  type: 'number', placeholder: '15',     width: '90px'  },
-            { id: 'city',             label: 'City',        type: 'text',   placeholder: 'Mumbai', width: '120px' },
-            { id: 'description',      label: 'Short Bio',   type: 'text',   placeholder: 'Brief overview of the doctor...', flex: 1 },
+            { id: 'hospital_id',  label: 'Hospital',   type: 'select', source: '/api/hospitals',   flex: 3 },
+            { id: 'specialty_id', label: 'Specialty',  type: 'select', source: '/api/specialties', flex: 2 },
+            { id: 'title',        label: 'Title',      type: 'text',   placeholder: 'e.g. Dr., Prof.', width: '120px' },
+        ],
+        [
+            { id: 'qualifications', label: 'Qualifications', type: 'chips', placeholder: 'Add degree & press Enter...', flex: 1 },
+            { id: 'languages',      label: 'Languages',      type: 'chips', placeholder: 'Add language & press Enter...', flex: 1 },
+        ],
+        [
+            { id: 'experience_years', label: 'Years of Experience', type: 'number', width: '140px' },
+            { id: 'description',      label: 'Short Bio',           type: 'text',   placeholder: 'Brief overview...', flex: 1 },
         ]
     ]
 };
