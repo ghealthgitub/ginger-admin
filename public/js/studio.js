@@ -38,6 +38,9 @@ const Studio = {
     imgOrigW: 0,
     imgOrigH: 0,
     imgAspectLocked: true,
+    isDirty: false,        // true only when there are unsaved changes
+    isSaving: false,       // true while a save request is in flight
+    _preAiHtml: null,      // stores HTML before AI rewrites for one-level undo
 
     // ── INIT ────────────────────────────────────────────────
     init(cfg) {
@@ -97,6 +100,7 @@ const Studio = {
             <div class="studio-topbar__title" id="topTitle">New ${this._cptLabel()}</div>
             <span class="studio-topbar__status studio-topbar__status--draft" id="topStatus">DRAFT</span>
             <span class="studio-topbar__saved" id="topSaved">✓ Saved</span>
+            <span class="studio-topbar__shortcut" title="Keyboard shortcuts: Ctrl+S = save, Escape = close modals">⌨ Ctrl+S</span>
             <div class="studio-topbar__actions">
                 <button class="studio-topbar__btn studio-topbar__btn--save" onclick="Studio.saveItem('draft')">Save Draft</button>
                 <button class="studio-topbar__btn studio-topbar__btn--publish" id="topPublishBtn" onclick="Studio.saveItem('published')">🚀 Publish</button>
@@ -434,6 +438,7 @@ const Studio = {
             }
         });
         this.quill.on('text-change', () => {
+            this.isDirty = true;
             this.updateStats();
             this.analyzeSEO();
             this._resetAutoSave();
@@ -1030,6 +1035,8 @@ const Studio = {
             if (!r.ok) return;
             const item = await r.json();
 
+            // Suppress dirty-marking while we populate fields programmatically
+            this._loading = true;
             document.getElementById('studioName').value        = item.name || item.title || '';
             document.getElementById('studioSlug').value        = item.slug || '';
             this.slugEdited = true;
@@ -1062,7 +1069,21 @@ const Studio = {
 
             // Let CPT handle anything custom (junction tables, galleries, etc.)
             if (cfg.onLoad) cfg.onLoad(item, this);
-        } catch(e) { console.error('Load error:', e); }
+
+            // If redirected here after first publish, show View link immediately
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('published') === '1' && item.status === 'published') {
+                const viewUrl = cfg.viewUrl ? cfg.viewUrl(item) : '';
+                this._setTopbarViewLink(viewUrl);
+                // Clean up the URL without reloading
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            }
+
+            // Page just loaded — not dirty yet
+            this._loading = false;
+            this.isDirty = false;
+        } catch(e) { console.error('Load error:', e); this._loading = false; }
     },
 
     _collectData(status) {
@@ -1096,9 +1117,21 @@ const Studio = {
     async saveItem(status) {
         const isAuto = status === 'auto';
         if (isAuto) status = document.getElementById('studioStatus').value;
+        if (!status) status = document.getElementById('studioStatus').value || 'draft';
+
+        // Prevent concurrent saves
+        if (this.isSaving) return;
+        this.isSaving = true;
+        if (!isAuto) this._setSaveButtonState(true, status);
+
         const data = this._collectData(status);
 
-        if (!data.name) { if (!isAuto) alert('Name is required'); return; }
+        if (!data.name) {
+            if (!isAuto) { alert('Name is required'); }
+            this.isSaving = false;
+            this._setSaveButtonState(false, status);
+            return;
+        }
 
         // Run publish validations from config
         if (!isAuto && status === 'published' && this.cfg.publishValidations) {
@@ -1111,8 +1144,8 @@ const Studio = {
                 }
             }
         }
-        // Featured image validation (always required to publish)
-        if (!isAuto && status === 'published' && !data.image) {
+        // Featured image validation (opt-in via requireImage: true in config)
+        if (!isAuto && status === 'published' && !data.image && this.cfg.requireImage !== false) {
             document.getElementById('featImgEmpty').style.borderColor = '#EF4444';
             setTimeout(() => document.getElementById('featImgEmpty').style.borderColor = '', 3000);
             alert('⚠️ Featured Image is required to publish.'); return;
@@ -1124,25 +1157,40 @@ const Studio = {
             const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             if (r.ok) {
                 const result = await r.json();
-                if (!this.editId && result.id) { window.location.href = this.cfg.editUrl ? this.cfg.editUrl(result) : '/' + this.cfg.cpt + 's/edit/' + result.id; return; }
+                this.isDirty = false; // clear dirty flag — changes are saved
+
+                // After first create, redirect to edit URL (preserves the new ID)
+                if (!this.editId && result.id) {
+                    // Build the edit URL, append ?published=1 so the edit page
+                    // knows to show the View link immediately on load
+                    const editUrl = this.cfg.editUrl
+                        ? this.cfg.editUrl(result)
+                        : '/' + this.cfg.cpt + 's/edit/' + result.id;
+                    const sep = editUrl.includes('?') ? '&' : '?';
+                    const flag = result.status === 'published' ? sep + 'published=1&slug=' + encodeURIComponent(result.slug || '') : '';
+                    window.location.href = editUrl + flag;
+                    return;
+                }
+
                 document.getElementById('studioStatus').value = result.status || status;
                 this.updatePublishUI();
+
                 if (isAuto) {
+                    this.isDirty = false;
                     this.showToast('✓ Auto-saved');
                 } else {
-                    const sv = document.getElementById('topSaved');
-                    sv.style.display = 'inline';
-                    if (result.status === 'published' && result.slug) {
-                        const viewUrl = this.cfg.viewUrl ? this.cfg.viewUrl(result) : '';
-                        sv.innerHTML = '✅ Saved!' + (viewUrl ? ` <a href="${viewUrl}" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>` : '');
-                        setTimeout(() => sv.style.display = 'none', 8000);
-                    } else { sv.innerHTML = '✅ Saved!'; setTimeout(() => sv.style.display = 'none', 3000); }
+                    this._showSavedBanner(result);
                 }
                 if (this.cfg.onSave) this.cfg.onSave(result, this);
             } else {
                 const e = await r.json(); if (!isAuto) alert(e.error || 'Save failed');
             }
-        } catch(e) { if (!isAuto) alert('Save failed: ' + e.message); }
+        } catch(e) {
+            if (!isAuto) alert('Save failed: ' + e.message);
+        } finally {
+            this.isSaving = false;
+            this._setSaveButtonState(false, status);
+        }
     },
 
     // ── AI ACTIONS ──────────────────────────────────────────
@@ -1202,9 +1250,11 @@ const Studio = {
                 this.showToast('✅ SEO tags generated!');
             } else {
                 const cleaned = result.replace(/^```html?\n?/i,'').replace(/```$/m,'').trim();
+                this._preAiHtml = html; // save for undo
                 this.quill.root.innerHTML = cleaned;
                 this.updateStats(); this.analyzeSEO();
-                this.showToast(type === 'headings' ? '✅ Headings assigned!' : '✅ Content updated!');
+                const msg = type === 'headings' ? '✅ Headings assigned!' : '✅ Content updated!';
+                this._showUndoToast(msg);
             }
         } catch(e) {
             this.showToast('❌ ' + e.message);
@@ -1288,7 +1338,84 @@ const Studio = {
         }
     },
 
+    // ── SAVED BANNER ────────────────────────────────────────
+    _showSavedBanner(result) {
+        const sv = document.getElementById('topSaved');
+        sv.style.display = 'inline';
+        if (result.status === 'published' && result.slug) {
+            const viewUrl = this.cfg.viewUrl ? this.cfg.viewUrl(result) : '';
+            sv.innerHTML = '✅ Saved!' + (viewUrl
+                ? ' <a href="' + viewUrl + '" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>'
+                : '');
+            // Also update the persistent View link in topbar
+            this._setTopbarViewLink(viewUrl);
+            setTimeout(() => { sv.style.display = 'none'; }, 10000);
+        } else {
+            sv.innerHTML = '✅ Saved!';
+            setTimeout(() => { sv.style.display = 'none'; }, 3000);
+        }
+    },
+
+    // Sets (or updates) a permanent View link next to the title in the topbar
+    _setTopbarViewLink(viewUrl) {
+        if (!viewUrl) return;
+        let existing = document.getElementById('topViewLink');
+        if (!existing) {
+            existing = document.createElement('a');
+            existing.id = 'topViewLink';
+            existing.target = '_blank';
+            existing.style.cssText = 'font-size:.78rem;font-weight:700;color:var(--teal);text-decoration:none;white-space:nowrap;padding:4px 10px;border:1px solid var(--teal);border-radius:6px;margin-left:4px;';
+            existing.textContent = 'View →';
+            // Insert after topSaved span
+            const saved = document.getElementById('topSaved');
+            if (saved && saved.parentNode) saved.parentNode.insertBefore(existing, saved.nextSibling);
+        }
+        existing.href = viewUrl;
+    },
+
     // ── UI HELPERS ──────────────────────────────────────────
+
+    // Disable/enable save buttons during in-flight save
+    _setSaveButtonState(saving, status) {
+        const isPublish = status === 'published';
+        const topBtn = document.getElementById('topPublishBtn');
+        const topSave = document.querySelector('.studio-topbar__btn--save');
+        const sbBtn  = document.getElementById('sbPublishBtn');
+        const sbSave = document.querySelector('.btn-save-draft');
+
+        if (saving) {
+            [topBtn, topSave, sbBtn, sbSave].forEach(b => { if (b) { b.disabled = true; b.style.opacity = '0.6'; } });
+            if (isPublish) {
+                if (topBtn) topBtn.innerHTML = '<span class="ai-spinner"></span> Saving...';
+                if (sbBtn)  sbBtn.innerHTML  = '<span class="ai-spinner"></span> Saving...';
+            } else {
+                if (topSave) topSave.innerHTML = '<span class="ai-spinner"></span> Saving...';
+                if (sbSave)  sbSave.innerHTML  = '<span class="ai-spinner"></span> Saving...';
+            }
+        } else {
+            [topBtn, topSave, sbBtn, sbSave].forEach(b => { if (b) { b.disabled = false; b.style.opacity = ''; } });
+            this.updatePublishUI(); // restores correct labels
+        }
+    },
+
+    // Show undo toast with action button
+    _showUndoToast(msg) {
+        const t = document.getElementById('studioToast');
+        t.innerHTML = msg + ' <button onclick="Studio._undoAi()" style="margin-left:10px;padding:2px 10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);border-radius:4px;color:#fff;cursor:pointer;font-size:.78rem;font-weight:700;font-family:inherit;">↩ Undo</button>';
+        t.style.display = 'block';
+        clearTimeout(t._hide);
+        t._hide = setTimeout(() => { t.style.display = 'none'; t.innerHTML = ''; }, 8000);
+    },
+
+    _undoAi() {
+        if (this._preAiHtml !== null) {
+            this.quill.root.innerHTML = this._preAiHtml;
+            this._preAiHtml = null;
+            this.updateStats(); this.analyzeSEO();
+            this.showToast('↩ Undone — original content restored');
+        }
+    },
+
     updateTopTitle() {
         const n = document.getElementById('studioName').value;
         document.getElementById('topTitle').textContent = n || ('New ' + this._cptLabel());
@@ -1301,7 +1428,15 @@ const Studio = {
         document.getElementById('topStatus').className   = 'studio-topbar__status studio-topbar__status--' + s;
         document.getElementById('topStatus').textContent = s.toUpperCase();
         const label = pub ? '✅ Update' : '🚀 Publish';
-        document.querySelectorAll('#sbPublishBtn, #topPublishBtn').forEach(b => b.textContent = label);
+        document.querySelectorAll('#sbPublishBtn, #topPublishBtn').forEach(b => { if (b) b.textContent = label; });
+        // Keep Save Draft button label correct
+        document.querySelectorAll('.btn-save-draft, .studio-topbar__btn--save').forEach(b => { if (b) b.textContent = 'Save Draft'; });
+        // Sync featured display
+        const featEl = document.getElementById('pubFeatured');
+        if (featEl) {
+            const isFeat = document.getElementById('studioIsFeatured') && document.getElementById('studioIsFeatured').value === 'true';
+            featEl.textContent = isFeat ? 'Yes ⭐' : 'No';
+        }
     },
 
     showTab(t) {
@@ -1315,16 +1450,45 @@ const Studio = {
 
     updateStats() {
         const text  = this.quill.getText().trim();
-        const words = text ? text.split(/\s+/).length : 0;
-        document.getElementById('studioWordCount').textContent = words + ' words';
+        const words = text ? text.split(/\s+/).filter(w => w).length : 0;
+        const readMins = Math.max(1, Math.round(words / 200));
+        document.getElementById('studioWordCount').textContent = words + ' words · ' + readMins + ' min read';
+        const html = this.quill.root.innerHTML;
+        const h2   = (html.match(/<h2/g)  || []).length;
+        const h3   = (html.match(/<h3/g)  || []).length;
+        const imgs  = (html.match(/<img/g) || []).length;
+        const links = (html.match(/<a /g)  || []).length;
+        const imgsNoAlt = (html.match(/<img(?![^>]*alt=)[^>]*>/g) || []).length;
+
         const a = [];
-        if (words < 300)       a.push(`<div class="analysis-item">⚠️ Content short (${words} words, aim 600+)</div>`);
-        else if (words >= 600) a.push(`<div class="analysis-item">✅ Good length (${words} words)</div>`);
-        else                   a.push(`<div class="analysis-item">📝 ${words} words (aim 600+)</div>`);
-        const h2   = (this.quill.root.innerHTML.match(/<h2/g) || []).length;
-        const imgs = (this.quill.root.innerHTML.match(/<img/g)  || []).length;
-        a.push(h2   ? `<div class="analysis-item">✅ ${h2} heading(s)</div>`     : '<div class="analysis-item">⚠️ No H2 headings</div>');
-        a.push(imgs ? `<div class="analysis-item">✅ ${imgs} image(s)</div>`     : '<div class="analysis-item">💡 Consider adding images</div>');
+
+        // Word count
+        if      (words === 0)    a.push('<div class="analysis-item">📝 Start writing...</div>');
+        else if (words < 300)    a.push(`<div class="analysis-item">⚠️ Too short — ${words} words (aim 600+)</div>`);
+        else if (words < 600)    a.push(`<div class="analysis-item">📝 ${words} words — getting there (aim 600+)</div>`);
+        else                     a.push(`<div class="analysis-item">✅ ${words} words — good length</div>`);
+
+        // Headings
+        if      (h2 === 0)       a.push('<div class="analysis-item">⚠️ No H2 headings — add section headings</div>');
+        else if (h2 >= 2)        a.push(`<div class="analysis-item">✅ ${h2} H2 + ${h3} H3 headings</div>`);
+        else                     a.push(`<div class="analysis-item">📝 ${h2} H2 heading (add more sections)</div>`);
+
+        // Images
+        if      (imgs === 0)     a.push('<div class="analysis-item">💡 No images — add at least one</div>');
+        else if (imgsNoAlt > 0)  a.push(`<div class="analysis-item">⚠️ ${imgs} image(s) — ${imgsNoAlt} missing alt text</div>`);
+        else                     a.push(`<div class="analysis-item">✅ ${imgs} image(s) with alt text</div>`);
+
+        // Links
+        if (links > 0) a.push(`<div class="analysis-item">🔗 ${links} internal link(s)</div>`);
+
+        // SEO fields
+        const mt = (document.getElementById('studioMetaTitle')  || {}).value || '';
+        const md = (document.getElementById('studioMetaDesc')   || {}).value || '';
+        const desc = (document.getElementById('studioDescription') || {}).value || '';
+        if (!mt)   a.push('<div class="analysis-item">⚠️ Missing meta title</div>');
+        if (!md)   a.push('<div class="analysis-item">⚠️ Missing meta description</div>');
+        if (!desc) a.push('<div class="analysis-item">⚠️ Missing short description</div>');
+
         document.getElementById('contentAnalysis').innerHTML = a.join('');
     },
 
@@ -1348,10 +1512,16 @@ const Studio = {
     },
 
     updateCharCount(id, cid, max) {
-        const l = document.getElementById(id).value.length;
+        const input = document.getElementById(id);
+        if (!input) return;
+        const l = input.value.length;
         const e = document.getElementById(cid);
-        e.textContent = l + '/' + max;
-        e.style.color = l > max ? '#EF4444' : l > max * .8 ? '#F59E0B' : '';
+        if (e) {
+            e.textContent = l + '/' + max;
+            e.style.color = l > max ? '#EF4444' : l > max * .8 ? '#F59E0B' : '';
+        }
+        // Highlight the input itself when over limit
+        input.style.borderColor = l > max ? '#EF4444' : l > max * .8 ? '#F59E0B' : '';
     },
 
     showToast(msg, duration) {
@@ -1412,8 +1582,13 @@ const Studio = {
 
     // ── KEYBOARD SHORTCUTS ──────────────────────────────────
     _initKeyboard() {
+        // Mark dirty when any form field changes (but not while loading)
+        document.addEventListener('input', () => { if (!this._loading) this.isDirty = true; });
+        document.addEventListener('change', () => { if (!this._loading) this.isDirty = true; });
+
+        // Only warn about unsaved changes if there are actually unsaved changes
         window.addEventListener('beforeunload', e => {
-            if (document.getElementById('studioName') && document.getElementById('studioName').value) { e.preventDefault(); e.returnValue = ''; }
+            if (this.isDirty) { e.preventDefault(); e.returnValue = ''; }
         });
         document.addEventListener('keydown', e => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.saveItem(this.editId ? 'auto' : null); }

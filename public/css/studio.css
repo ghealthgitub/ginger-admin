@@ -536,3 +536,24 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* ── TOPBAR KEYBOARD SHORTCUT HINT ── */
+.studio-topbar__shortcut {
+    font-size: .72rem;
+    color: var(--gray-300);
+    font-weight: 500;
+    padding: 3px 8px;
+    border: 1px solid var(--gray-200);
+    border-radius: 5px;
+    cursor: default;
+    white-space: nowrap;
+}
+.studio-topbar__shortcut:hover {
+    color: var(--gray-500);
+    border-color: var(--gray-300);
+}
+
+/* ── TOAST WITH UNDO BUTTON ── */
+.studio-toast button {
+    font-family: inherit;
+}
