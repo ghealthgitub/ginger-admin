@@ -240,6 +240,14 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             </div>
         </div>
     </div>
+
+    <div class="sb-box" id="doctorTreatsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">💊 Treatments</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="treat-count"><span id="treatSelectedCount">0</span> selected</div>
+            <input type="text" class="treat-search" id="treatSearch" placeholder="Search treatments..." oninput="treatFilter()">
+            <div class="treat-list" id="treatList"><div style="padding:12px;text-align:center;color:var(--gray-400);font-size:.8rem">Loading...</div></div>
+        </div>
+    </div>
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
     </div>
@@ -748,8 +756,9 @@ async function saveItem(status) {
         const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
         if (r.ok) {
             const result=await r.json();
-            if (!editId&&result.id) { isDirty=false; window.location.href=C.editBase+result.id; return; }
+            if (!editId&&result.id) { await saveDoctorTreats(result.id); isDirty=false; window.location.href=C.editBase+result.id; return; }
             document.getElementById('status').value=result.status||status; updatePublishUI();
+            await saveDoctorTreats(editId);
             isDirty=false;
             if (isAuto) showToast('✓ Auto-saved');
             else {
@@ -881,10 +890,72 @@ quill.root.addEventListener('keydown',function(e){
 });
 document.getElementById('name').addEventListener('input',()=>isDirty=true);
 
+
+// ─────────────────────────────────────────────
+// DOCTOR TREATMENTS PANEL
+// ─────────────────────────────────────────────
+let allTreatments = [], selectedTreatIds = new Set();
+
+async function initDoctorTreats() {
+    if (C.cpt !== 'doctor') return;
+    document.getElementById('doctorTreatsBox').style.display = '';
+    // Load all treatments
+    try {
+        const r = await fetch('/api/treatments');
+        allTreatments = r.ok ? await r.json() : [];
+    } catch(e) { allTreatments = []; }
+    // Load currently linked treatments if editing
+    if (editId) {
+        try {
+            const r = await fetch('/api/doctor-treatments/' + editId);
+            const rows = r.ok ? await r.json() : [];
+            rows.forEach(row => selectedTreatIds.add(row.treatment_id));
+        } catch(e) {}
+    }
+    treatRender();
+}
+
+function treatRender() {
+    const q = (document.getElementById('treatSearch')?.value || '').toLowerCase();
+    const filtered = allTreatments.filter(t => !q || t.name.toLowerCase().includes(q));
+    const list = document.getElementById('treatList');
+    if (!filtered.length) { list.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gray-400);font-size:.8rem">No treatments found</div>'; return; }
+    list.innerHTML = filtered.map(t => `
+        <div class="treat-item" onclick="treatToggle(${t.id})">
+            <input type="checkbox" id="tc_${t.id}" ${selectedTreatIds.has(t.id) ? 'checked' : ''} onclick="event.stopPropagation();treatToggle(${t.id})">
+            <label for="tc_${t.id}">${t.name}</label>
+        </div>`).join('');
+    document.getElementById('treatSelectedCount').textContent = selectedTreatIds.size;
+}
+
+function treatFilter() { treatRender(); }
+
+function treatToggle(id) {
+    if (selectedTreatIds.has(id)) selectedTreatIds.delete(id);
+    else selectedTreatIds.add(id);
+    // Update checkbox visually
+    const cb = document.getElementById('tc_' + id);
+    if (cb) cb.checked = selectedTreatIds.has(id);
+    document.getElementById('treatSelectedCount').textContent = selectedTreatIds.size;
+    isDirty = true;
+}
+
+async function saveDoctorTreats(doctorId) {
+    if (C.cpt !== 'doctor' || !doctorId) return;
+    try {
+        await fetch('/api/doctor-treatments/' + doctorId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ treatment_ids: [...selectedTreatIds] })
+        });
+    } catch(e) { console.error('Failed to save doctor treatments:', e); }
+}
+
 // ─────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────
 initPage();
+initDoctorTreats();
 if (editId) loadItem();
 </script>
 </body></html>
