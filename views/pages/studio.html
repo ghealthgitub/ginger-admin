@@ -525,7 +525,7 @@ function mpSwitchTab(tab, btn) {
     }
 }
 async function mpLoadMedia() {
-    try { const r = await fetch('/api/media'); const d = await r.json(); mpMedia = d.filter(m => m.file_type && m.file_type.startsWith('image')); mpRenderGrid(); }
+    try { const r = await fetch('/api/media'); const d = await r.json(); mpMedia = d.filter(m => m.mime_type && m.mime_type.startsWith('image')); mpRenderGrid(); }
     catch(e) { document.getElementById('mpGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load</div>'; }
 }
 function mpRenderGrid() {
