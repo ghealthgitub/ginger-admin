@@ -287,37 +287,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <!-- D. Treatment: Cost Details -->
-    <div class="sb-box" id="dtCostBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">💰 Cost Details</div><span class="sb-box__toggle">▾</span></div>
-        <div class="sb-box__body">
-            <div class="sb-label" style="margin-top:0">Cost Range (USD)</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-                <div style="flex:1"><div style="font-size:.68rem;color:var(--gray-400);margin-bottom:3px">From</div><input type="number" id="cost_min_usd" class="sb-input" placeholder="e.g. 3000" min="0"></div>
-                <div style="flex:1"><div style="font-size:.68rem;color:var(--gray-400);margin-bottom:3px">To</div><input type="number" id="cost_max_usd" class="sb-input" placeholder="e.g. 8000" min="0"></div>
-            </div>
-            <div class="sb-label">Hospital Stay</div>
-            <input type="text" id="dt_hospital_stay" class="sb-input" placeholder="e.g. 5-7 days + 10 days recovery">
-            <div class="sb-label">Cost Includes</div>
-            <textarea id="cost_includes" class="sb-textarea" rows="3" placeholder="Surgery, anaesthesia, hospital stay, meals, nursing care..."></textarea>
-        </div>
-    </div>
-
-    <!-- D. Specialty + D. Treatment: Hero BG -->
-    <div class="sb-box" id="dsHeroBgBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🌄 Hero Background Image</div><span class="sb-box__toggle">▾</span></div>
-        <div class="sb-box__body">
-            <div id="heroBgImgBox" style="cursor:pointer" onclick="openMediaPicker('hero_bg')">
-                <img class="feat-img-preview" id="heroBgPreview" style="display:none">
-                <div class="feat-img-empty" id="heroBgEmpty"><div style="font-size:1.5rem;margin-bottom:4px">🌄</div>Click to set hero background</div>
-            </div>
-            <div id="heroBgActions" style="display:none;margin-top:6px">
-                <div class="feat-img-btns">
-                    <button class="feat-img-btn" onclick="openMediaPicker('hero_bg')">Change</button>
-                    <button class="feat-img-btn" onclick="removeHeroBg()" style="color:#EF4444">Remove</button>
-                </div>
-            </div>
-            <input type="hidden" id="hero_bg">
-        </div>
-    </div>
+    <!-- Hero BG removed: featured image used as hero background -->
 
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
@@ -556,7 +526,17 @@ function buildViewUrl(itemSlug) {
         const sel = document.getElementById(C.viewUrlBuilder.selectId);
         const opt = sel ? sel.options[sel.selectedIndex] : null;
         const parentSlug = opt && opt.dataset.slug ? opt.dataset.slug : '';
-        if (parentSlug) return C.viewUrlBuilder.withParent.replace('{parent}', parentSlug).replace('{slug}', itemSlug);
+        if (parentSlug) {
+            let url = C.viewUrlBuilder.withParent.replace('{parent}', parentSlug).replace('{slug}', itemSlug);
+            // Resolve {specialty} placeholder if extraSelectId is configured
+            if (C.viewUrlBuilder.extraSelectId && url.includes('{specialty}')) {
+                const extraSel = document.getElementById(C.viewUrlBuilder.extraSelectId);
+                const extraOpt = extraSel ? extraSel.options[extraSel.selectedIndex] : null;
+                const extraSlug = extraOpt && extraOpt.dataset.slug ? extraOpt.dataset.slug : '';
+                url = url.replace('{specialty}', extraSlug || 'specialty');
+            }
+            return url;
+        }
     }
     return (C.viewBase || '/') + itemSlug + '/';
 }
@@ -910,17 +890,8 @@ async function saveItem(status) {
         status: status||document.getElementById('status').value,
         ...cptData
     };
-    // D. Specialty / D. Treatment: collect hero_bg
-    if (C.cpt === 'd-specialty' || C.cpt === 'd-treatment') {
-        data.hero_bg = document.getElementById('hero_bg')?.value || '';
-    }
-    // D. Treatment: collect cost fields
-    if (C.cpt === 'd-treatment') {
-        data.cost_min_usd = document.getElementById('cost_min_usd')?.value || null;
-        data.cost_max_usd = document.getElementById('cost_max_usd')?.value || null;
-        data.cost_includes = document.getElementById('cost_includes')?.value || '';
-        data.hospital_stay = document.getElementById('dt_hospital_stay')?.value || '';
-    }
+    // D. Treatment: cost fields are in fieldRows (cost_min_usd, cost_max_usd, hospital_stay)
+    // hero_bg not used — featured image serves as hero background
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try {
@@ -990,17 +961,8 @@ async function loadItem() {
         updateCharCount('meta_title','metaTitleCount',60);
         updateCharCount('meta_description','metaDescCount',160);
         if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
-            // D. Specialty / D. Treatment: restore hero_bg
-            if (C.cpt === 'd-specialty' || C.cpt === 'd-treatment') {
-                if (item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
-            }
-            // D. Treatment: restore cost fields
-            if (C.cpt === 'd-treatment') {
-                if (item.cost_min_usd) document.getElementById('cost_min_usd').value = item.cost_min_usd;
-                if (item.cost_max_usd) document.getElementById('cost_max_usd').value = item.cost_max_usd;
-                if (item.cost_includes) document.getElementById('cost_includes').value = item.cost_includes;
-                if (item.hospital_stay) document.getElementById('dt_hospital_stay').value = item.hospital_stay;
-            }
+            // D. Specialty: restore hero_bg if it has its own field
+            if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
     } catch(e) { console.error(e); }
 }
 
@@ -1338,16 +1300,8 @@ function loadCitiesForDest(forceSlug, forceCity) {
 let dsWhyQuill = null;
 
 function initDSpecialtyPanels() {
-    if (C.cpt !== 'd-specialty' && C.cpt !== 'd-treatment') return;
-    if (C.cpt === 'd-treatment') {
-        document.getElementById('dtCostBox').style.display = '';
-        // Dirty tracking for cost sidebar fields
-        ['cost_min_usd','cost_max_usd','cost_includes','dt_hospital_stay'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', () => { isDirty = true; });
-        });
-    }
-    document.getElementById('dsHeroBgBox').style.display = '';
+    // No extra panels needed — cost fields are in fieldRows, hero bg uses featured image
+    return;
 
 }
 
