@@ -954,7 +954,6 @@ document.getElementById('name').addEventListener('input',()=>isDirty=true);
 // DOCTOR TREATMENTS + DETAILS PANEL
 // ─────────────────────────────────────────────
 let allTreatments = [], selectedTreatIds = new Set();
-let doctorQualifications = [], doctorLanguages = [];
 
 async function initDoctorTreats() {
     if (C.cpt !== 'doctor') return;
@@ -1089,8 +1088,7 @@ function removeFieldChip(fieldId, i) {
     isDirty = true;
 }
 
-// Keep legacy aliases for any code still referencing doctorQualifications/doctorLanguages
-let doctorQualifications = [], doctorLanguages = [];
+// Legacy stubs (unused — chips now handled via fieldChipsData)
 function handleChipKey(e, type) {}
 function renderChips(type) {}
 function removeChip(i, type) {}
