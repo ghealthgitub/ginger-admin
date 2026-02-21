@@ -33,7 +33,7 @@ const DOCTOR_CONFIG = {
         ],
         [
             { id: 'qualifications', label: 'Qualifications', type: 'chips', placeholder: 'Add degree & press Enter...', flex: 1 },
-            { id: 'languages',      label: 'Languages',      type: 'chips', placeholder: 'Add language & press Enter...', flex: 1 },
+            { id: 'languages',      label: 'Languages Spoken', type: 'lang-select', flex: 1 },
         ],
         [
             { id: 'experience_years', label: 'Years of Experience', type: 'number', width: '140px' },

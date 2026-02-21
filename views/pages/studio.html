@@ -188,6 +188,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .field-chip{background:rgba(14,165,160,.1);color:var(--teal);padding:2px 8px;border-radius:4px;font-size:.74rem;font-weight:600;display:inline-flex;align-items:center;gap:3px;line-height:1.5;white-space:nowrap}
 .field-chip button{background:none;border:none;color:rgba(14,165,160,.5);cursor:pointer;font-size:.82rem;padding:0;line-height:1}.field-chip button:hover{color:#EF4444}
 .field-chips-input{border:none;outline:none;font-family:inherit;font-size:.8rem;padding:2px 0;background:transparent;flex:1;min-width:100px}
+
+/* ── Language multi-select ── */
+.lang-select-wrap{display:flex;flex-direction:column;gap:0;width:100%}
+.lang-tags{display:flex;flex-wrap:wrap;gap:4px;min-height:0;margin-bottom:2px}
+.lang-tag{display:inline-flex;align-items:center;gap:3px;background:rgba(14,165,160,.1);color:var(--teal);padding:2px 8px 2px 10px;border-radius:50px;font-size:.74rem;font-weight:600}
+.lang-tag button{background:none;border:none;color:rgba(14,165,160,.5);cursor:pointer;font-size:.88rem;padding:0;line-height:1}.lang-tag button:hover{color:#EF4444}
 </style></head>
 <body>
 
@@ -400,6 +406,15 @@ function renderFields() {
                 </div>`;
             } else if (f.type === 'city-select') {
                 input = `<select id="${f.id}" style="width:100%"><option value="">Select city...</option></select>`;
+            } else if (f.type === 'lang-select') {
+                input = `<div class="lang-select-wrap" id="${f.id}_wrap">
+                    <div class="lang-tags" id="${f.id}_tags"></div>
+                    <select id="${f.id}_picker" onchange="langAdd('${f.id}',this)" style="width:100%;margin-top:4px">
+                        <option value="">+ Add language...</option>
+                    </select>
+                </div>`;
+                window._langSelectFields = window._langSelectFields || [];
+                window._langSelectFields.push(f.id);
             } else {
                 input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
             }
@@ -409,6 +424,9 @@ function renderFields() {
     }).join('');
     // Populate selects from remote sources
     rows.flat().filter(f => f.type === 'select' && f.source).forEach(loadSelectSource);
+    // Initialise any lang-select pickers (must run after innerHTML is set)
+    (window._langSelectFields || []).forEach(id => langInit(id));
+    window._langSelectFields = [];
 }
 
 async function loadSelectSource(f) {
@@ -423,15 +441,35 @@ async function loadSelectSource(f) {
             if (item.slug) o.dataset.slug = item.slug;
             sel.appendChild(o);
         });
+        // After destination loads, populate city dropdown
+        if (f.id === 'destination_id') {
+            // If we have a pending restore (edit mode), pre-select destination then load cities
+            if (window._pendingDestId) {
+                const match = [...sel.options].find(o => o.value == window._pendingDestId);
+                if (match) { match.selected = true; updatePermalink(); }
+            }
+            loadCitiesForDest(null, window._pendingCity || '');
+        }
     } catch(e) { console.error('Select source failed:', f.source); }
 }
 
 function getFieldVal(id) {
+    // lang-select field — return array
+    if (document.getElementById(id + '_picker')) return [...(langData[id] || new Set())];
     // chips field — return array
     if (fieldChipsData.hasOwnProperty(id)) return fieldChipsData[id] || [];
     const el = document.getElementById(id); return el ? el.value : '';
 }
 function setFieldVal(id, val) {
+    // lang-select field — populate set
+    if (document.getElementById(id + '_picker')) {
+        if (!langData[id]) langData[id] = new Set();
+        langData[id].clear();
+        const arr = Array.isArray(val) ? val : (val ? [val] : []);
+        arr.forEach(v => langData[id].add(v));
+        langRender(id);
+        return;
+    }
     // chips field — populate array
     if (document.getElementById(id + '_wrap')) {
         fieldChipsData[id] = Array.isArray(val) ? [...val] : (val ? [val] : []);
@@ -789,9 +827,13 @@ async function saveItem(status) {
             cptData.specialty = specSel.options[specSel.selectedIndex].text.trim() || null;
         }
     }
-    // Chips fields — collect from fieldChipsData for any chips-type fields
+    // Chips fields — collect from fieldChipsData
     (C.fieldRows||[]).flat().filter(f => f.type === 'chips').forEach(f => {
         cptData[f.id] = fieldChipsData[f.id] || [];
+    });
+    // Lang-select fields — collect from langData
+    (C.fieldRows||[]).flat().filter(f => f.type === 'lang-select').forEach(f => {
+        cptData[f.id] = [...(langData[f.id] || new Set())];
     });
     const data = {
         name: document.getElementById('name').value,
@@ -848,13 +890,23 @@ async function loadItem() {
         document.getElementById('image').value=item.image||'';
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
+        // Store pending dest+city so loadSelectSource can pre-select on async load
+        if (C.cpt === 'doctor') {
+            window._pendingDestId = item.destination_id;
+            window._pendingCity = item.city || '';
+        }
         const restoreFields=()=>{
-            // Load city dropdown first (needs destination set)
-            if (C.cpt === 'doctor') loadCitiesForDest();
             allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
+            // Re-load cities with the now-correct destination slug
+            if (C.cpt === 'doctor') {
+                const destSel = document.getElementById('destination_id');
+                const opt = destSel ? destSel.options[destSel.selectedIndex] : null;
+                const slug = opt ? (opt.dataset.slug||'').toLowerCase() : '';
+                loadCitiesForDest(slug, item.city||'');
+            }
             updatePermalink();
-            // Re-filter treatments after specialty is populated
             if (C.cpt === 'doctor') setTimeout(()=>treatRender(), 100);
+            window._pendingDestId = null; window._pendingCity = null;
         };
         // Wait briefly for async select sources to populate, then restore values
         setTimeout(restoreFields,300);
@@ -1098,6 +1150,64 @@ function renderChips(type) {}
 function removeChip(i, type) {}
 
 
+
+// ─────────────────────────────────────────────
+// LANGUAGE MULTI-SELECT
+// ─────────────────────────────────────────────
+const LANGUAGES_LIST = [
+    'English','Hindi','Arabic','Turkish','Thai','Malay','French','German',
+    'Spanish','Russian','Bengali','Telugu','Tamil','Kannada','Malayalam',
+    'Marathi','Gujarati','Punjabi','Urdu','Chinese (Mandarin)','Japanese',
+    'Korean','Portuguese','Italian','Dutch','Polish','Swedish','Norwegian',
+    'Danish','Greek','Hebrew','Persian (Farsi)','Swahili','Indonesian'
+];
+const langData = {}; // { fieldId: Set of selected languages }
+
+function langInit(fieldId) {
+    if (!langData[fieldId]) langData[fieldId] = new Set();
+    const picker = document.getElementById(fieldId + '_picker');
+    if (!picker) return;
+    picker.innerHTML = '<option value="">+ Add language...</option>';
+    LANGUAGES_LIST.forEach(lang => {
+        const o = document.createElement('option');
+        o.value = lang; o.textContent = lang;
+        picker.appendChild(o);
+    });
+}
+
+function langAdd(fieldId, selectEl) {
+    const val = selectEl.value; if (!val) return;
+    if (!langData[fieldId]) langData[fieldId] = new Set();
+    langData[fieldId].add(val);
+    selectEl.value = '';
+    langRender(fieldId);
+    isDirty = true;
+}
+
+function langRemove(fieldId, val) {
+    if (langData[fieldId]) langData[fieldId].delete(val);
+    langRender(fieldId);
+    isDirty = true;
+}
+
+function langRender(fieldId) {
+    const wrap = document.getElementById(fieldId + '_tags');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    (langData[fieldId] || new Set()).forEach(lang => {
+        const tag = document.createElement('span');
+        tag.className = 'lang-tag';
+        tag.textContent = lang;
+        const btn = document.createElement('button');
+        btn.textContent = '×'; btn.title = 'Remove';
+        btn.onclick = (function(fid, v){ return function(){ langRemove(fid, v); }; })(fieldId, lang);
+        tag.appendChild(btn);
+        wrap.appendChild(tag);
+    });
+    document.getElementById(fieldId + '_picker').style.display =
+        (langData[fieldId] && langData[fieldId].size >= 10) ? 'none' : '';
+}
+
 // ─────────────────────────────────────────────
 // CITY DROPDOWN (filtered by destination)
 // ─────────────────────────────────────────────
@@ -1109,15 +1219,18 @@ const CITY_MAP = {
     'singapore': ['Singapore'],
 };
 
-function loadCitiesForDest() {
+function loadCitiesForDest(forceSlug, forceCity) {
     const sel = document.getElementById('city');
     if (!sel || sel.tagName !== 'SELECT') return;
-    const destSel = document.getElementById('destination_id');
-    if (!destSel) return;
-    const opt = destSel.options[destSel.selectedIndex];
-    const slug = opt ? (opt.dataset.slug || '').toLowerCase() : '';
+    // Determine slug: use forceSlug if provided, else read destination select
+    let slug = forceSlug || '';
+    if (!slug) {
+        const destSel = document.getElementById('destination_id');
+        const opt = destSel ? destSel.options[destSel.selectedIndex] : null;
+        slug = (opt ? (opt.dataset.slug || '') : '').toLowerCase();
+    }
     const cities = CITY_MAP[slug] || [];
-    const current = sel.value;
+    const current = (forceCity !== undefined) ? forceCity : sel.value;
     sel.innerHTML = '<option value="">Select city...</option>';
     cities.forEach(c => {
         const o = document.createElement('option');
@@ -1125,7 +1238,7 @@ function loadCitiesForDest() {
         if (c === current) o.selected = true;
         sel.appendChild(o);
     });
-    // If current value isn't in list but was set (editing), add it
+    // Keep non-standard saved city visible
     if (current && !cities.includes(current)) {
         const o = document.createElement('option');
         o.value = current; o.textContent = current; o.selected = true;
