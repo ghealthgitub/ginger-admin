@@ -1,10 +1,59 @@
-module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage }) {
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, serveStudio }) {
 
-// ============== HOSPITALS CRUD ==============
+// ─── CPT CONFIG ───────────────────────────────────────────────
+const HOSPITAL_CONFIG = {
+    cpt: 'hospital',
+    label: 'Hospital',
+    api: '/api/hospitals',
+    editBase: '/hospitals/edit/',
+    listUrl: '/hospitals',
+    viewBase: 'https://ginger.healthcare/destinations/',
+    placeholder: 'Hospital name...',
+    permalinkPrefix: 'ginger.healthcare/destinations/',
+    // View URL: /destinations/{country-slug}/hospitals/{hospital-slug}/
+    viewUrlBuilder: {
+        selectId: 'destination_id',
+        withParent: 'https://ginger.healthcare/destinations/{parent}/hospitals/{slug}/',
+        withoutParent: null
+    },
+    permalinkDynamic: {
+        selectId: 'destination_id',
+        withSlug: 'ginger.healthcare/destinations/{slug}/hospitals/',
+        withoutSlug: 'ginger.healthcare/destinations/.../hospitals/'
+    },
+    fieldRows: [
+        [
+            { id: 'destination_id', label: 'Destination *', type: 'select', source: '/api/destinations', flex: 1, onchange: 'updatePermalink()' },
+            { id: 'city',           label: 'City',           type: 'text',   placeholder: 'e.g. Mumbai',   width: '130px' },
+            { id: 'beds',           label: 'Beds',           type: 'number', default: 0,                   width: '70px'  },
+            { id: 'established',    label: 'Est. Year',      type: 'number', default: 2000,                width: '85px'  },
+            { id: 'rating',         label: 'Rating',         type: 'text',   placeholder: '4.5',           width: '70px'  }
+        ],
+        [
+            { id: 'description', label: 'Short Description', type: 'text', placeholder: 'Brief overview of the hospital...', flex: 1 }
+        ]
+    ]
+};
+
+// ─── LEGACY REDIRECT ──────────────────────────────────────────
+app.get('/hospitals-mgmt', authRequired, (req, res) => {
+    res.redirect(301, '/hospitals');
+});
+
+// ─── STUDIO ROUTES ────────────────────────────────────────────
+app.get('/hospitals/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    serveStudio(res, HOSPITAL_CONFIG);
+});
+app.get('/hospitals/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    serveStudio(res, HOSPITAL_CONFIG);
+});
+
+// ─── LISTING ──────────────────────────────────────────────────
 app.get('/hospitals', authRequired, (req, res) => {
     servePage(res, 'hospitals');
 });
 
+// ─── API ──────────────────────────────────────────────────────
 app.get('/api/hospitals', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
@@ -16,14 +65,41 @@ app.get('/api/hospitals', apiAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT h.*, d.name as destination_name, d.slug as destination_slug,
+                    a.name as airport_name, a.code as airport_code
+             FROM hospitals h
+             LEFT JOIN destinations d ON h.destination_id = d.id
+             LEFT JOIN airports a ON h.airport_id = a.id
+             WHERE h.id = $1`, [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude,
+                airport_id, airport_distance, description, long_description,
+                accreditations, specialties, beds, established, image, location_image,
+                gallery, gallery_people, rating, is_featured, status,
+                meta_title, meta_description } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `INSERT INTO hospitals (name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, location_image||null, gallery || [], gallery_people || [], rating, is_featured || false, status || 'draft']
+            `INSERT INTO hospitals (name, slug, destination_id, country, city, address,
+             latitude, longitude, airport_id, airport_distance, description, long_description,
+             accreditations, specialties, beds, established, image, location_image,
+             gallery, gallery_people, rating, is_featured, status, meta_title, meta_description)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25) RETURNING *`,
+            [name, slug, destination_id, country, city, address,
+             latitude||null, longitude||null, airport_id||null, airport_distance||null,
+             description, long_description, accreditations||[], specialties||[],
+             beds||null, established||null, image, location_image||null,
+             gallery||[], gallery_people||[], rating||null, is_featured||false,
+             status||'draft', meta_title||null, meta_description||null]
         );
         await logActivity(req.user.id, 'create', 'hospital', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -32,19 +108,32 @@ app.post('/api/hospitals', apiAuth, roleRequired('super_admin', 'editor'), async
 
 app.put('/api/hospitals/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, destination_id, country, city, address, latitude, longitude, airport_id, airport_distance, description, long_description, accreditations, specialties, beds, established, image, location_image, gallery, gallery_people, rating, is_featured, status } = req.body;
+        const { name, slug, destination_id, country, city, address, latitude, longitude,
+                airport_id, airport_distance, description, long_description,
+                accreditations, specialties, beds, established, image, location_image,
+                gallery, gallery_people, rating, is_featured, status,
+                meta_title, meta_description } = req.body;
         if (!destination_id) return res.status(400).json({ error: 'Destination (country) is required' });
         const result = await pool.query(
-            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5, address=$6, latitude=$7, longitude=$8, airport_id=$9, airport_distance=$10, description=$11, long_description=$12, accreditations=$13, specialties=$14, beds=$15, established=$16, image=$17, location_image=$18, gallery=$19, gallery_people=$20, rating=$21, is_featured=$22, status=$23, updated_at=NOW()
-             WHERE id=$24 RETURNING *`,
-            [name, slug, destination_id, country, city, address, latitude||null, longitude||null, airport_id||null, airport_distance||null, description, long_description, accreditations || [], specialties || [], beds, established, image, location_image||null, gallery || [], gallery_people || [], rating, is_featured, status, req.params.id]
+            `UPDATE hospitals SET name=$1, slug=$2, destination_id=$3, country=$4, city=$5,
+             address=$6, latitude=$7, longitude=$8, airport_id=$9, airport_distance=$10,
+             description=$11, long_description=$12, accreditations=$13, specialties=$14,
+             beds=$15, established=$16, image=$17, location_image=$18, gallery=$19,
+             gallery_people=$20, rating=$21, is_featured=$22, status=$23,
+             meta_title=$24, meta_description=$25, updated_at=NOW()
+             WHERE id=$26 RETURNING *`,
+            [name, slug, destination_id, country, city, address,
+             latitude||null, longitude||null, airport_id||null, airport_distance||null,
+             description, long_description, accreditations||[], specialties||[],
+             beds||null, established||null, image, location_image||null,
+             gallery||[], gallery_people||[], rating||null, is_featured,
+             status, meta_title||null, meta_description||null, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'hospital', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Hospitals bulk actions
 app.post('/api/hospitals/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { ids, action } = req.body;
@@ -67,51 +156,23 @@ app.post('/api/hospitals/bulk', apiAuth, roleRequired('super_admin', 'editor'), 
 
 app.delete('/api/hospitals/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        const id = req.params.id;
-        const deps = [];
-        const d = await pool.query('SELECT COUNT(*) FROM doctors WHERE hospital_id = $1', [id]);
+        const id = req.params.id; const deps = [];
+        const d = await pool.query('SELECT COUNT(*) FROM doctors WHERE hospital_id=$1', [id]);
         if (+d.rows[0].count > 0) deps.push(`${d.rows[0].count} doctor(s)`);
-        const v = await pool.query('SELECT COUNT(*) FROM videos WHERE hospital_id = $1', [id]);
+        const v = await pool.query('SELECT COUNT(*) FROM videos WHERE hospital_id=$1', [id]);
         if (+v.rows[0].count > 0) deps.push(`${v.rows[0].count} video(s)`);
-        const t = await pool.query('SELECT COUNT(*) FROM testimonials WHERE hospital_id = $1', [id]);
+        const t = await pool.query('SELECT COUNT(*) FROM testimonials WHERE hospital_id=$1', [id]);
         if (+t.rows[0].count > 0) deps.push(`${t.rows[0].count} testimonial(s)`);
-        if (deps.length > 0) {
-            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
-        }
-        // Clean up junction tables first
-        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id = $1', [id]);
-        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id = $1', [id]);
-        await pool.query('DELETE FROM hospitals WHERE id = $1', [id]);
+        if (deps.length) return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id=$1', [id]);
+        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id=$1', [id]);
+        await pool.query('DELETE FROM hospitals WHERE id=$1', [id]);
         await logActivity(req.user.id, 'delete', 'hospital', parseInt(id), 'Deleted hospital');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Hospital Studio pages
-app.get('/hospitals/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    servePage(res, 'hospital-studio');
-});
-app.get('/hospitals/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    servePage(res, 'hospital-studio');
-});
-
-// Single hospital GET (for studio editor)
-app.get('/api/hospitals/:id', apiAuth, async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT h.*, d.name as destination_name, d.slug as destination_slug,
-                    a.name as airport_name, a.code as airport_code, a.latitude as airport_lat, a.longitude as airport_lng
-             FROM hospitals h
-             LEFT JOIN destinations d ON h.destination_id = d.id
-             LEFT JOIN airports a ON h.airport_id = a.id
-             WHERE h.id = $1`, [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ error: 'Server error' }); }
-});
-
-// ============== ACCREDITATIONS CRUD ==============
+// ─── ACCREDITATIONS CRUD ──────────────────────────────────────
 app.get('/accreditations-mgmt', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
     servePage(res, 'accreditations');
 });
@@ -144,27 +205,25 @@ app.put('/api/accreditations/:id', apiAuth, roleRequired('super_admin', 'editor'
 });
 app.delete('/api/accreditations/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        const ha = await pool.query('SELECT COUNT(*) FROM hospital_accreditations WHERE accreditation_id = $1', [req.params.id]);
-        if (+ha.rows[0].count > 0) {
-            return res.status(409).json({ error: `Cannot delete — linked to ${ha.rows[0].count} hospital(s). Remove them first.` });
-        }
-        await pool.query('DELETE FROM accreditations WHERE id = $1', [req.params.id]); res.json({ success: true });
-    }
-    catch (err) { res.status(500).json({ error: 'Server error' }); }
+        const ha = await pool.query('SELECT COUNT(*) FROM hospital_accreditations WHERE accreditation_id=$1', [req.params.id]);
+        if (+ha.rows[0].count > 0) return res.status(409).json({ error: `Cannot delete — linked to ${ha.rows[0].count} hospital(s). Remove them first.` });
+        await pool.query('DELETE FROM accreditations WHERE id=$1', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
-// Hospital → Specialties junction
+// ─── JUNCTION: Hospital ↔ Specialties ─────────────────────────
 app.get('/api/hospitals/:id/specialties', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT s.* FROM specialties s JOIN hospital_specialties hs ON s.id = hs.specialty_id WHERE hs.hospital_id = $1 ORDER BY s.name`, [req.params.id]);
+            `SELECT s.* FROM specialties s JOIN hospital_specialties hs ON s.id = hs.specialty_id WHERE hs.hospital_id=$1 ORDER BY s.name`, [req.params.id]);
         res.json(result.rows);
     } catch (err) { res.json([]); }
 });
 app.put('/api/hospitals/:id/specialties', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { specialty_ids } = req.body;
-        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM hospital_specialties WHERE hospital_id=$1', [req.params.id]);
         if (specialty_ids && specialty_ids.length > 0) {
             const values = specialty_ids.map((sid, i) => `($1, $${i+2})`).join(',');
             await pool.query(`INSERT INTO hospital_specialties (hospital_id, specialty_id) VALUES ${values}`, [req.params.id, ...specialty_ids]);
@@ -173,18 +232,18 @@ app.put('/api/hospitals/:id/specialties', apiAuth, roleRequired('super_admin', '
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Hospital → Accreditations junction
+// ─── JUNCTION: Hospital ↔ Accreditations ──────────────────────
 app.get('/api/hospitals/:id/accreditations', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT a.* FROM accreditations a JOIN hospital_accreditations ha ON a.id = ha.accreditation_id WHERE ha.hospital_id = $1 ORDER BY a.name`, [req.params.id]);
+            `SELECT a.* FROM accreditations a JOIN hospital_accreditations ha ON a.id = ha.accreditation_id WHERE ha.hospital_id=$1 ORDER BY a.name`, [req.params.id]);
         res.json(result.rows);
     } catch (err) { res.json([]); }
 });
 app.put('/api/hospitals/:id/accreditations', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { accreditation_ids } = req.body;
-        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id = $1', [req.params.id]);
+        await pool.query('DELETE FROM hospital_accreditations WHERE hospital_id=$1', [req.params.id]);
         if (accreditation_ids && accreditation_ids.length > 0) {
             const values = accreditation_ids.map((aid, i) => `($1, $${i+2})`).join(',');
             await pool.query(`INSERT INTO hospital_accreditations (hospital_id, accreditation_id) VALUES ${values}`, [req.params.id, ...accreditation_ids]);
@@ -192,6 +251,5 @@ app.put('/api/hospitals/:id/accreditations', apiAuth, roleRequired('super_admin'
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
 
 };
