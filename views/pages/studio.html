@@ -1077,7 +1077,8 @@ function renderFieldChips(fieldId) {
     arr.forEach((val, i) => {
         const chip = document.createElement('span');
         chip.className = 'field-chip';
-        chip.innerHTML = val + '<button onclick="removeFieldChip('' + fieldId + '',' + i + ')" title="Remove">×</button>';
+        chip.textContent = val;
+        const _btn = document.createElement('button'); _btn.title='Remove'; _btn.textContent='×'; _btn.onclick = (function(fid,fi){ return function(){ removeFieldChip(fid,fi); }; })(fieldId,i); chip.appendChild(_btn);
         wrap.insertBefore(chip, input);
     });
 }
