@@ -236,7 +236,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
         <div id="videoThumbRow" style="display:none">
             <div style="font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Thumbnail</div>
-            <img id="videoThumbImg" style="width:100%;max-width:480px;border-radius:8px;border:1.5px solid var(--gray-200);display:block">
+            <img id="videoThumbImg" style="width:100%;max-width:480px;border-radius:8px;border:1.5px solid var(--gray-200);display:block" onerror="if(!this._tried){this._tried=true;this.src=this.src.replace('maxresdefault','mqdefault');}">
             <input type="hidden" id="thumbnail">
             <div style="margin-top:6px;font-size:.72rem;color:var(--gray-400)">Auto-extracted from YouTube</div>
         </div>
@@ -391,6 +391,11 @@ function initPage() {
     document.getElementById('name').placeholder = C.placeholder || (label + ' name...');
     document.getElementById('slug').placeholder = label.toLowerCase().replace(/\s+/g,'-') + '-slug';
     document.getElementById('permalinkBase').textContent = C.permalinkPrefix || 'ginger.healthcare/';
+    // Video CPT: hide permalink area — videos don't have standalone URLs
+    if (C.cpt === 'video') {
+        const pa = document.querySelector('.permalink-area');
+        if (pa) pa.innerHTML = '<span style="font-size:.75rem;color:var(--gray-400);font-style:italic">Videos appear on doctor &amp; hospital pages — no standalone URL</span>';
+    }
     renderFields();
 }
 
@@ -944,9 +949,11 @@ async function saveItem(status) {
             else {
                 const sv=document.getElementById('topSaved'); sv.style.display='inline';
                 if (result.status==='published'&&result.slug) {
-                    const viewUrl=buildViewUrl(result.slug);
-                    setViewBtn(viewUrl);
-                    sv.innerHTML='✅ Published! <a href="'+viewUrl+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';
+                    const viewUrl = C.cpt === 'video'
+                        ? (document.getElementById('youtube_url')?.value || '#')
+                        : buildViewUrl(result.slug);
+                    if (C.cpt !== 'video') setViewBtn(viewUrl);
+                    sv.innerHTML='✅ Published! <a href="'+viewUrl+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">'+(C.cpt==='video'?'Watch on YouTube →':'View →')+'</a>';
                     setTimeout(()=>sv.style.display='none',8000);
                 } else { sv.innerHTML='✅ Saved!'; setTimeout(()=>sv.style.display='none',3000); }
             }
@@ -997,7 +1004,16 @@ async function loadItem() {
         if (item.image) setFeatImage(item.image);
         updateCharCount('meta_title','metaTitleCount',60);
         updateCharCount('meta_description','metaDescCount',160);
-        if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
+        if (item.status==='published'&&item.slug) setTimeout(()=>{
+            if (C.cpt === 'video') {
+                // View btn links to YouTube for videos
+                const ytUrl = item.youtube_url || '#';
+                const b = document.getElementById('viewBtn');
+                b.href = ytUrl; b.textContent = 'Watch →'; b.style.display = 'flex';
+            } else {
+                setViewBtn(buildViewUrl(item.slug));
+            }
+        },400);
             // D. Specialty: restore hero_bg if it has its own field
             if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
             // Video: restore thumbnail + fire preview
@@ -1377,13 +1393,26 @@ function extractYTThumb() {
         if (thumbRow) thumbRow.style.display = 'none';
         return;
     }
-    // Embed preview
+    // Embed preview — use nocookie domain, add onerror fallback for disabled-embed videos
     if (previewBox) previewBox.innerHTML =
-        `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}"
-         frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope"
-         allowfullscreen style="display:block;border:none"></iframe>`;
-    // Thumbnail — try maxresdefault, fall back to hqdefault
-    const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        `<div style="position:relative;width:100%;height:100%">
+            <iframe id="ytPreviewFrame" width="100%" height="100%"
+             src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0"
+             frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope"
+             allowfullscreen style="display:block;border:none;position:absolute;inset:0"
+             onerror="this.style.display='none';document.getElementById('ytFallback').style.display='flex'"></iframe>
+            <div id="ytFallback" style="display:none;position:absolute;inset:0;background:#1a1a2e;
+             flex-direction:column;align-items:center;justify-content:center;gap:12px;border-radius:12px">
+                <div style="font-size:2rem">▶</div>
+                <div style="color:#ccc;font-size:.88rem;text-align:center">Video preview unavailable<br><span style="font-size:.75rem;opacity:.7">(embed disabled by channel)</span></div>
+                <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank"
+                 style="background:var(--teal);color:#fff;padding:8px 20px;border-radius:6px;text-decoration:none;font-size:.82rem;font-weight:600">
+                    Watch on YouTube →
+                </a>
+            </div>
+         </div>`;
+    // Thumbnail — try maxresdefault first (no letterbox), fall back to mqdefault
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     if (thumbImg) thumbImg.src = thumbUrl;
     if (thumbHidden) thumbHidden.value = thumbUrl;
     if (thumbRow) thumbRow.style.display = 'block';
