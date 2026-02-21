@@ -715,11 +715,18 @@ async function saveItem(status) {
     const allFields = (C.fieldRows||[]).flat();
     const cptData = {};
     allFields.forEach(f => { cptData[f.id] = f.type==='number' ? (parseInt(getFieldVal(f.id))||0) : (getFieldVal(f.id)||null); });
-    // Auto-populate legacy 'country' text field from destination select (hospitals)
-    if (C.cpt === 'hospital') {
+    // Auto-populate legacy text fields from FK selects (hospitals + doctors)
+    if (C.cpt === 'hospital' || C.cpt === 'doctor') {
         const destSel = document.getElementById('destination_id');
         if (destSel && destSel.selectedIndex >= 0) {
-            cptData.country = destSel.options[destSel.selectedIndex].text.replace(/\s*🇮🇳|\s*🇹🇷|\s*🇹🇭|\s*🇦🇪|\s*🇸🇬/g,'').trim() || null;
+            const destText = destSel.options[destSel.selectedIndex].text;
+            cptData.country = destText.replace(/\s*[\u{1F1E0}-\u{1F1FF}]{2}/gu,'').trim() || null;
+        }
+    }
+    if (C.cpt === 'doctor') {
+        const specSel = document.getElementById('specialty_id');
+        if (specSel && specSel.selectedIndex >= 0 && specSel.value) {
+            cptData.specialty = specSel.options[specSel.selectedIndex].text.trim() || null;
         }
     }
     const data = {
