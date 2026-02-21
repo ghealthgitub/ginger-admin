@@ -30,6 +30,7 @@ const TREATMENT_CONFIG = {
             { id: 'description',    label: 'Short Description',type: 'text', placeholder: 'Brief overview...',    flex: 1 }
         ]
     ]
+};
 
 // ─── STUDIO ROUTES ────────────────────────────────────────────
 app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
