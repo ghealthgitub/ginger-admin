@@ -398,6 +398,8 @@ function renderFields() {
                     <input class="field-chips-input" id="${f.id}_input" placeholder="${f.placeholder||'Type and press Enter...'}"
                         onkeydown="fieldChipKey(event,'${f.id}')" style="min-width:120px">
                 </div>`;
+            } else if (f.type === 'city-select') {
+                input = `<select id="${f.id}" style="width:100%"><option value="">Select city...</option></select>`;
             } else {
                 input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
             }
@@ -847,6 +849,8 @@ async function loadItem() {
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
         const restoreFields=()=>{
+            // Load city dropdown first (needs destination set)
+            if (C.cpt === 'doctor') loadCitiesForDest();
             allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
             updatePermalink();
             // Re-filter treatments after specialty is populated
@@ -1092,6 +1096,42 @@ function removeFieldChip(fieldId, i) {
 function handleChipKey(e, type) {}
 function renderChips(type) {}
 function removeChip(i, type) {}
+
+
+// ─────────────────────────────────────────────
+// CITY DROPDOWN (filtered by destination)
+// ─────────────────────────────────────────────
+const CITY_MAP = {
+    'india':     ['Gurugram','New Delhi','Mumbai','Chennai','Bangalore','Hyderabad','Kolkata','Pune','Ahmedabad','Kochi','Jaipur','Chandigarh','Lucknow','Nagpur'],
+    'turkey':    ['Istanbul','Ankara','Izmir','Antalya','Bursa','Adana','Gaziantep','Konya'],
+    'thailand':  ['Bangkok','Chiang Mai','Phuket','Pattaya','Hua Hin','Koh Samui'],
+    'uae':       ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Al Ain'],
+    'singapore': ['Singapore'],
+};
+
+function loadCitiesForDest() {
+    const sel = document.getElementById('city');
+    if (!sel || sel.tagName !== 'SELECT') return;
+    const destSel = document.getElementById('destination_id');
+    if (!destSel) return;
+    const opt = destSel.options[destSel.selectedIndex];
+    const slug = opt ? (opt.dataset.slug || '').toLowerCase() : '';
+    const cities = CITY_MAP[slug] || [];
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select city...</option>';
+    cities.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        if (c === current) o.selected = true;
+        sel.appendChild(o);
+    });
+    // If current value isn't in list but was set (editing), add it
+    if (current && !cities.includes(current)) {
+        const o = document.createElement('option');
+        o.value = current; o.textContent = current; o.selected = true;
+        sel.insertBefore(o, sel.children[1]);
+    }
+}
 
 // ─────────────────────────────────────────────
 // BOOT

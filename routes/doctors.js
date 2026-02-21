@@ -21,13 +21,15 @@ const DOCTOR_CONFIG = {
     },
     fieldRows: [
         [
-            { id: 'destination_id', label: 'Country *',   type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink()' },
-            { id: 'city',           label: 'City',         type: 'text',   placeholder: 'e.g. Mumbai, Delhi...', flex: 2 },
+            { id: 'destination_id', label: 'Country *', type: 'select', source: '/api/destinations', flex: 2, onchange: 'updatePermalink(); loadCitiesForDest()' },
+            { id: 'city',           label: 'City',      type: 'city-select', flex: 2 },
         ],
         [
-            { id: 'hospital_id',  label: 'Hospital',   type: 'select', source: '/api/hospitals',   flex: 3 },
-            { id: 'specialty_id', label: 'Specialty',  type: 'select', source: '/api/specialties', flex: 2 },
-            { id: 'title',        label: 'Title',      type: 'text',   placeholder: 'e.g. Dr., Prof.', width: '120px' },
+            { id: 'hospital_id',  label: 'Hospital',  type: 'select', source: '/api/hospitals',   flex: 3 },
+            { id: 'specialty_id', label: 'Specialty', type: 'select', source: '/api/specialties', flex: 2 },
+        ],
+        [
+            { id: 'title', label: 'Title / Designation', type: 'text', placeholder: 'e.g. Chairman & Managing Director, Senior Consultant...', flex: 1 },
         ],
         [
             { id: 'qualifications', label: 'Qualifications', type: 'chips', placeholder: 'Add degree & press Enter...', flex: 1 },
