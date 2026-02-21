@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { pool, initDB } = require('./config/database');
@@ -53,8 +54,27 @@ function servePage(res, page) {
     res.sendFile(path.join(__dirname, 'views', 'pages', page + '.html'));
 }
 
+// Helper: serve universal studio with injected CPT config
+let _studioHtml = null;
+function serveStudio(res, config) {
+    const studioPath = path.join(__dirname, 'views', 'pages', 'studio.html');
+    try {
+        if (!_studioHtml || process.env.NODE_ENV !== 'production') {
+            _studioHtml = fs.readFileSync(studioPath, 'utf8');
+        }
+        const adminUrl = process.env.ADMIN_URL || 'https://enter.ginger.healthcare';
+        const injection = `<script>\nwindow.CPT_CONFIG = ${JSON.stringify(config)};\nwindow.ADMIN_URL = ${JSON.stringify(adminUrl)};\n</script>`;
+        const html = _studioHtml.replace('</head>', injection + '\n</head>');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+    } catch(err) {
+        console.error('[serveStudio] Failed to read studio.html:', err.message);
+        res.status(500).send('Studio template not found. Make sure views/pages/studio.html exists.');
+    }
+}
+
 // Shared context passed to all route modules
-const ctx = { authRequired, apiAuth, roleRequired, logActivity, servePage, rootDir: __dirname };
+const ctx = { authRequired, apiAuth, roleRequired, logActivity, servePage, serveStudio, rootDir: __dirname };
 
 // ============== ROUTE MODULES ==============
 // Each file is independent — editing one cannot break another

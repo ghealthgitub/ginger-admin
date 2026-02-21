@@ -1,0 +1,820 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title id="pageTitle">Studio | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+:root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:#fff;font-size:.82rem;text-decoration:none;padding:6px 12px;border:none;border-radius:6px;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal)}.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:4px}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}.topbar__btn--save:hover{background:var(--gray-200)}
+.topbar__btn--publish{background:var(--teal);color:#fff}.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--view{background:var(--white);color:var(--teal);border:1px solid var(--teal);text-decoration:none}.topbar__btn--view:hover{background:rgba(14,165,160,.08)}
+.studio{display:flex;height:calc(100vh - 48px)}
+.panel-editor{flex:1;display:flex;flex-direction:column;min-width:300px;background:var(--white);overflow:hidden}
+.panel-right{width:340px;min-width:260px;background:var(--white);border-left:1px solid var(--gray-200);overflow-y:auto;flex-shrink:0}
+.panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.title-area{padding:20px 32px 0;flex-shrink:0}
+.title-input{width:100%;border:none;outline:none;font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:600;color:var(--navy);padding:0;margin-bottom:6px;line-height:1.3}.title-input::placeholder{color:var(--gray-300)}
+.permalink-area{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-400);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}
+.permalink-area input{border:none;outline:none;font-size:.78rem;color:var(--teal);font-weight:500;padding:2px 4px;border-radius:3px;background:transparent;flex:1;min-width:0;font-family:inherit}
+.permalink-area input:focus{background:var(--gray-50);border:1px solid var(--gray-200)}
+.permalink-edit{font-size:.72rem;color:var(--teal);cursor:pointer;font-weight:600;border:none;background:none;font-family:inherit}.permalink-edit:hover{text-decoration:underline}
+.spec-fields{display:flex;gap:12px;padding:0 32px 12px;flex-shrink:0;border-bottom:1px solid var(--gray-100);align-items:flex-end}
+.spec-field{display:flex;flex-direction:column;gap:2px}
+.spec-field label{font-size:.7rem;font-weight:600;color:var(--gray-400);text-transform:uppercase}
+.spec-field input,.spec-field select{border:1px solid var(--gray-200);border-radius:6px;padding:5px 10px;font-size:.85rem;font-family:inherit}
+.spec-field input:focus,.spec-field select:focus{outline:none;border-color:var(--teal)}
+.import-bar{display:flex;align-items:center;gap:8px;padding:8px 32px;border-bottom:1px solid var(--gray-100);background:var(--gray-50);flex-shrink:0}
+.import-btn{display:flex;align-items:center;gap:4px;padding:5px 14px;background:var(--white);border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray-600);font-family:inherit;transition:all .15s}
+.import-btn:hover{border-color:var(--teal);color:var(--teal)}
+.import-btn--primary{background:var(--teal);color:#fff;border-color:var(--teal)}.import-btn--primary:hover{background:#0c918c}
+.import-hint{font-size:.72rem;color:var(--gray-400);margin-left:auto}
+.editor-toolbar-area{display:flex;align-items:center;justify-content:space-between;padding:6px 32px;border-bottom:1px solid var(--gray-100);flex-shrink:0}
+.editor-tabs{display:flex;gap:0;border:1px solid var(--gray-200);border-radius:6px;overflow:hidden}
+.editor-tab{padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray-500);background:var(--white);transition:all .15s}
+.editor-tab.active{background:var(--teal);color:#fff}
+.editor-stats{font-size:.75rem;color:var(--gray-400)}
+.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.editor-wrap .ql-toolbar{border:none;border-bottom:1px solid var(--gray-100);padding:6px 32px;flex-shrink:0}
+.editor-wrap .ql-container{border:none;flex:1;overflow:auto;font-family:'DM Sans',sans-serif;font-size:15px}
+.editor-wrap .ql-editor{padding:20px 32px;min-height:100%}
+.editor-wrap .ql-editor.ql-blank::before{left:32px;color:var(--gray-300)}
+.preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
+.preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
+.editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
+.editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
+.img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
+.editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
+.editor-wrap .ql-editor img.img-align-right{float:right;margin:0 0 12px 16px}
+.editor-wrap .ql-editor img.img-align-center{display:block;margin:12px auto;float:none}
+.editor-wrap .ql-editor img.img-align-none{float:none;display:inline;margin:0}
+.sb-box{border-bottom:1px solid var(--gray-100)}
+.sb-box.collapsed .sb-box__body{display:none}
+.sb-box__head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none}
+.sb-box__head:hover{background:var(--gray-50)}
+.sb-box__title{font-size:.82rem;font-weight:700;color:var(--navy)}
+.sb-box__toggle{color:var(--gray-400);font-size:.8rem;transition:transform .2s}
+.sb-box.collapsed .sb-box__toggle{transform:rotate(-90deg)}
+.sb-box__body{padding:0 16px 14px}
+.sb-label{font-size:.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;margin-top:10px}
+.sb-input{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;margin-bottom:6px}.sb-input:focus{outline:none;border-color:var(--teal)}
+.sb-select{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;margin-bottom:6px;background:var(--white)}.sb-select:focus{outline:none;border-color:var(--teal)}
+.sb-textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;min-height:70px;margin-bottom:6px}.sb-textarea:focus{outline:none;border-color:var(--teal)}
+.char-count{float:right;font-size:.7rem;color:var(--gray-400);font-weight:400}
+.char-count.over{color:#EF4444}
+.publish-box{border-top:3px solid var(--ginger)}
+.publish-row{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--gray-600);margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--gray-100)}
+.publish-row strong{color:var(--navy)}
+.publish-btns{display:flex;gap:6px;margin-top:8px}
+.btn-save{flex:1;padding:7px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray-600)}.btn-save:hover{background:var(--gray-200)}
+.btn-publish{flex:2;padding:7px;background:var(--teal);border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;color:#fff}.btn-publish:hover{background:#0c918c}
+.seo-badge{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:50px}
+.seo-badge--gray{background:var(--gray-100);color:var(--gray-500)}
+.seo-badge--red{background:#FEE2E2;color:#DC2626}
+.seo-badge--yellow{background:#FEF3C7;color:#D97706}
+.seo-badge--green{background:#D1FAE5;color:#059669}
+.feat-img-preview{width:100%;border-radius:6px;display:none;margin-bottom:6px}
+.feat-img-empty{border:2px dashed var(--gray-200);border-radius:8px;padding:20px;text-align:center;font-size:.8rem;color:var(--gray-400);cursor:pointer;transition:all .15s}.feat-img-empty:hover{border-color:var(--teal);color:var(--teal)}
+.feat-img-btns{display:flex;gap:6px}
+.feat-img-btn{flex:1;padding:6px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray-600)}.feat-img-btn:hover{border-color:var(--teal);color:var(--teal)}
+.analysis-item{font-size:.78rem;color:var(--gray-500);padding:3px 0;display:flex;align-items:center;gap:6px}
+.ai-helpers{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ai-btn{padding:6px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--gray-500);font-family:inherit;transition:all .15s;text-align:center}
+.ai-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}.ai-btn:disabled{opacity:.4;cursor:not-allowed}
+.ai-helpers .ai-btn:last-child:nth-child(odd){grid-column:1/-1}
+.mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center}
+.mp-overlay.active{display:flex}
+.mp-modal{background:#fff;border-radius:12px;width:900px;max-width:95vw;height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.3)}
+.mp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-200)}
+.mp-header h3{font-size:1rem;font-weight:700;color:var(--navy)}
+.mp-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);line-height:1;padding:0 4px}.mp-close:hover{color:var(--gray-700)}
+.mp-tabs{display:flex;gap:0;border-bottom:1px solid var(--gray-200);padding:0 20px}
+.mp-tab{padding:8px 16px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--gray-500);font-family:inherit;border-bottom:2px solid transparent;transition:all .15s}
+.mp-tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.mp-content{display:flex;flex:1;overflow:hidden}
+.mp-body{flex:1;overflow-y:auto;padding:16px 20px}
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.mp-item{border:2px solid var(--gray-200);border-radius:8px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:var(--gray-50);transition:all .15s}
+.mp-item:hover{border-color:var(--teal)}.mp-item.selected{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,165,160,.2)}
+.mp-item img{width:100%;height:100%;object-fit:cover}
+.mp-sidebar{width:260px;border-left:1px solid var(--gray-200);padding:16px;overflow-y:auto;flex-shrink:0}
+.mp-sidebar label{display:block;font-size:.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;margin-bottom:3px;margin-top:10px}
+.mp-sidebar input,.mp-sidebar textarea{width:100%;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-family:inherit}.mp-sidebar input:focus,.mp-sidebar textarea:focus{outline:none;border-color:var(--teal)}
+.mp-sidebar textarea{resize:vertical;min-height:50px}
+.mp-sidebar__img{width:100%;border-radius:6px;margin-bottom:8px}
+.mp-sidebar__name{font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:2px;word-break:break-all}
+.mp-sidebar__meta{font-size:.72rem;color:var(--gray-400);margin-bottom:6px}
+.url-row{display:flex;gap:4px;margin-bottom:8px}
+.url-row input{flex:1;font-size:.72rem}
+.copy-btn{padding:5px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}.copy-btn:hover{border-color:var(--teal);color:var(--teal)}
+.mp-upload-zone{border:2px dashed var(--gray-300);border-radius:10px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s}.mp-upload-zone:hover{border-color:var(--teal);background:rgba(14,165,160,.04)}
+.mp-upload-progress{margin-top:12px;font-size:.8rem;color:var(--gray-500)}
+.mp-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50)}
+.mp-footer__info{font-size:.78rem;color:var(--gray-400);flex:1;text-align:center}
+.btn{padding:7px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.btn-primary{background:var(--teal);color:#fff}.btn-primary:hover{background:#0c918c}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-danger{background:#FEE2E2;color:#DC2626;border:1px solid #FCA5A5}.btn-danger:hover{background:#FEE2E2}.btn-danger:disabled{opacity:.4;cursor:not-allowed}
+.img-edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1001;display:none;align-items:center;justify-content:center}
+.img-edit-overlay.active{display:flex}
+.img-edit-modal{background:#fff;border-radius:12px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.3)}
+.img-edit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-100)}
+.img-edit-header h3{font-size:.95rem;font-weight:700;color:var(--navy)}
+.img-edit-body{padding:16px 20px}
+.img-edit-preview{width:100%;max-height:200px;object-fit:contain;border-radius:6px;background:var(--gray-50);margin-bottom:12px}
+.img-edit-field label{font-size:.78rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:4px}
+.img-edit-field input,.img-edit-field textarea{width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit}.img-edit-field input:focus,.img-edit-field textarea:focus{outline:none;border-color:var(--teal)}
+.img-edit-field textarea{resize:vertical;min-height:50px}
+.img-edit-field .hint{font-size:.72rem;color:var(--gray-400);margin-top:2px}
+.img-edit-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)}
+.img-edit-section h4{font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:10px}
+.align-btns{display:flex;gap:0;border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.align-btn{flex:1;padding:7px;text-align:center;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:var(--white);color:var(--gray-500);font-family:inherit;border-right:1px solid var(--gray-200);transition:all .15s}
+.align-btn:last-child{border-right:none}.align-btn:hover{background:var(--gray-50);color:var(--gray-700)}.align-btn.active{background:var(--teal);color:#fff}
+.size-presets{display:flex;gap:6px;margin-bottom:12px}
+.size-preset{padding:5px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .15s}
+.size-preset:hover{border-color:var(--teal);color:var(--teal)}.size-preset.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.size-inputs{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.size-inputs input{width:80px;padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;text-align:center}.size-inputs input:focus{outline:none;border-color:var(--teal)}
+.size-inputs .sep{color:var(--gray-400);font-weight:600}
+.size-inputs .lock-btn{width:30px;height:30px;border:1px solid var(--gray-200);border-radius:6px;background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
+.size-inputs .lock-btn.locked{background:rgba(14,165,160,.08);border-color:var(--teal);color:var(--teal)}.size-inputs .lock-btn:hover{border-color:var(--teal)}
+.img-edit-actions{display:flex;gap:8px;padding-top:12px;border-top:1px solid var(--gray-100);margin-top:16px}
+.img-edit-actions .btn{padding:7px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);transition:all .15s}
+.img-edit-actions .btn:hover{border-color:var(--teal);color:var(--teal)}
+.img-edit-actions .btn-replace{position:relative;overflow:hidden}
+.img-edit-actions .btn-replace input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.img-edit-actions .btn-remove{color:#EF4444;border-color:#FCA5A5}.img-edit-actions .btn-remove:hover{background:#FEE2E2;border-color:#EF4444;color:#DC2626}
+.img-edit-actions .btn-done{background:var(--teal);color:#fff;border-color:var(--teal);margin-left:auto}.img-edit-actions .btn-done:hover{background:#0c918c}
+.autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+</style></head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <a href="#" class="topbar__back" id="backBtn">← Back</a>
+    <div class="topbar__title" id="topTitle">Loading...</div>
+    <span class="topbar__status topbar__status--draft" id="topStatus">DRAFT</span>
+    <span class="topbar__saved" id="topSaved">✓ Saved</span>
+    <div class="topbar__actions">
+        <a class="topbar__btn topbar__btn--view" id="viewBtn" href="#" target="_blank" style="display:none">View →</a>
+        <button class="topbar__btn topbar__btn--save" onclick="saveItem('draft')">Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" onclick="saveItem('published')">🚀 Publish</button>
+    </div>
+</div>
+
+<div class="studio">
+<div class="panel-editor">
+    <div class="title-area">
+        <input type="text" class="title-input" id="name" oninput="autoSlug();updateTopTitle()">
+        <div class="permalink-area"><span>Permalink:</span><span style="color:var(--gray-500)" id="permalinkBase"></span><input type="text" id="slug" oninput="slugEdited=true"><button class="permalink-edit" onclick="document.getElementById('slug').focus()">Edit</button></div>
+    </div>
+    <div id="cptFields"></div>
+    <div class="import-bar">
+        <button class="import-btn import-btn--primary" onclick="openMediaPicker('insert')">🖼 Add Media</button>
+        <label class="import-btn"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importFile(this)">📄 Import from Word</label>
+        <span class="import-hint">Tip: Paste images directly into the editor</span>
+    </div>
+    <div class="editor-toolbar-area">
+        <div class="editor-tabs"><div class="editor-tab active" id="tabWrite" onclick="showTab('write')">✏ Write</div><div class="editor-tab" id="tabPreview" onclick="showTab('preview')">👁 Preview</div></div>
+        <div class="editor-stats"><span id="wordCount">0 words</span></div>
+    </div>
+    <div class="editor-wrap" id="editorWrap"><div id="editor"></div></div>
+    <div class="preview-pane" id="previewPane"></div>
+</div>
+
+<div class="panel-right">
+    <div class="sb-box publish-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="publish-row"><span>📌</span><strong>Status:</strong><span id="pubStatus">Draft</span></div>
+            <div class="publish-row"><span>⭐</span><strong>Featured:</strong><span id="pubFeatured">No</span></div>
+            <div class="publish-row"><span>📊</span><strong>SEO:</strong><span class="seo-badge seo-badge--gray" id="seoBadge">0 / 100</span></div>
+            <select class="sb-select" id="status" onchange="updatePublishUI()"><option value="draft">📝 Draft</option><option value="published">✅ Published</option></select>
+            <div style="display:flex;gap:10px;margin-bottom:6px"><div style="flex:1"><div class="sb-label">Featured</div><select class="sb-select" id="is_featured" style="margin-bottom:0"><option value="false">No</option><option value="true">Yes ⭐</option></select></div><div style="flex:1"><div class="sb-label">Order</div><input class="sb-input" type="number" id="display_order" value="0" style="margin-bottom:0"></div></div>
+            <div class="publish-btns"><button class="btn-save" onclick="saveItem('draft')">Save Draft</button><button class="btn-publish" onclick="saveItem('published')">🚀 Publish</button></div>
+        </div>
+    </div>
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🖼 Featured Image</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div id="featImgBox" style="cursor:pointer" onclick="openMediaPicker('featured')"><img class="feat-img-preview" id="featImgPreview"><div class="feat-img-empty" id="featImgEmpty"><div style="font-size:1.5rem;margin-bottom:4px">🖼</div>Click to set featured image</div></div>
+            <div id="featImgActions" style="display:none;margin-top:6px"><div class="feat-img-btns"><button class="feat-img-btn" onclick="openMediaPicker('featured')">Change</button><button class="feat-img-btn" onclick="removeFeatImage()" style="color:#EF4444">Remove</button></div></div>
+            <input type="hidden" id="image">
+        </div>
+    </div>
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🔍 SEO Settings</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label">Meta Title <span class="char-count" id="metaTitleCount">0/60</span></div>
+            <input class="sb-input" id="meta_title" placeholder="SEO title" oninput="updateCharCount('meta_title','metaTitleCount',60);analyzeSEO()">
+            <div class="sb-label">Meta Description <span class="char-count" id="metaDescCount">0/160</span></div>
+            <textarea class="sb-textarea" id="meta_description" placeholder="SEO description" oninput="updateCharCount('meta_description','metaDescCount',160);analyzeSEO()"></textarea>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
+                <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
+                <div class="ai-helpers">
+                    <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
+                    <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
+                    <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
+                    <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
+                    <button class="ai-btn" onclick="aiAction('spacing')">🧹 Clean Spacing</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
+    </div>
+</div>
+</div>
+
+<!-- MEDIA PICKER -->
+<div class="mp-overlay" id="mediaPicker" onclick="if(event.target===this)closeMediaPicker()">
+<div class="mp-modal">
+    <div class="mp-header"><h3 id="mpTitle">Insert Media</h3><button class="mp-close" onclick="closeMediaPicker()">&times;</button></div>
+    <div class="mp-tabs"><button class="mp-tab active" onclick="mpSwitchTab('library',this)">Media Library</button><button class="mp-tab" onclick="mpSwitchTab('upload',this)">Upload Files</button></div>
+    <div class="mp-content">
+        <div class="mp-body">
+            <div id="mpLibraryView"><div style="margin-bottom:12px"><input type="text" style="width:100%;padding:7px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit" id="mpSearch" placeholder="Search media..." oninput="mpFilter()"></div><div class="mp-grid" id="mpGrid"><div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Loading...</div></div></div>
+            <div id="mpUploadView" style="display:none"><div class="mp-upload-zone" id="mpUploadZone"><input type="file" id="mpFileInput" style="display:none" accept="image/*" multiple onchange="mpUploadFiles(this)"><div style="font-size:2.5rem;margin-bottom:8px">📁</div><p style="color:var(--gray-500);font-weight:600">Click to upload or drag and drop</p><p style="font-size:.82rem;color:var(--gray-400);margin-top:4px">JPG, PNG, GIF, WebP, SVG — Max 10MB</p><div class="mp-upload-progress" id="mpUploadProgress"></div></div></div>
+        </div>
+        <div class="mp-sidebar" id="mpSidebar">
+            <img class="mp-sidebar__img" id="mpSidebarImg"><div class="mp-sidebar__name" id="mpSidebarName"></div><div class="mp-sidebar__meta" id="mpSidebarMeta"></div>
+            <label>Alt Text</label><input type="text" id="mpAltText" placeholder="Describe the image" oninput="mpSaveMetadata()">
+            <p style="font-size:.65rem;color:var(--gray-400);margin:-4px 0 8px;line-height:1.4"><a href="https://moz.com/learn/seo/alt-text" target="_blank" style="color:var(--teal)">Learn about alt text.</a> Leave empty if decorative.</p>
+            <label>Title</label><input type="text" id="mpTitleField" placeholder="Image title" oninput="mpSaveMetadata()">
+            <label>Caption</label><textarea id="mpCaption" rows="2" placeholder="Caption" oninput="mpSaveMetadata()"></textarea>
+            <label>File URL</label><div class="url-row"><input type="text" id="mpFileUrl" readonly onclick="mpCopyUrl()"><button class="copy-btn" onclick="mpCopyUrl()">Copy</button></div>
+        </div>
+    </div>
+    <div class="mp-footer"><button class="btn btn-danger" id="mpDelBtn" disabled onclick="mpDelete()">🗑 Delete</button><div class="mp-footer__info" id="mpFooterInfo"></div><button class="btn btn-primary" id="mpConfirmBtn" disabled onclick="mpConfirm()">Insert into editor</button></div>
+</div>
+</div>
+
+<!-- IMAGE EDIT MODAL -->
+<div class="img-edit-overlay" id="imgEditOverlay" onclick="if(event.target===this)closeImgEdit()">
+<div class="img-edit-modal">
+    <div class="img-edit-header"><h3>Image Details</h3><button class="mp-close" onclick="closeImgEdit()">&times;</button></div>
+    <div class="img-edit-body">
+        <img class="img-edit-preview" id="imgEditPreview">
+        <div class="img-edit-field"><label>Alt Text (for SEO & accessibility)</label><input type="text" id="imgEditAlt" placeholder="Describe the image..."><div class="hint">Describe the purpose of the image. Leave empty if decorative.</div></div>
+        <div class="img-edit-field"><label>Caption (shown below image)</label><input type="text" id="imgEditCaption" placeholder="Optional caption..."></div>
+        <div class="img-edit-section"><h4>Display Settings</h4>
+            <label style="font-size:.78rem;font-weight:600;color:var(--gray-500);margin-bottom:6px;display:block">Alignment</label>
+            <div class="align-btns"><button class="align-btn" data-align="left" onclick="setImgAlign('left',this)">◧ Left</button><button class="align-btn" data-align="center" onclick="setImgAlign('center',this)">◻ Center</button><button class="align-btn" data-align="right" onclick="setImgAlign('right',this)">◨ Right</button><button class="align-btn active" data-align="none" onclick="setImgAlign('none',this)">▬ None</button></div>
+            <label style="font-size:.78rem;font-weight:600;color:var(--gray-500);margin-bottom:6px;display:block">Size</label>
+            <div class="size-presets"><button class="size-preset" onclick="setImgSizePreset(25,this)">25%</button><button class="size-preset" onclick="setImgSizePreset(50,this)">50%</button><button class="size-preset" onclick="setImgSizePreset(75,this)">75%</button><button class="size-preset active" onclick="setImgSizePreset(100,this)">100%</button></div>
+            <div class="size-inputs">
+                <div><label style="font-size:.7rem;color:var(--gray-400);display:block;margin-bottom:2px">Width</label><input type="number" id="imgEditW" min="20" step="1" oninput="onImgDimChange('w')"></div>
+                <span class="sep" style="margin-top:14px">×</span>
+                <div><label style="font-size:.7rem;color:var(--gray-400);display:block;margin-bottom:2px">Height</label><input type="number" id="imgEditH" min="20" step="1" oninput="onImgDimChange('h')"></div>
+                <button class="lock-btn locked" id="imgAspectLock" onclick="toggleAspectLock()" title="Lock aspect ratio" style="margin-top:14px">🔗</button>
+                <span style="font-size:.7rem;color:var(--gray-400);margin-top:14px">px</span>
+            </div>
+        </div>
+        <div class="img-edit-actions"><label class="btn btn-replace">🔄 Replace<input type="file" accept="image/*" onchange="replaceEditorImage(this)"></label><button class="btn btn-remove" onclick="removeEditorImage()">🗑 Remove</button><button class="btn btn-done" onclick="applyImgEdit()">✅ Done</button></div>
+    </div>
+</div>
+</div>
+
+<div class="img-size-badge" id="imgSizeBadge"></div>
+<div class="autosave-toast" id="autoToast"></div>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+// CPT_CONFIG is injected by the server as a <script> block before this file loads.
+// Shape: { cpt, api, editBase, listUrl, viewBase, label, placeholder, permalinkPrefix,
+//          fieldRows: [ [{id,label,type,placeholder,width,flex,source,onchange,default},...], ... ],
+//          permalinkDynamic: { selectId, withSlug, withoutSlug },
+//          viewUrlBuilder: { selectId, withParent, withoutParent } }
+const C = window.CPT_CONFIG || {};
+
+// === GLOBALS ===
+const pathParts = window.location.pathname.split('/');
+const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
+let autoSaveTimer = null, slugEdited = false, mpMode = 'insert';
+let mpMedia = [], mpSelected = null, mpSaveTimer = null;
+let currentEditImg = null, isDirty = false;
+let aspectLocked = true, origAspect = 1;
+
+// ─────────────────────────────────────────────
+// PAGE INIT — driven entirely by CPT_CONFIG
+// ─────────────────────────────────────────────
+function initPage() {
+    const label = C.label || 'Item';
+    document.getElementById('pageTitle').textContent = label + ' Studio | Ginger Admin';
+    document.getElementById('topTitle').textContent = 'New ' + label;
+    document.getElementById('backBtn').href = C.listUrl || '/';
+    document.getElementById('name').placeholder = C.placeholder || (label + ' name...');
+    document.getElementById('slug').placeholder = label.toLowerCase().replace(/\s+/g,'-') + '-slug';
+    document.getElementById('permalinkBase').textContent = C.permalinkPrefix || 'ginger.healthcare/';
+    renderFields();
+}
+
+// ─────────────────────────────────────────────
+// DYNAMIC FIELD RENDERING
+// ─────────────────────────────────────────────
+function renderFields() {
+    const container = document.getElementById('cptFields');
+    const rows = C.fieldRows || [];
+    if (!rows.length) { container.style.display = 'none'; return; }
+    container.innerHTML = rows.map(row => {
+        const fields = row.map(f => {
+            const flex = f.flex ? ` style="flex:${f.flex}"` : '';
+            let input = '';
+            if (f.type === 'select') {
+                const onch = f.onchange ? ` onchange="${f.onchange}"` : '';
+                // Support both static options[] and remote source
+                const staticOpts = f.options
+                    ? f.options.map(o => `<option value="${o.value}">${o.label}</option>`).join('')
+                    : '';
+                const placeholder = f.options ? 'None' : `Select ${f.label}...`;
+                input = `<select id="${f.id}"${onch} style="width:100%"><option value="">${placeholder}</option>${staticOpts}</select>`;
+            } else if (f.type === 'number') {
+                input = `<input type="number" id="${f.id}" value="${f.default||0}" style="width:${f.width||'80px'}">`;
+            } else if (f.type === 'emoji') {
+                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:56px;text-align:center;font-size:1.2rem">`;
+            } else {
+                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}">`;
+            }
+            return `<div class="spec-field"${flex}><label>${f.label}</label>${input}</div>`;
+        }).join('');
+        return `<div class="spec-fields">${fields}</div>`;
+    }).join('');
+    // Populate selects from remote sources
+    rows.flat().filter(f => f.type === 'select' && f.source).forEach(loadSelectSource);
+}
+
+async function loadSelectSource(f) {
+    try {
+        const r = await fetch(f.source);
+        const data = await r.json();
+        const sel = document.getElementById(f.id); if (!sel) return;
+        data.forEach(item => {
+            const o = document.createElement('option');
+            o.value = item.id;
+            o.textContent = (item.icon ? item.icon + ' ' : '') + item.name;
+            if (item.slug) o.dataset.slug = item.slug;
+            sel.appendChild(o);
+        });
+    } catch(e) { console.error('Select source failed:', f.source); }
+}
+
+function getFieldVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setFieldVal(id, val) { const el = document.getElementById(id); if (el) el.value = (val === null || val === undefined) ? '' : val; }
+
+function updatePermalink() {
+    if (!C.permalinkDynamic) return;
+    const sel = document.getElementById(C.permalinkDynamic.selectId);
+    const opt = sel ? sel.options[sel.selectedIndex] : null;
+    const parentSlug = opt && opt.dataset.slug ? opt.dataset.slug : '';
+    document.getElementById('permalinkBase').textContent = parentSlug
+        ? C.permalinkDynamic.withSlug.replace('{slug}', parentSlug)
+        : C.permalinkDynamic.withoutSlug;
+}
+
+function buildViewUrl(itemSlug) {
+    if (C.viewUrlBuilder) {
+        const sel = document.getElementById(C.viewUrlBuilder.selectId);
+        const opt = sel ? sel.options[sel.selectedIndex] : null;
+        const parentSlug = opt && opt.dataset.slug ? opt.dataset.slug : '';
+        if (parentSlug) return C.viewUrlBuilder.withParent.replace('{parent}', parentSlug).replace('{slug}', itemSlug);
+    }
+    return (C.viewBase || '/') + itemSlug + '/';
+}
+
+// ─────────────────────────────────────────────
+// QUILL
+// ─────────────────────────────────────────────
+const quill = new Quill('#editor', {
+    theme: 'snow',
+    placeholder: 'Write content...',
+    modules: {
+        toolbar: {
+            container: [[{header:[1,2,3,false]}],['bold','italic','underline','strike'],[{color:[]},{background:[]}],[{list:'ordered'},{list:'bullet'}],['blockquote','code-block'],['link','image'],[{align:[]}],['clean']],
+            handlers: { image: function() { openMediaPicker('insert'); } }
+        },
+        clipboard: { matchVisual: false }
+    }
+});
+quill.on('text-change', () => { resetAutoSave(); updateStats(); });
+
+// ─────────────────────────────────────────────
+// IMAGE INTERACTION
+// ─────────────────────────────────────────────
+quill.root.addEventListener('mousedown', function(e) {
+    if (e.target.tagName !== 'IMG') return;
+    e.preventDefault(); e.stopPropagation();
+    clearImageSelection();
+    e.target.classList.add('ql-img-selected');
+    currentEditImg = e.target;
+    nativeSelectNode(e.target);
+    resizeObserver.observe(e.target);
+});
+quill.root.addEventListener('dblclick', function(e) { if (e.target.tagName === 'IMG') { e.preventDefault(); openImgEdit(e.target); } });
+document.addEventListener('mousedown', function(e) { if (currentEditImg && !e.target.closest('.img-edit-overlay') && e.target !== currentEditImg) clearImageSelection(); });
+quill.root.addEventListener('dragstart', function(e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
+
+function clearImageSelection() {
+    if (currentEditImg) { currentEditImg.classList.remove('ql-img-selected'); resizeObserver.unobserve(currentEditImg); currentEditImg = null; }
+    document.getElementById('imgSizeBadge').style.display = 'none';
+}
+const badge = document.getElementById('imgSizeBadge');
+const resizeObserver = new ResizeObserver(entries => {
+    for (const e of entries) {
+        const img = e.target;
+        const w = Math.round(e.contentRect.width), h = Math.round(e.contentRect.height);
+        img.setAttribute('width', w); img.setAttribute('height', h);
+        badge.textContent = w + ' × ' + h;
+        const r = img.getBoundingClientRect();
+        badge.style.left = (r.left + r.width/2 - badge.offsetWidth/2) + 'px';
+        badge.style.top = (r.top - 26) + 'px';
+        badge.style.display = 'block';
+    }
+});
+
+// ─────────────────────────────────────────────
+// IMAGE UPLOAD (paste / drop / server)
+// ─────────────────────────────────────────────
+quill.root.addEventListener('paste', function(e) {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            uploadImageToServer(items[i].getAsFile()).then(url => {
+                if (url) { const idx = quill.getSelection(true)?.index || quill.getLength(); quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); }
+            });
+            return;
+        }
+    }
+    setTimeout(() => fixPastedImages(), 500);
+});
+quill.root.addEventListener('drop', function(e) {
+    if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
+        e.preventDefault(); e.stopPropagation();
+        uploadImageToServer(e.dataTransfer.files[0]).then(url => {
+            if (url) { const idx = quill.getSelection(true)?.index || quill.getLength(); quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); }
+        });
+    }
+});
+async function uploadImageToServer(file) {
+    const fd = new FormData(); fd.append('file', file);
+    try {
+        const r = await fetch('/api/media/upload', { method:'POST', body:fd });
+        if (r.ok) { const d = await r.json(); return d.url; }
+        showToast('❌ Upload failed (' + r.status + ')');
+    } catch(e) { showToast('❌ Network error'); }
+    return null;
+}
+async function fixPastedImages() {
+    for (const img of quill.root.querySelectorAll('img')) {
+        if (img.src.startsWith('data:')) { const url = await uploadImageToServer(dataURLtoBlob(img.src)); if (url) img.src = url; }
+        else if (img.src.startsWith('file:///') || img.src === '//:0') {
+            const p = document.createElement('p');
+            p.innerHTML = '<span style="background:#FEF3C7;color:#92400E;padding:6px 12px;border-radius:6px;font-size:.85rem;display:inline-block">⚠️ Image couldn\'t paste from Word. Use "Add Media" to insert it.</span>';
+            img.parentNode.replaceChild(p, img);
+        }
+    }
+}
+function dataURLtoBlob(dataurl) {
+    const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
+    while(n--) u8[n] = bstr.charCodeAt(n);
+    return new Blob([u8], {type:mime});
+}
+
+// ─────────────────────────────────────────────
+// MEDIA PICKER
+// ─────────────────────────────────────────────
+function openMediaPicker(mode) {
+    mpMode = mode;
+    document.getElementById('mpTitle').textContent = mode === 'featured' ? 'Set Featured Image' : 'Insert Media';
+    document.getElementById('mpConfirmBtn').textContent = mode === 'featured' ? 'Set Featured Image' : 'Insert into editor';
+    document.getElementById('mediaPicker').classList.add('active');
+    mpLoadMedia();
+}
+function closeMediaPicker() { document.getElementById('mediaPicker').classList.remove('active'); }
+function mpSwitchTab(tab, btn) {
+    document.querySelectorAll('.mp-tab').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+    document.getElementById('mpLibraryView').style.display = tab === 'library' ? 'block' : 'none';
+    document.getElementById('mpUploadView').style.display = tab === 'upload' ? 'block' : 'none';
+    if (tab === 'library') mpLoadMedia();
+    else {
+        const z = document.getElementById('mpUploadZone');
+        z.onclick = () => document.getElementById('mpFileInput').click();
+        z.ondragover = e => { e.preventDefault(); z.style.borderColor='var(--teal)'; };
+        z.ondrop = e => { e.preventDefault(); z.style.borderColor=''; mpUploadFiles({files:e.dataTransfer.files}); };
+    }
+}
+async function mpLoadMedia() {
+    try { const r = await fetch('/api/media'); const d = await r.json(); mpMedia = d.filter(m => m.file_type && m.file_type.startsWith('image')); mpRenderGrid(); }
+    catch(e) { document.getElementById('mpGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">Failed to load</div>'; }
+}
+function mpRenderGrid() {
+    const q = (document.getElementById('mpSearch').value||'').toLowerCase();
+    const items = mpMedia.filter(m => !q || (m.original_name||'').toLowerCase().includes(q) || (m.alt_text||'').toLowerCase().includes(q));
+    const au = window.ADMIN_URL || '';
+    document.getElementById('mpGrid').innerHTML = items.length
+        ? items.map(m=>`<div class="mp-item${mpSelected&&mpSelected.id===m.id?' selected':''}" onclick="mpSelectItem(${m.id})"><img src="${au}${m.file_path}" loading="lazy" alt="${m.alt_text||''}"></div>`).join('')
+        : '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No media found</div>';
+}
+function mpFilter() { mpRenderGrid(); }
+function mpSelectItem(id) {
+    mpSelected = mpMedia.find(m => m.id === id); mpRenderGrid();
+    const au = window.ADMIN_URL || '';
+    document.getElementById('mpSidebarImg').src = au + mpSelected.file_path;
+    document.getElementById('mpSidebarName').textContent = mpSelected.original_name || mpSelected.file_path.split('/').pop();
+    document.getElementById('mpSidebarMeta').textContent = mpSelected.file_size ? Math.round(mpSelected.file_size/1024)+' KB' : '';
+    document.getElementById('mpAltText').value = mpSelected.alt_text || '';
+    document.getElementById('mpTitleField').value = mpSelected.title || '';
+    document.getElementById('mpCaption').value = mpSelected.caption || '';
+    document.getElementById('mpFileUrl').value = au + mpSelected.file_path;
+    document.getElementById('mpConfirmBtn').disabled = false;
+    document.getElementById('mpDelBtn').disabled = false;
+    document.getElementById('mpFooterInfo').textContent = '1 item selected';
+}
+function mpSaveMetadata() {
+    if (!mpSelected) return;
+    clearTimeout(mpSaveTimer);
+    mpSaveTimer = setTimeout(() => fetch('/api/media/'+mpSelected.id, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({alt_text:document.getElementById('mpAltText').value,title:document.getElementById('mpTitleField').value,caption:document.getElementById('mpCaption').value})}), 800);
+}
+function mpCopyUrl() { const u=document.getElementById('mpFileUrl').value; navigator.clipboard.writeText(u).then(()=>showToast('✅ URL copied')).catch(()=>{document.getElementById('mpFileUrl').select();document.execCommand('copy');showToast('✅ URL copied');}); }
+function mpConfirm() {
+    if (!mpSelected) return;
+    const url = (window.ADMIN_URL||'') + mpSelected.file_path;
+    if (mpMode==='featured') { setFeatImage(url); closeMediaPicker(); return; }
+    const idx = quill.getSelection(true)?.index||quill.getLength();
+    quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); closeMediaPicker();
+}
+async function mpDelete() {
+    if (!mpSelected||!confirm('Delete "'+(mpSelected.original_name||'file')+'"?')) return;
+    const r = await fetch('/api/media/'+mpSelected.id,{method:'DELETE'});
+    if (r.ok) { mpSelected=null; showToast('🗑 Deleted'); mpLoadMedia(); document.getElementById('mpConfirmBtn').disabled=true; document.getElementById('mpDelBtn').disabled=true; document.getElementById('mpFooterInfo').textContent=''; }
+    else showToast('❌ Delete failed');
+}
+async function mpUploadFiles(input) {
+    const files=Array.from(input.files||[]); if(!files.length) return;
+    const prog=document.getElementById('mpUploadProgress'); prog.textContent='Uploading 0/'+files.length+'...';
+    let done=0;
+    for (const f of files) { const fd=new FormData(); fd.append('file',f); try{await fetch('/api/media/upload',{method:'POST',body:fd});}catch(e){} prog.textContent='Uploading '+(++done)+'/'+files.length+'...'; }
+    prog.textContent='✅ Done'; setTimeout(()=>{prog.textContent='';mpSwitchTab('library',document.querySelectorAll('.mp-tab')[0]);},1000);
+}
+
+// ─────────────────────────────────────────────
+// IMAGE EDIT MODAL
+// ─────────────────────────────────────────────
+function openImgEdit(img) {
+    currentEditImg = img;
+    document.getElementById('imgEditPreview').src = img.src;
+    document.getElementById('imgEditAlt').value = img.alt||'';
+    document.getElementById('imgEditCaption').value = img.dataset.caption||'';
+    document.getElementById('imgEditW').value = img.naturalWidth||img.width||'';
+    document.getElementById('imgEditH').value = img.naturalHeight||img.height||'';
+    origAspect = (img.naturalWidth&&img.naturalHeight) ? img.naturalWidth/img.naturalHeight : 1;
+    document.getElementById('imgAspectLock').classList.add('locked'); aspectLocked=true;
+    document.querySelectorAll('.align-btn').forEach(b=>b.classList.toggle('active',b.dataset.align===(img.dataset.align||'none')));
+    document.querySelectorAll('.size-preset').forEach(b=>b.classList.remove('active'));
+    document.getElementById('imgEditOverlay').classList.add('active');
+}
+function closeImgEdit() { document.getElementById('imgEditOverlay').classList.remove('active'); }
+function setImgAlign(align,btn) { document.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function setImgSizePreset(pct,btn) {
+    if (!currentEditImg) return;
+    document.querySelectorAll('.size-preset').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    const w=Math.round((currentEditImg.naturalWidth||300)*pct/100);
+    document.getElementById('imgEditW').value=w; document.getElementById('imgEditH').value=Math.round(w/origAspect);
+}
+function onImgDimChange(which) {
+    if (!aspectLocked) return;
+    if (which==='w') { const w=parseInt(document.getElementById('imgEditW').value)||0; document.getElementById('imgEditH').value=Math.round(w/origAspect); }
+    else { const h=parseInt(document.getElementById('imgEditH').value)||0; document.getElementById('imgEditW').value=Math.round(h*origAspect); }
+}
+function toggleAspectLock() { aspectLocked=!aspectLocked; const b=document.getElementById('imgAspectLock'); b.classList.toggle('locked',aspectLocked); b.textContent=aspectLocked?'🔗':'🔓'; }
+function applyImgEdit() {
+    if (!currentEditImg) return;
+    const align=document.querySelector('.align-btn.active')?.dataset.align||'none';
+    ['img-align-left','img-align-right','img-align-center','img-align-none'].forEach(c=>currentEditImg.classList.remove(c));
+    currentEditImg.classList.add('img-align-'+align); currentEditImg.dataset.align=align;
+    currentEditImg.alt=document.getElementById('imgEditAlt').value;
+    currentEditImg.dataset.caption=document.getElementById('imgEditCaption').value;
+    const w=parseInt(document.getElementById('imgEditW').value),h=parseInt(document.getElementById('imgEditH').value);
+    if (w) currentEditImg.style.width=w+'px'; if (h) currentEditImg.style.height=h+'px';
+    closeImgEdit(); isDirty=true;
+}
+async function replaceEditorImage(input) {
+    const file=input.files[0]; if(!file||!currentEditImg) return;
+    showToast('📤 Uploading...'); const url=await uploadImageToServer(file);
+    if (url) { currentEditImg.src=url; document.getElementById('imgEditPreview').src=url; showToast('✅ Replaced'); isDirty=true; }
+}
+function removeEditorImage() {
+    if (!currentEditImg||!confirm('Remove this image?')) return;
+    currentEditImg.remove(); clearImageSelection(); closeImgEdit(); isDirty=true; showToast('🗑 Image removed');
+}
+
+// ─────────────────────────────────────────────
+// FEATURED IMAGE
+// ─────────────────────────────────────────────
+function setFeatImage(url) {
+    document.getElementById('image').value=url;
+    const full = url.startsWith('http') ? url : (window.ADMIN_URL||'')+url;
+    const p=document.getElementById('featImgPreview'); p.src=full; p.style.display='block';
+    document.getElementById('featImgEmpty').style.display='none';
+    document.getElementById('featImgActions').style.display='block';
+}
+function removeFeatImage() {
+    document.getElementById('image').value='';
+    document.getElementById('featImgPreview').style.display='none';
+    document.getElementById('featImgEmpty').style.display='block';
+    document.getElementById('featImgActions').style.display='none';
+    isDirty=true;
+}
+
+// ─────────────────────────────────────────────
+// WORD IMPORT
+// ─────────────────────────────────────────────
+async function importFile(input) {
+    const file=input.files[0]; if(!file) return; input.value='';
+    if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.root.innerHTML=d.html;updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
+    alert('Supported: .docx, .txt, images');
+}
+
+// ─────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────
+function resetAutoSave() { isDirty=true; clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(()=>{if(editId)saveItem('auto');},15000); }
+function updateTopTitle() { document.getElementById('topTitle').textContent=document.getElementById('name').value||('New '+(C.label||'Item')); }
+function autoSlug() { if(!slugEdited&&!editId){const n=document.getElementById('name').value;document.getElementById('slug').value=n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');} }
+function showTab(t) {
+    document.getElementById('tabWrite').classList.toggle('active',t==='write');
+    document.getElementById('tabPreview').classList.toggle('active',t==='preview');
+    document.getElementById('editorWrap').style.display=t==='write'?'flex':'none';
+    const pp=document.getElementById('previewPane'); pp.style.display=t==='preview'?'block':'none';
+    if(t==='preview') pp.innerHTML=quill.root.innerHTML;
+}
+function updateStats() {
+    const text=quill.getText().trim();
+    const words=text?text.split(/\s+/).filter(w=>w).length:0;
+    document.getElementById('wordCount').textContent=words+' words — '+Math.max(1,Math.ceil(words/200))+' min read';
+    analyzeSEO();
+}
+function analyzeSEO() {
+    let score=0; const items=[];
+    const title=document.getElementById('meta_title').value||'';
+    const desc=document.getElementById('meta_description').value||'';
+    const words=(quill.getText().trim()||'').split(/\s+/).filter(w=>w).length;
+    const h2s=quill.root.querySelectorAll('h2').length;
+    const imgs=quill.root.querySelectorAll('img').length;
+    const imgsAlt=quill.root.querySelectorAll('img[alt]:not([alt=""])').length;
+    if(title){score+=15;items.push('✅ Title present');}else items.push('⚠️ Add meta title');
+    if(title.length>=30&&title.length<=60){score+=20;items.push('✅ Title length ('+title.length+'/60)');}else if(title)items.push('⚠️ Meta title '+title.length+'/60');
+    if(desc.length>=80&&desc.length<=160){score+=20;items.push('✅ Description ('+desc.length+'/160)');}else if(desc)items.push('⚠️ Meta desc '+desc.length+'/160');
+    if(words>=600){score+=15;items.push('✅ '+words+' words');}else if(words>=300){score+=10;items.push('📝 '+words+' words (aim 600+)');}else if(words>0)items.push('⚠️ '+words+' words (aim 600+)');
+    if(h2s>0){score+=10;items.push('✅ '+h2s+' H2 heading'+(h2s>1?'s':''));}else items.push('⚠️ No H2 headings');
+    if(imgs>0){score+=10;items.push('✅ '+imgs+' image'+(imgs>1?'s':''));if(imgsAlt===imgs){score+=5;items.push('✅ All images have alt text');}else items.push('⚠️ '+(imgs-imgsAlt)+' image(s) missing alt text');}else items.push('💡 Consider adding images');
+    const b=document.getElementById('seoBadge');b.textContent=score+' / 100';
+    b.className='seo-badge '+(score>=70?'seo-badge--green':score>=40?'seo-badge--yellow':score>0?'seo-badge--red':'seo-badge--gray');
+    document.getElementById('contentAnalysis').innerHTML=items.map(i=>`<div class="analysis-item">${i}</div>`).join('')||'<div class="analysis-item">Start writing...</div>';
+}
+function updatePublishUI() {
+    const s=document.getElementById('status').value;
+    document.getElementById('pubStatus').textContent=s.charAt(0).toUpperCase()+s.slice(1);
+    document.getElementById('topStatus').textContent=s.toUpperCase();
+    document.getElementById('topStatus').className='topbar__status topbar__status--'+s;
+}
+function updateCharCount(id,cid,max) { const len=(document.getElementById(id).value||'').length; const el=document.getElementById(cid); el.textContent=len+'/'+max; el.classList.toggle('over',len>max); }
+function showToast(msg) { const t=document.getElementById('autoToast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500); }
+function setViewBtn(url) { const b=document.getElementById('viewBtn');b.href=url;b.style.display='flex'; }
+function nativeSelectNode(node) { const sel=window.getSelection(),range=document.createRange();range.selectNode(node);sel.removeAllRanges();sel.addRange(range); }
+
+// ─────────────────────────────────────────────
+// SAVE
+// ─────────────────────────────────────────────
+async function saveItem(status) {
+    const isAuto=status==='auto'; if(isAuto) status=document.getElementById('status').value;
+    // Collect all CPT fields from config
+    const allFields = (C.fieldRows||[]).flat();
+    const cptData = {};
+    allFields.forEach(f => { cptData[f.id] = f.type==='number' ? (parseInt(getFieldVal(f.id))||0) : (getFieldVal(f.id)||null); });
+    const data = {
+        name: document.getElementById('name').value,
+        slug: document.getElementById('slug').value,
+        long_description: quill.root.innerHTML==='<p><br></p>' ? '' : quill.root.innerHTML,
+        image: document.getElementById('image').value,
+        is_featured: document.getElementById('is_featured').value==='true',
+        display_order: parseInt(document.getElementById('display_order').value)||0,
+        meta_title: document.getElementById('meta_title').value,
+        meta_description: document.getElementById('meta_description').value,
+        status: status||document.getElementById('status').value,
+        ...cptData
+    };
+    if (!data.name) { if(!isAuto) alert('Name is required'); return; }
+    if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    try {
+        const url=editId ? C.api+'/'+editId : C.api;
+        const r=await fetch(url,{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        if (r.ok) {
+            const result=await r.json();
+            if (!editId&&result.id) { isDirty=false; window.location.href=C.editBase+result.id; return; }
+            document.getElementById('status').value=result.status||status; updatePublishUI();
+            isDirty=false;
+            if (isAuto) showToast('✓ Auto-saved');
+            else {
+                const sv=document.getElementById('topSaved'); sv.style.display='inline';
+                if (result.status==='published'&&result.slug) {
+                    const viewUrl=buildViewUrl(result.slug);
+                    setViewBtn(viewUrl);
+                    sv.innerHTML='✅ Published! <a href="'+viewUrl+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">View →</a>';
+                    setTimeout(()=>sv.style.display='none',8000);
+                } else { sv.innerHTML='✅ Saved!'; setTimeout(()=>sv.style.display='none',3000); }
+            }
+        } else { const e=await r.json(); if(!isAuto) alert(e.error||'Save failed'); }
+    } catch(e) { if(!isAuto) alert('Save failed'); }
+}
+
+// ─────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────
+async function loadItem() {
+    if (!editId) return;
+    try {
+        const r=await fetch(C.api+'/'+editId); if(!r.ok) return; const item=await r.json();
+        document.getElementById('name').value=item.name||'';
+        document.getElementById('slug').value=item.slug||''; slugEdited=true;
+        quill.root.innerHTML=item.long_description||'';
+        document.getElementById('status').value=item.status||'draft';
+        document.getElementById('is_featured').value=item.is_featured?'true':'false';
+        document.getElementById('display_order').value=item.display_order||0;
+        document.getElementById('meta_title').value=item.meta_title||'';
+        document.getElementById('meta_description').value=item.meta_description||'';
+        document.getElementById('image').value=item.image||'';
+        // Restore CPT fields — after select sources have loaded
+        const allFields=(C.fieldRows||[]).flat();
+        const restoreFields=()=>{ allFields.forEach(f=>setFieldVal(f.id,item[f.id])); updatePermalink(); };
+        // Wait briefly for async select sources to populate, then restore values
+        setTimeout(restoreFields,300);
+        updateTopTitle(); updatePublishUI(); updateStats(); analyzeSEO();
+        document.getElementById('pubFeatured').textContent=item.is_featured?'Yes ⭐':'No';
+        if (item.image) setFeatImage(item.image);
+        updateCharCount('meta_title','metaTitleCount',60);
+        updateCharCount('meta_description','metaDescCount',160);
+        if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
+    } catch(e) { console.error(e); }
+}
+
+// ─────────────────────────────────────────────
+// AI HELPERS
+// ─────────────────────────────────────────────
+async function aiAction(type) {
+    const btns=document.querySelectorAll('.ai-btn'); btns.forEach(b=>b.disabled=true);
+    const itemName=document.getElementById('name').value||('this '+(C.label||'item').toLowerCase());
+    const content=quill.getText().trim();
+    let prompt='';
+    if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
+    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+content.substring(0,4000);
+    else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
+    else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
+    else if (type==='spacing') prompt='Clean up spacing and formatting of this medical content. Remove excessive blank lines, ensure consistent paragraphs, fix list formatting. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
+    try {
+        const r=await fetch('/api/ai/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,type:C.cpt||'item',context:(C.label||'Item')+': '+itemName})});
+        if(!r.ok) throw new Error('AI request failed');
+        const d=await r.json(); let result=d.content||'';
+        const match=result.match(/```html?\n?([\s\S]*?)```/); if(match) result=match[1].trim();
+        if (type==='seo') {
+            result.split('\n').forEach(line=>{
+                if(line.toLowerCase().includes('meta title')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_title').value=v;}
+                if(line.toLowerCase().includes('meta description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v)document.getElementById('meta_description').value=v;}
+                if(line.toLowerCase().includes('short description')){const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim();if(v&&v.length<250)setFieldVal('description',v);}
+            });
+            analyzeSEO(); showToast('✅ SEO tags generated');
+        } else { quill.root.innerHTML=result; updateStats(); analyzeSEO(); showToast('✅ Content updated'); }
+    } catch(e) { showToast('❌ AI error: '+e.message); }
+    btns.forEach(b=>b.disabled=false);
+}
+
+// ─────────────────────────────────────────────
+// KEYBOARD SHORTCUTS
+// ─────────────────────────────────────────────
+window.addEventListener('beforeunload',e=>{ if(isDirty){e.preventDefault();e.returnValue='';} });
+document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveItem(editId?'auto':null);}
+    if(e.key==='Escape'){clearImageSelection();closeImgEdit();closeMediaPicker();}
+});
+quill.root.addEventListener('keydown',function(e){
+    if(!currentEditImg) return;
+    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopPropagation();currentEditImg.remove();clearImageSelection();showToast('🗑 Image removed');}
+});
+document.getElementById('name').addEventListener('input',()=>isDirty=true);
+
+// ─────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────
+initPage();
+if (editId) loadItem();
+</script>
+</body></html>
