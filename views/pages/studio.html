@@ -287,7 +287,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <!-- D. Specialty: Hero BG -->
+    <!-- D. Treatment: Cost Details -->
+    <div class="sb-box" id="dtCostBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">💰 Cost Details</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label" style="margin-top:0">Cost Range (USD)</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+                <div style="flex:1"><div style="font-size:.68rem;color:var(--gray-400);margin-bottom:3px">From</div><input type="number" id="cost_min_usd" class="sb-input" placeholder="e.g. 3000" min="0"></div>
+                <div style="flex:1"><div style="font-size:.68rem;color:var(--gray-400);margin-bottom:3px">To</div><input type="number" id="cost_max_usd" class="sb-input" placeholder="e.g. 8000" min="0"></div>
+            </div>
+            <div class="sb-label">Hospital Stay</div>
+            <input type="text" id="dt_hospital_stay" class="sb-input" placeholder="e.g. 5-7 days + 10 days recovery">
+            <div class="sb-label">Cost Includes</div>
+            <textarea id="cost_includes" class="sb-textarea" rows="3" placeholder="Surgery, anaesthesia, hospital stay, meals, nursing care..."></textarea>
+        </div>
+    </div>
+
+    <!-- D. Specialty + D. Treatment: Hero BG -->
     <div class="sb-box" id="dsHeroBgBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🌄 Hero Background Image</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
             <div id="heroBgImgBox" style="cursor:pointer" onclick="openMediaPicker('hero_bg')">
@@ -516,6 +531,21 @@ function updatePermalink() {
             document.getElementById('topTitle').textContent = autoName;
             if (!slugEdited) {
                 document.getElementById('slug').value = specName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+            }
+        }
+    }
+    // D. Treatment: auto-fill name from treatment + destination
+    if (C.cpt === 'd-treatment' && !editId) {
+        const destOpt = document.getElementById('destination_id')?.options[document.getElementById('destination_id')?.selectedIndex];
+        const treatOpt = document.getElementById('treatment_id')?.options[document.getElementById('treatment_id')?.selectedIndex];
+        const destName = destOpt?.value ? destOpt.text.replace(/^[\p{So}\p{Cn}\s]+/u,'').trim() : '';
+        const treatName = treatOpt?.value ? treatOpt.text.replace(/^[\p{So}\p{Cn}\s]+/u,'').trim() : '';
+        if (destName && treatName) {
+            const autoName = treatName + ' in ' + destName;
+            document.getElementById('name').value = autoName;
+            document.getElementById('topTitle').textContent = autoName;
+            if (!slugEdited) {
+                document.getElementById('slug').value = treatName.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
             }
         }
     }
@@ -880,10 +910,16 @@ async function saveItem(status) {
         status: status||document.getElementById('status').value,
         ...cptData
     };
-    // D. Specialty: collect why_choose + hero_bg
-    if (C.cpt === 'd-specialty') {
-        data.why_choose = dsWhyQuill ? (dsWhyQuill.root.innerHTML === '<p><br></p>' ? '' : dsWhyQuill.root.innerHTML) : '';
+    // D. Specialty / D. Treatment: collect hero_bg
+    if (C.cpt === 'd-specialty' || C.cpt === 'd-treatment') {
         data.hero_bg = document.getElementById('hero_bg')?.value || '';
+    }
+    // D. Treatment: collect cost fields
+    if (C.cpt === 'd-treatment') {
+        data.cost_min_usd = document.getElementById('cost_min_usd')?.value || null;
+        data.cost_max_usd = document.getElementById('cost_max_usd')?.value || null;
+        data.cost_includes = document.getElementById('cost_includes')?.value || '';
+        data.hospital_stay = document.getElementById('dt_hospital_stay')?.value || '';
     }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -954,10 +990,16 @@ async function loadItem() {
         updateCharCount('meta_title','metaTitleCount',60);
         updateCharCount('meta_description','metaDescCount',160);
         if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
-            // D. Specialty: restore why_choose + hero_bg
-            if (C.cpt === 'd-specialty') {
-                if (item.why_choose) setTimeout(()=>{ if(dsWhyQuill) dsWhyQuill.root.innerHTML = item.why_choose; }, 250);
+            // D. Specialty / D. Treatment: restore hero_bg
+            if (C.cpt === 'd-specialty' || C.cpt === 'd-treatment') {
                 if (item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
+            }
+            // D. Treatment: restore cost fields
+            if (C.cpt === 'd-treatment') {
+                if (item.cost_min_usd) document.getElementById('cost_min_usd').value = item.cost_min_usd;
+                if (item.cost_max_usd) document.getElementById('cost_max_usd').value = item.cost_max_usd;
+                if (item.cost_includes) document.getElementById('cost_includes').value = item.cost_includes;
+                if (item.hospital_stay) document.getElementById('dt_hospital_stay').value = item.hospital_stay;
             }
     } catch(e) { console.error(e); }
 }
@@ -1296,7 +1338,15 @@ function loadCitiesForDest(forceSlug, forceCity) {
 let dsWhyQuill = null;
 
 function initDSpecialtyPanels() {
-    if (C.cpt !== 'd-specialty') return;
+    if (C.cpt !== 'd-specialty' && C.cpt !== 'd-treatment') return;
+    if (C.cpt === 'd-treatment') {
+        document.getElementById('dtCostBox').style.display = '';
+        // Dirty tracking for cost sidebar fields
+        ['cost_min_usd','cost_max_usd','cost_includes','dt_hospital_stay'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => { isDirty = true; });
+        });
+    }
     document.getElementById('dsHeroBgBox').style.display = '';
 
 }
@@ -1330,6 +1380,7 @@ if (editId) loadItem();
 document.addEventListener('change', function(e) {
     if (e.target.id === 'specialty_id' && C.cpt === 'doctor') treatRender();
     if (e.target.id === 'specialty_id' && C.cpt === 'd-specialty') updatePermalink();
+    if ((e.target.id === 'treatment_id' || e.target.id === 'destination_id') && C.cpt === 'd-treatment') updatePermalink();
 });
 </script>
 </body></html>
