@@ -715,6 +715,13 @@ async function saveItem(status) {
     const allFields = (C.fieldRows||[]).flat();
     const cptData = {};
     allFields.forEach(f => { cptData[f.id] = f.type==='number' ? (parseInt(getFieldVal(f.id))||0) : (getFieldVal(f.id)||null); });
+    // Auto-populate legacy 'country' text field from destination select (hospitals)
+    if (C.cpt === 'hospital') {
+        const destSel = document.getElementById('destination_id');
+        if (destSel && destSel.selectedIndex >= 0) {
+            cptData.country = destSel.options[destSel.selectedIndex].text.replace(/\s*🇮🇳|\s*🇹🇷|\s*🇹🇭|\s*🇦🇪|\s*🇸🇬/g,'').trim() || null;
+        }
+    }
     const data = {
         name: document.getElementById('name').value,
         slug: document.getElementById('slug').value,
