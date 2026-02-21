@@ -226,8 +226,24 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="editor-tabs"><div class="editor-tab active" id="tabWrite" onclick="showTab('write')">✏ Write</div><div class="editor-tab" id="tabPreview" onclick="showTab('preview')">👁 Preview</div></div>
         <div class="editor-stats"><span id="wordCount">0 words</span></div>
     </div>
+    <!-- Video Preview Panel (shown when C.noQuill = true) -->
+    <div id="videoPreviewPanel" style="display:none;flex-direction:column;flex:1;overflow-y:auto;padding:24px;gap:24px">
+        <div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">▶ Video Preview</div>
+            <div id="videoPreviewBox" style="background:var(--gray-900,#111);border-radius:12px;overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--gray-500);font-size:.88rem;text-align:center;padding:20px">
+                Enter a YouTube URL above to preview
+            </div>
+        </div>
+        <div id="videoThumbRow" style="display:none">
+            <div style="font-size:.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Thumbnail</div>
+            <img id="videoThumbImg" style="width:100%;max-width:480px;border-radius:8px;border:1.5px solid var(--gray-200);display:block">
+            <input type="hidden" id="thumbnail">
+            <div style="margin-top:6px;font-size:.72rem;color:var(--gray-400)">Auto-extracted from YouTube</div>
+        </div>
+    </div>
     <div class="editor-wrap" id="editorWrap">
         <div id="editor"></div>
+
         <div class="ai-progress" id="aiProgress">
             <div class="ai-progress__label" id="aiProgressLabel">✨ AI is working...</div>
             <div class="ai-progress__bar-wrap"><div class="ai-progress__bar" id="aiProgressBar"></div></div>
@@ -544,7 +560,14 @@ function buildViewUrl(itemSlug) {
 // ─────────────────────────────────────────────
 // QUILL
 // ─────────────────────────────────────────────
-const quill = new Quill('#editor', {
+let quill;
+if (C.noQuill) {
+    document.getElementById('editorWrap').style.display = 'none';
+    document.getElementById('videoPreviewPanel').style.display = 'flex';
+    quill = { root:{ innerHTML:'' }, getLength:()=>0, on:()=>{}, getSelection:()=>null,
+              insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{} };
+} else {
+quill = new Quill('#editor', {
     theme: 'snow',
     placeholder: 'Write content...',
     modules: {
@@ -556,6 +579,7 @@ const quill = new Quill('#editor', {
     }
 });
 quill.on('text-change', () => { resetAutoSave(); updateStats(); });
+} // end if (!C.noQuill)
 
 // ─────────────────────────────────────────────
 // IMAGE INTERACTION
@@ -892,6 +916,14 @@ async function saveItem(status) {
     };
     // D. Treatment: cost fields are in fieldRows (cost_min_usd, cost_max_usd, hospital_stay)
     // hero_bg not used — featured image serves as hero background
+    // Video: collect auto-extracted thumbnail
+    if (C.cpt === 'video') {
+        data.thumbnail = document.getElementById('thumbnail')?.value || '';
+    }
+    // Video: collect thumbnail from hidden field
+    if (C.cpt === 'video') {
+        data.thumbnail = document.getElementById('thumbnail')?.value || '';
+    }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try {
@@ -963,6 +995,28 @@ async function loadItem() {
         if (item.status==='published'&&item.slug) setTimeout(()=>setViewBtn(buildViewUrl(item.slug)),400);
             // D. Specialty: restore hero_bg if it has its own field
             if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
+            // Video: restore thumbnail hidden field then fire preview
+            if (C.cpt === 'video') setTimeout(() => {
+                if (item.thumbnail) {
+                    const th = document.getElementById('thumbnail');
+                    if (th) th.value = item.thumbnail;
+                    const img = document.getElementById('videoThumbImg');
+                    if (img) { img.src = item.thumbnail; }
+                    const tr = document.getElementById('videoThumbRow');
+                    if (tr) tr.style.display = 'block';
+                }
+                if (item.youtube_url) extractYTThumb();
+            }, 300);
+            // Video: restore thumbnail + fire preview
+            if (C.cpt === 'video') setTimeout(() => {
+                if (item.thumbnail) {
+                    const th = document.getElementById('thumbnail');
+                    const img = document.getElementById('videoThumbImg');
+                    if (th) th.value = item.thumbnail;
+                    if (img) { img.src = item.thumbnail; document.getElementById('videoThumbRow').style.display = 'block'; }
+                }
+                if (item.youtube_url) extractYTThumb();
+            }, 200);
     } catch(e) { console.error(e); }
 }
 
@@ -1293,6 +1347,99 @@ function loadCitiesForDest(forceSlug, forceCity) {
     }
 }
 
+
+// ─────────────────────────────────────────────
+// VIDEO CPT — YouTube thumbnail extraction + preview
+// ─────────────────────────────────────────────
+function extractYTThumb() {
+    const urlEl = document.getElementById('youtube_url');
+    if (!urlEl) return;
+    const url = urlEl.value.trim();
+    const videoId = getYTVideoId(url);
+    if (!videoId) {
+        document.getElementById('videoPreviewBox').innerHTML = 'Enter a YouTube URL above to preview';
+        document.getElementById('videoThumbRow').style.display = 'none';
+        return;
+    }
+    // Show embed preview
+    document.getElementById('videoPreviewBox').innerHTML =
+        `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}"
+         frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope"
+         allowfullscreen style="display:block;border:none"></iframe>`;
+    // Set thumbnail
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    const thumbEl = document.getElementById('videoThumbImg');
+    const hiddenThumb = document.getElementById('thumbnail');
+    if (thumbEl) thumbEl.src = thumbUrl;
+    if (hiddenThumb) hiddenThumb.value = thumbUrl;
+    document.getElementById('videoThumbRow').style.display = 'block';
+    // Auto-generate slug from title if empty
+    if (!slugEdited) {
+        const titleEl = document.getElementById('name');
+        if (titleEl && titleEl.value) {
+            document.getElementById('slug').value = titleEl.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+        }
+    }
+    isDirty = true;
+}
+
+function getYTVideoId(url) {
+    if (!url) return null;
+    const patterns = [
+        /youtube\.com\/watch\?v=([^&]+)/,
+        /youtu\.be\/([^?&]+)/,
+        /youtube\.com\/embed\/([^?&]+)/,
+        /youtube\.com\/shorts\/([^?&]+)/,
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────
+// VIDEO CPT — YouTube extraction + preview
+// ─────────────────────────────────────────────
+function getYTVideoId(url) {
+    if (!url) return null;
+    const patterns = [
+        /youtube\.com\/watch\?v=([^&]+)/,
+        /youtu\.be\/([^?&]+)/,
+        /youtube\.com\/embed\/([^?&]+)/,
+        /youtube\.com\/shorts\/([^?&]+)/,
+    ];
+    for (const p of patterns) { const m = url.match(p); if (m) return m[1]; }
+    return null;
+}
+
+function extractYTThumb() {
+    if (C.cpt !== 'video') return;
+    const urlEl = document.getElementById('youtube_url');
+    if (!urlEl) return;
+    const videoId = getYTVideoId(urlEl.value.trim());
+    const previewBox = document.getElementById('videoPreviewBox');
+    const thumbRow  = document.getElementById('videoThumbRow');
+    const thumbImg  = document.getElementById('videoThumbImg');
+    const thumbHidden = document.getElementById('thumbnail');
+
+    if (!videoId) {
+        if (previewBox) previewBox.innerHTML = 'Enter a YouTube URL above to preview';
+        if (thumbRow) thumbRow.style.display = 'none';
+        return;
+    }
+    // Embed preview
+    if (previewBox) previewBox.innerHTML =
+        `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}"
+         frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope"
+         allowfullscreen style="display:block;border:none"></iframe>`;
+    // Thumbnail — try maxresdefault, fall back to hqdefault
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    if (thumbImg) thumbImg.src = thumbUrl;
+    if (thumbHidden) thumbHidden.value = thumbUrl;
+    if (thumbRow) thumbRow.style.display = 'block';
+    isDirty = true;
+}
 
 // ─────────────────────────────────────────────
 // D. SPECIALTY PANELS (why_choose + hero_bg)

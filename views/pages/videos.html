@@ -65,25 +65,12 @@ tr:hover .row-actions{opacity:1}
 .btn-new{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--ginger);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;transition:background .2s}
 .btn-new:hover{background:#D9531E}
 /* Modal for Add/Edit */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;align-items:center;justify-content:center}
-.modal-overlay.open{display:flex}
-.modal{background:#fff;border-radius:12px;width:640px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.modal__header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--gray-200)}
-.modal__header h3{font-size:1rem;font-weight:700;color:var(--navy)}.modal__close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray-400)}
-.modal__body{padding:20px 24px}.modal__body .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.modal__body .form-group{margin-bottom:14px}.modal__body .form-label{font-size:.78rem;font-weight:700;color:var(--navy);display:block;margin-bottom:4px}
-.modal__body .form-input,.modal__body .form-select,.modal__body .form-textarea{width:100%;padding:8px 12px;border:1.5px solid var(--gray-300);border-radius:6px;font-size:.85rem;font-family:inherit}
-.modal__body .form-input:focus,.modal__body .form-select:focus{border-color:var(--teal);outline:none}
-.modal__footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--gray-200)}
-.modal__footer .btn{padding:8px 20px;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;border:none}
-.modal__footer .btn--outline{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-300)}.modal__footer .btn--outline:hover{background:var(--gray-100)}
-.modal__footer .btn--primary{background:var(--ginger);color:#fff}.modal__footer .btn--primary:hover{background:#D9531E}
 </style>
 <script src="/js/sidebar.js" defer></script>
 </head>
 <body><div class="layout"><aside class="sidebar" id="sidebar"></aside>
 
-<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Videos</h1><div class="topbar__actions"><button class="btn-new" onclick="openAddModal()">+ Add Video</button></div></header>
+<main class="main"><header class="topbar"><button class="topbar__menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><h1 class="topbar__title" id="pageTitle">Videos</h1><div class="topbar__actions"><a class="btn-new" href="/video-studio" target="_blank">+ New Video</a></div></header>
 <div class="content">
     <!-- Status Tabs -->
     <div class="status-tabs" id="statusTabs">
@@ -132,35 +119,7 @@ tr:hover .row-actions{opacity:1}
     </div></div>
 </div>
 
-<!-- Add/Edit Modal -->
-<div class="modal-overlay" id="modal">
-<div class="modal"><div class="modal__header"><h3 id="modalTitle">Add Video</h3><button class="modal__close" onclick="closeModal()">✕</button></div>
-<div class="modal__body">
-    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="f_title" placeholder="Video title" oninput="autoSlug()"></div>
-    <div class="form-row">
-        <div class="form-group"><label class="form-label">YouTube URL *</label><input class="form-input" id="f_youtube_url" placeholder="https://youtube.com/watch?v=..." oninput="autoThumb()"></div>
-        <div class="form-group"><label class="form-label">Slug</label><input class="form-input" id="f_slug" placeholder="auto-generated"></div>
-    </div>
-    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f_description" rows="2" placeholder="Brief description"></textarea></div>
-    <div class="form-row">
-        <div class="form-group"><label class="form-label">Doctor</label><select class="form-select" id="f_doctor_id"></select></div>
-        <div class="form-group"><label class="form-label">Hospital</label><select class="form-select" id="f_hospital_id"></select></div>
-    </div>
-    <div class="form-row">
-        <div class="form-group"><label class="form-label">Specialty</label><select class="form-select" id="f_specialty_id"></select></div>
-        <div class="form-group"><label class="form-label">Treatment</label><select class="form-select" id="f_treatment_id"></select></div>
-    </div>
-    <div class="form-row">
-        <div class="form-group"><label class="form-label">Sort Order</label><input class="form-input" type="number" id="f_sort_order" value="0"></div>
-        <div class="form-group"><label class="form-label">Featured</label><select class="form-select" id="f_featured"><option value="false">No</option><option value="true">Yes ⭐</option></select></div>
-    </div>
-    <div class="form-row">
-        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_status"><option value="draft">Draft</option><option value="published">Published</option></select></div>
-        <div class="form-group"><label class="form-label">Thumbnail</label><input class="form-input" id="f_thumbnail" placeholder="Auto-extracted from YouTube"></div>
-    </div>
-</div>
-<div class="modal__footer"><button class="btn btn--outline" onclick="closeModal()">Cancel</button><button class="btn btn--primary" onclick="saveItem()">💾 Save</button></div>
-</div></div>
+
 
 </main></div>
 
@@ -263,12 +222,10 @@ function renderTable(filtered) {
             <td class="cb-cell"><input type="checkbox" ${checked} onchange="toggleSelect(${v.id}, this.checked)"></td>
             <td><div class="vid-thumb">${thumb ? '<img src="' + esc(thumb) + '" loading="lazy">' : '🎬'}<a href="${esc(v.youtube_url)}" target="_blank"><div class="vid-thumb__play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></a></div></td>
             <td class="post-title-cell">
-                <strong><a href="#" onclick="openEditModal(${v.id});return false">${esc(v.title)}</a></strong>
+                <strong><a href="/video-studio/edit/${v.id}" target="_blank">${esc(v.title)}</a></strong>
                 <div class="row-actions">
-                    <a href="#" onclick="openEditModal(${v.id});return false">Edit</a>
-                    <span class="sep">|</span>
-                    <button onclick="toggleQuickEdit(${v.id})">Quick Edit</button>
-                    <span class="sep">|</span>
+                    <a href="/video-studio/edit/${v.id}" target="_blank">Edit in Studio</a>
+                                        <span class="sep">|</span>
                     <a href="${esc(v.youtube_url)}" target="_blank">Watch</a>
                     ${v.status === 'published' ? '<span class="sep">|</span><a href="https://ginger.healthcare/videos/" target="_blank">View Page</a>' : ''}
                     <span class="sep">|</span>
@@ -363,8 +320,7 @@ function sortBy(field) {
 }
 function changePage(dir) { curPage += dir; doFilter(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-// Quick Edit
-function toggleQuickEdit(id) { const row = document.getElementById('qe-row-' + id); row.style.display = row.style.display === 'none' ? '' : 'none'; }
+
 async function quickSave(id) {
     const v = items.find(x => x.id === id); if (!v) return;
     const data = {
@@ -386,32 +342,9 @@ async function deleteItem(id) {
     try { await fetch(API + '/' + id, { method: 'DELETE' }); selectedIds.delete(id); load(); } catch(e) { alert('Delete failed'); }
 }
 
-// Modal
-function openAddModal() {
-    editId = null; document.getElementById('modalTitle').textContent = 'Add Video';
-    ['f_title', 'f_slug', 'f_youtube_url', 'f_thumbnail', 'f_description'].forEach(id => document.getElementById(id).value = '');
-    ['f_doctor_id', 'f_hospital_id', 'f_specialty_id', 'f_treatment_id'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f_sort_order').value = '0'; document.getElementById('f_featured').value = 'false'; document.getElementById('f_status').value = 'draft';
-    document.getElementById('modal').classList.add('open');
-}
-function openEditModal(id) {
-    const v = items.find(x => x.id === id); if (!v) return;
-    editId = id; document.getElementById('modalTitle').textContent = 'Edit: ' + v.title;
-    document.getElementById('f_title').value = v.title || '';
-    document.getElementById('f_slug').value = v.slug || '';
-    document.getElementById('f_youtube_url').value = v.youtube_url || '';
-    document.getElementById('f_thumbnail').value = v.thumbnail || '';
-    document.getElementById('f_description').value = v.description || '';
-    document.getElementById('f_doctor_id').value = v.doctor_id || '';
-    document.getElementById('f_hospital_id').value = v.hospital_id || '';
-    document.getElementById('f_specialty_id').value = v.specialty_id || '';
-    document.getElementById('f_treatment_id').value = v.treatment_id || '';
-    document.getElementById('f_sort_order').value = v.sort_order || 0;
-    document.getElementById('f_featured').value = v.is_featured ? 'true' : 'false';
-    document.getElementById('f_status').value = v.status || 'draft';
-    document.getElementById('modal').classList.add('open');
-}
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+
+
 
 async function saveItem() {
     const data = {
