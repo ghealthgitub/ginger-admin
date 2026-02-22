@@ -978,15 +978,25 @@ async function loadItem() {
         }
         const item=await r.json();
         console.log('[loadItem] loaded:', item);
-        document.getElementById('name').value =item.name||item.title||'';
-        document.getElementById('slug').value =item.slug||''; slugEdited=true;
+        console.log('[loadItem] step 1: name');
+        const _name = document.getElementById('name'); if(_name) _name.value = item.name||item.title||'';
+        console.log('[loadItem] step 2: slug');
+        const _slug = document.getElementById('slug'); if(_slug) { _slug.value = item.slug||''; slugEdited=true; }
+        console.log('[loadItem] step 3: quill');
         quill.root.innerHTML=item.long_description||'';
-        document.getElementById('status').value =item.status||'draft';
-        document.getElementById('is_featured').value =item.is_featured?'true':'false';
+        console.log('[loadItem] step 4: status');
+        const _stat = document.getElementById('status'); if(_stat) _stat.value = item.status||'draft';
+        console.log('[loadItem] step 5: is_featured');
+        const _feat = document.getElementById('is_featured'); if(_feat) _feat.value = item.is_featured?'true':'false';
+        console.log('[loadItem] step 6: display_order');
         const _do=document.getElementById('display_order'); if(_do) _do.value=item.display_order||0;
-        document.getElementById('meta_title').value =item.meta_title||'';
-        document.getElementById('meta_description').value =item.meta_description||'';
-        document.getElementById('image').value =item.image||'';
+        console.log('[loadItem] step 7: meta_title');
+        const _mt = document.getElementById('meta_title'); if(_mt) _mt.value = item.meta_title||'';
+        console.log('[loadItem] step 8: meta_description');
+        const _md = document.getElementById('meta_description'); if(_md) _md.value = item.meta_description||'';
+        console.log('[loadItem] step 9: image');
+        const _img = document.getElementById('image'); if(_img) _img.value = item.image||'';
+        console.log('[loadItem] step 10: restoreFields setup');
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
         // Store pending dest+city so loadSelectSource can pre-select on async load
@@ -1347,7 +1357,8 @@ const CITY_MAP = {
 
 function loadCitiesForDest(forceSlug, forceCity) {
     const sel = document.getElementById('city');
-    if (!sel || sel.tagName !== 'SELECT') return;
+    if (!sel) return;
+    if (sel.tagName !== 'SELECT') return;
     // Determine slug: use forceSlug if provided, else read destination select
     let slug = forceSlug || '';
     if (!slug) {
