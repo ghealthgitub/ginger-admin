@@ -1005,7 +1005,11 @@ async function loadItem() {
             window._pendingCity = item.city || '';
         }
         const restoreFields=()=>{
-            allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
+            console.log('[restoreFields] starting, fields:', allFields.map(f=>f.id));
+            allFields.forEach(f=>{
+                console.log('[restoreFields] setting:', f.id, '=', item[f.id]);
+                setFieldVal(f.id,item[f.id]);
+            });
             // Re-load cities with the now-correct destination slug
             if (C.cpt === 'doctor') {
                 const destSel = document.getElementById('destination_id');
@@ -1038,20 +1042,23 @@ async function loadItem() {
             if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
             // Video: restore thumbnail + fire preview
             if (C.cpt === 'video') setTimeout(() => {
+                console.log('[video restore] starting, youtube_url:', item.youtube_url, 'thumbnail:', item.thumbnail);
+                if (item.youtube_url) {
+                    const el = document.getElementById('youtube_url');
+                    console.log('[video restore] youtube_url el:', el);
+                    if (el) el.value = item.youtube_url;
+                    extractYTThumb();
+                }
                 if (item.thumbnail) {
                     const th = document.getElementById('thumbnail');
                     const img = document.getElementById('videoThumbImg');
                     const tr = document.getElementById('videoThumbRow');
+                    console.log('[video restore] thumb el:', th, img, tr);
                     if (th) th.value = item.thumbnail;
                     if (img) img.src = item.thumbnail;
                     if (tr) tr.style.display = 'block';
                 }
-                if (item.youtube_url) {
-                    const el = document.getElementById('youtube_url');
-                    if (el) el.value = item.youtube_url;
-                    extractYTThumb();
-                }
-            }, 300);
+            }, 400);
     } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
 }
 
@@ -1432,8 +1439,8 @@ function extractYTThumb() {
                 </a>
             </div>
          </div>`;
-    // Thumbnail — try maxresdefault first (no letterbox), fall back to mqdefault
-    const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    // Thumbnail — use mqdefault (reliable, no letterbox issues like hqdefault)
+    const thumbUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
     if (thumbImg) thumbImg.src = thumbUrl;
     if (thumbHidden) thumbHidden.value = thumbUrl;
     if (thumbRow) thumbRow.style.display = 'block';
