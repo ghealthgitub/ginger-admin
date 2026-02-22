@@ -842,7 +842,7 @@ async function importFile(input) {
 // UI HELPERS
 // ─────────────────────────────────────────────
 function resetAutoSave() { isDirty=true; clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(()=>{if(editId)saveItem('auto');},15000); }
-function updateTopTitle() { document.getElementById('topTitle').textContent=document.getElementById('name')?.value||('New '+(C.label||'Item')); }
+function updateTopTitle() { const n=document.getElementById('name')?.value; document.getElementById('topTitle').textContent=n||(editId?'Loading...':('New '+(C.label||'Item'))); }
 function autoSlug() { if(!slugEdited&&!editId){const n=document.getElementById('name')?.value;document.getElementById('slug').value =n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');} }
 function showTab(t) {
     document.getElementById('tabWrite').classList.toggle('active',t==='write');
@@ -969,7 +969,15 @@ async function saveItem(status) {
 async function loadItem() {
     if (!editId) return;
     try {
-        const r=await fetch(C.api+'/'+editId); if(!r.ok) return; const item=await r.json();
+        const r=await fetch(C.api+'/'+editId);
+        if(!r.ok) {
+            console.error('[loadItem] fetch failed:', r.status, C.api+'/'+editId);
+            showToast('⚠️ Could not load item ('+r.status+')');
+            document.getElementById('topTitle').textContent = 'Error loading #'+editId;
+            return;
+        }
+        const item=await r.json();
+        console.log('[loadItem] loaded:', item);
         document.getElementById('name').value =item.name||item.title||'';
         document.getElementById('slug').value =item.slug||''; slugEdited=true;
         quill.root.innerHTML=item.long_description||'';
@@ -1034,7 +1042,7 @@ async function loadItem() {
                     extractYTThumb();
                 }
             }, 300);
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
 }
 
 // ─────────────────────────────────────────────
