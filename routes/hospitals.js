@@ -23,11 +23,11 @@ const HOSPITAL_CONFIG = {
     },
     fieldRows: [
         [
-            { id: 'destination_id', label: 'Destination *', type: 'select',      source: '/api/destinations', flex: 1, onchange: 'updatePermalink()' },
+            { id: 'destination_id', label: 'Destination *', type: 'select', source: '/api/destinations', flex: 1, onchange: 'updatePermalink()' },
             { id: 'city',           label: 'City',           type: 'city-select',                              flex: 1 },
-            { id: 'beds',           label: 'Beds',           type: 'number',      default: 0,                  width: '70px'  },
-            { id: 'established',    label: 'Est. Year',      type: 'number',      default: 2000,               width: '85px'  },
-            { id: 'rating',         label: 'Rating',         type: 'text',        placeholder: '4.5',          width: '70px'  }
+            { id: 'beds',           label: 'Beds',           type: 'number', default: 0,                   width: '70px'  },
+            { id: 'established',    label: 'Est. Year',      type: 'number', default: 2000,                width: '85px'  },
+            { id: 'rating',         label: 'Rating',         type: 'text',   placeholder: '4.5',           width: '70px'  }
         ],
         [
             { id: 'airport_id',       label: 'Nearest Airport', type: 'select', source: '/api/airports', flex: 2 },
