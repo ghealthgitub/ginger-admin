@@ -489,7 +489,12 @@ async function loadSelectSource(f) {
         data.forEach(item => {
             const o = document.createElement('option');
             o.value = nameMode ? item.name : item.id;
-            o.textContent = (item.flag ? item.flag + ' ' : item.icon ? item.icon + ' ' : '') + item.name;
+            // Airport records have a code field — display as "CODE — Name (City)"
+            if (item.code) {
+                o.textContent = item.code + ' — ' + item.name + (item.city ? ' (' + item.city + ')' : '');
+            } else {
+                o.textContent = (item.flag ? item.flag + ' ' : item.icon ? item.icon + ' ' : '') + item.name;
+            }
             if (item.slug) o.dataset.slug = item.slug;
             if (nameMode) o.dataset.slug = item.slug; // keep slug for city lookup
             sel.appendChild(o);
@@ -1086,7 +1091,7 @@ async function loadItem() {
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
         // Store pending dest+city so loadSelectSource can pre-select on async load
-        if (C.cpt === 'doctor') {
+        if (C.cpt === 'doctor' || C.cpt === 'hospital') {
             window._pendingDestId = item.destination_id;
             window._pendingCity = item.city || '';
         }
@@ -1098,7 +1103,7 @@ async function loadItem() {
         const restoreFields=()=>{
             allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
             // Re-load cities with the now-correct destination slug
-            if (C.cpt === 'doctor') {
+            if (C.cpt === 'doctor' || C.cpt === 'hospital') {
                 const destSel = document.getElementById('destination_id');
                 const opt = destSel ? destSel.options[destSel.selectedIndex] : null;
                 const slug = opt ? (opt.dataset.slug||'').toLowerCase() : '';
@@ -1461,7 +1466,7 @@ function langRender(fieldId) {
 // CITY DROPDOWN (filtered by destination)
 // ─────────────────────────────────────────────
 const CITY_MAP = {
-    'india':     ['Delhi','Gurugram','Mumbai','Chennai','Bangalore','Hyderabad','Kolkata','Pune','Ahmedabad','Kochi','Jaipur','Chandigarh','Lucknow','Nagpur'],
+    'india':     ['Delhi','Gurugram','Noida','Faridabad','Mumbai','Chennai','Bangalore','Hyderabad','Kolkata','Pune','Ahmedabad','Kochi','Jaipur','Chandigarh','Lucknow','Nagpur'],
     'turkey':    ['Istanbul','Ankara','Izmir','Antalya','Bursa','Adana','Gaziantep','Konya'],
     'thailand':  ['Bangkok','Chiang Mai','Phuket','Pattaya','Hua Hin','Koh Samui'],
     'uae':       ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Al Ain'],
