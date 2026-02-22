@@ -393,7 +393,7 @@ const C = window.CPT_CONFIG || {};
 const pathParts = window.location.pathname.split('/');
 const editId = pathParts[2] === 'edit' ? pathParts[3] : null;
 let autoSaveTimer = null, slugEdited = false, mpMode = 'insert';
-let mpMedia = [], mpSelected = null, mpSaveTimer = null;
+let mpMedia = [], mpSelected = null, mpSaveTimer = null, mpSelectedSet = new Set();
 let currentEditImg = null, isDirty = false;
 let aspectLocked = true, origAspect = 1;
 
@@ -720,8 +720,10 @@ function dataURLtoBlob(dataurl) {
 // ─────────────────────────────────────────────
 function openMediaPicker(mode) {
     mpMode = mode;
-    document.getElementById('mpTitle').textContent = mode === 'featured' ? 'Set Featured Image' : 'Insert Media';
-    document.getElementById('mpConfirmBtn').textContent = mode === 'featured' ? 'Set Featured Image' : 'Insert into editor';
+    mpSelectedSet.clear();
+    const isAirportPhoto = mode === 'airport_photo';
+    document.getElementById('mpTitle').textContent = mode === 'featured' ? 'Set Featured Image' : isAirportPhoto ? 'Select Airport Photos' : 'Insert Media';
+    document.getElementById('mpConfirmBtn').textContent = mode === 'featured' ? 'Set Featured Image' : isAirportPhoto ? 'Add Selected Photos' : 'Insert into editor';
     document.getElementById('mediaPicker').classList.add('active');
     mpLoadMedia();
 }
@@ -747,12 +749,42 @@ function mpRenderGrid() {
     const items = mpMedia.filter(m => !q || (m.original_name||'').toLowerCase().includes(q) || (m.alt_text||'').toLowerCase().includes(q));
     const au = window.ADMIN_URL || '';
     document.getElementById('mpGrid').innerHTML = items.length
-        ? items.map(m=>`<div class="mp-item${mpSelected&&mpSelected.id===m.id?' selected':''}" onclick="mpSelectItem(${m.id})"><img src="${au}${m.url}" loading="lazy" alt="${m.alt_text||''}"></div>`).join('')
+        ? items.map(m => {
+            // Multi-select mode: highlight all items in set; single mode: highlight mpSelected
+            const isSelected = mpMode === 'airport_photo'
+                ? mpSelectedSet.has(m.id)
+                : (mpSelected && mpSelected.id === m.id);
+            return `<div class="mp-item${isSelected ? ' selected' : ''}" onclick="mpSelectItem(${m.id})"><img src="${au}${m.url}" loading="lazy" alt="${m.alt_text||''}"></div>`;
+        }).join('')
         : '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray-400)">No media found</div>';
 }
 function mpFilter() { mpRenderGrid(); }
 function mpSelectItem(id) {
-    mpSelected = mpMedia.find(m => m.id === id); mpRenderGrid();
+    const item = mpMedia.find(m => m.id === id);
+    if (!item) return;
+    // Airport photo mode: toggle multi-select
+    if (mpMode === 'airport_photo') {
+        if (mpSelectedSet.has(id)) mpSelectedSet.delete(id);
+        else mpSelectedSet.add(id);
+        mpSelected = item; // keep sidebar showing last clicked
+        mpRenderGrid();
+        const count = mpSelectedSet.size;
+        document.getElementById('mpConfirmBtn').disabled = count === 0;
+        document.getElementById('mpFooterInfo').textContent = count > 0 ? count + ' photo' + (count > 1 ? 's' : '') + ' selected' : '';
+        // Update sidebar with last clicked item
+        const au = window.ADMIN_URL || '';
+        document.getElementById('mpSidebarImg').src = au + item.url;
+        document.getElementById('mpSidebarName').textContent = item.original_name || item.url.split('/').pop();
+        document.getElementById('mpSidebarMeta').textContent = item.file_size ? Math.round(item.file_size/1024)+' KB' : '';
+        document.getElementById('mpAltText').value = item.alt_text || '';
+        document.getElementById('mpTitleField').value = item.title || '';
+        document.getElementById('mpCaption').value = item.caption || '';
+        document.getElementById('mpFileUrl').value = au + item.url;
+        document.getElementById('mpDelBtn').disabled = false;
+        return;
+    }
+    // Normal single-select mode
+    mpSelected = item; mpRenderGrid();
     const au = window.ADMIN_URL || '';
     document.getElementById('mpSidebarImg').src = au + mpSelected.url;
     document.getElementById('mpSidebarName').textContent = mpSelected.original_name || mpSelected.url.split('/').pop();
@@ -777,7 +809,10 @@ function mpConfirm() {
     if (mpMode==='featured') { setFeatImage(url); closeMediaPicker(); return; }
     if (mpMode==='hero_bg') { setHeroBg(url); closeMediaPicker(); return; }
     if (mpMode==='airport_photo') {
-        if (!airportPhotos.includes(mpSelected.url)) airportPhotos.push(mpSelected.url);
+        mpSelectedSet.forEach(id => {
+            const item = mpMedia.find(m => m.id === id);
+            if (item && !airportPhotos.includes(item.url)) airportPhotos.push(item.url);
+        });
         renderAirportGallery(); closeMediaPicker(); isDirty = true; return;
     }
     const idx = quill.getSelection(true)?.index||quill.getLength();
@@ -1426,7 +1461,7 @@ function langRender(fieldId) {
 // CITY DROPDOWN (filtered by destination)
 // ─────────────────────────────────────────────
 const CITY_MAP = {
-    'india':     ['Gurugram','New Delhi','Mumbai','Chennai','Bangalore','Hyderabad','Kolkata','Pune','Ahmedabad','Kochi','Jaipur','Chandigarh','Lucknow','Nagpur'],
+    'india':     ['Delhi','Gurugram','Mumbai','Chennai','Bangalore','Hyderabad','Kolkata','Pune','Ahmedabad','Kochi','Jaipur','Chandigarh','Lucknow','Nagpur'],
     'turkey':    ['Istanbul','Ankara','Izmir','Antalya','Bursa','Adana','Gaziantep','Konya'],
     'thailand':  ['Bangkok','Chiang Mai','Phuket','Pattaya','Hua Hin','Koh Samui'],
     'uae':       ['Dubai','Abu Dhabi','Sharjah','Ajman','Ras Al Khaimah','Al Ain'],
