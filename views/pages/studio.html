@@ -503,6 +503,16 @@ async function loadSelectSource(f) {
             }
             loadCitiesForDest(null, window._pendingCity || '');
         }
+        // Airport: after country select-name loads, pre-select saved country then load cities
+        if (f.id === 'country' && C.cpt === 'airport' && window._pendingCountry) {
+            const match = [...sel.options].find(o => o.value === window._pendingCountry);
+            if (match) {
+                match.selected = true;
+                const slug = (match.dataset.slug || '').toLowerCase();
+                loadCitiesForDest(slug, window._pendingCity || '');
+            }
+            window._pendingCountry = null;
+        }
     } catch(e) { console.error('Select source failed:', f.source); }
 }
 
@@ -1045,6 +1055,11 @@ async function loadItem() {
             window._pendingDestId = item.destination_id;
             window._pendingCity = item.city || '';
         }
+        // Airport: store pending country so async select can pre-select after load
+        if (C.cpt === 'airport') {
+            window._pendingCountry = item.country || '';
+            window._pendingCity = item.city || '';
+        }
         const restoreFields=()=>{
             allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
             // Re-load cities with the now-correct destination slug
@@ -1056,7 +1071,7 @@ async function loadItem() {
             }
             updatePermalink();
             if (C.cpt === 'doctor') setTimeout(()=>treatRender(), 100);
-            window._pendingDestId = null; window._pendingCity = null;
+            window._pendingDestId = null; window._pendingCity = null; window._pendingCountry = null;
         };
         // Wait briefly for async select sources to populate, then restore values
         setTimeout(restoreFields,300);
@@ -1102,17 +1117,18 @@ async function loadItem() {
             if (C.cpt === 'airport') {
                 airportPhotos = Array.isArray(item.photos) ? [...item.photos] : [];
                 renderAirportGallery();
-                // Restore arrival_instructions into Quill (it's stored separately, not as long_description)
+                // Restore arrival_instructions into Quill
                 if (item.arrival_instructions) quill.root.innerHTML = item.arrival_instructions;
-                // After country select loads (async), trigger city reload
+                // Country select is already populated at boot — just set value, then load cities
                 setTimeout(() => {
                     const countrySel = document.getElementById('country');
-                    if (countrySel && countrySel.value) {
+                    if (countrySel && item.country) {
+                        countrySel.value = item.country;
                         const opt = countrySel.options[countrySel.selectedIndex];
-                        const slug = opt ? (opt.dataset.slug||'').toLowerCase() : '';
-                        loadCitiesForDest(slug, item.city||'');
+                        const slug = opt ? (opt.dataset.slug || '').toLowerCase() : '';
+                        if (slug) loadCitiesForDest(slug, item.city || '');
                     }
-                }, 500);
+                }, 200);
             }
     } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
 }
@@ -1572,9 +1588,12 @@ function renderAirportGallery() {
     if (!grid) return;
     grid.innerHTML = airportPhotos.map((img, i) => {
         const src = img.startsWith('http') ? img : adminUrl + img;
-        return `<div style="position:relative;border-radius:6px;overflow:hidden;aspect-ratio:4/3;border:1.5px solid var(--gray-200)">
-            <img src="${src}" style="width:100%;height:100%;object-fit:cover">
-            <button onclick="removeAirportPhoto(${i})" style="position:absolute;top:2px;right:2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+        return `<div style="position:relative;border-radius:6px;overflow:hidden;aspect-ratio:4/3;border:1.5px solid var(--gray-200);background:var(--gray-100)">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:4px;font-size:.7rem;color:var(--gray-400)">
+                <span style="font-size:1.2rem">🖼️</span>404
+            </div>
+            <button onclick="removeAirportPhoto(${i})" style="position:absolute;top:2px;right:2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:1">✕</button>
         </div>`;
     }).join('');
     document.getElementById('airport_photos').value = JSON.stringify(airportPhotos);
