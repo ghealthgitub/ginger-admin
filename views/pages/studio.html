@@ -444,7 +444,8 @@ function renderFields() {
                 input = `<textarea id="${f.id}" placeholder="${f.placeholder||''}" rows="${rows}" style="width:100%;resize:vertical;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-family:inherit;font-size:.88rem;line-height:1.5"${onch3}>${f.default||''}</textarea>`;
             } else {
                 const onch2 = f.onchange ? ` oninput="${f.onchange}"` : '';
-                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="width:${f.width||'auto'}"${onch2}>`;
+                const w = f.width ? `width:${f.width}` : (f.flex ? 'width:100%' : 'width:auto');
+                input = `<input type="text" id="${f.id}" placeholder="${f.placeholder||''}" style="${w}"${onch2}>`;
             }
             return `<div class="spec-field"${flex}><label>${f.label}</label>${input}</div>`;
         }).join('');
@@ -971,32 +972,20 @@ async function loadItem() {
     try {
         const r=await fetch(C.api+'/'+editId);
         if(!r.ok) {
-            console.error('[loadItem] fetch failed:', r.status, C.api+'/'+editId);
             showToast('⚠️ Could not load item ('+r.status+')');
             document.getElementById('topTitle').textContent = 'Error loading #'+editId;
             return;
         }
         const item=await r.json();
-        console.log('[loadItem] loaded:', item);
-        console.log('[loadItem] step 1: name');
         const _name = document.getElementById('name'); if(_name) _name.value = item.name||item.title||'';
-        console.log('[loadItem] step 2: slug');
         const _slug = document.getElementById('slug'); if(_slug) { _slug.value = item.slug||''; slugEdited=true; }
-        console.log('[loadItem] step 3: quill');
         quill.root.innerHTML=item.long_description||'';
-        console.log('[loadItem] step 4: status');
         const _stat = document.getElementById('status'); if(_stat) _stat.value = item.status||'draft';
-        console.log('[loadItem] step 5: is_featured');
         const _feat = document.getElementById('is_featured'); if(_feat) _feat.value = item.is_featured?'true':'false';
-        console.log('[loadItem] step 6: display_order');
         const _do=document.getElementById('display_order'); if(_do) _do.value=item.display_order||0;
-        console.log('[loadItem] step 7: meta_title');
         const _mt = document.getElementById('meta_title'); if(_mt) _mt.value = item.meta_title||'';
-        console.log('[loadItem] step 8: meta_description');
         const _md = document.getElementById('meta_description'); if(_md) _md.value = item.meta_description||'';
-        console.log('[loadItem] step 9: image');
         const _img = document.getElementById('image'); if(_img) _img.value = item.image||'';
-        console.log('[loadItem] step 10: restoreFields setup');
         // Restore CPT fields — after select sources have loaded
         const allFields=(C.fieldRows||[]).flat();
         // Store pending dest+city so loadSelectSource can pre-select on async load
@@ -1005,11 +994,7 @@ async function loadItem() {
             window._pendingCity = item.city || '';
         }
         const restoreFields=()=>{
-            console.log('[restoreFields] starting, fields:', allFields.map(f=>f.id));
-            allFields.forEach(f=>{
-                console.log('[restoreFields] setting:', f.id, '=', item[f.id]);
-                setFieldVal(f.id,item[f.id]);
-            });
+            allFields.forEach(f=>setFieldVal(f.id,item[f.id]));
             // Re-load cities with the now-correct destination slug
             if (C.cpt === 'doctor') {
                 const destSel = document.getElementById('destination_id');
@@ -1042,21 +1027,21 @@ async function loadItem() {
             if (C.cpt === 'd-specialty' && item.hero_bg) setTimeout(()=>setHeroBg(item.hero_bg), 50);
             // Video: restore thumbnail + fire preview
             if (C.cpt === 'video') setTimeout(() => {
-                console.log('[video restore] starting, youtube_url:', item.youtube_url, 'thumbnail:', item.thumbnail);
                 if (item.youtube_url) {
                     const el = document.getElementById('youtube_url');
-                    console.log('[video restore] youtube_url el:', el);
                     if (el) el.value = item.youtube_url;
                     extractYTThumb();
                 }
-                if (item.thumbnail) {
+                if (item.youtube_url) {
+                    // Always re-derive thumbnail from video ID (never use stale DB value)
+                    const vid = getYTVideoId(item.youtube_url);
+                    const freshThumb = vid ? `https://img.youtube.com/vi/${vid}/mqdefault.jpg` : (item.thumbnail||'');
                     const th = document.getElementById('thumbnail');
                     const img = document.getElementById('videoThumbImg');
                     const tr = document.getElementById('videoThumbRow');
-                    console.log('[video restore] thumb el:', th, img, tr);
-                    if (th) th.value = item.thumbnail;
-                    if (img) img.src = item.thumbnail;
-                    if (tr) tr.style.display = 'block';
+                    if (th && freshThumb) th.value = freshThumb;
+                    if (img && freshThumb) { img.src = freshThumb; img.removeAttribute('onerror'); }
+                    if (tr && freshThumb) tr.style.display = 'block';
                 }
             }, 400);
     } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
