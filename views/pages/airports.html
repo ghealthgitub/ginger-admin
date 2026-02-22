@@ -77,7 +77,7 @@
                 <h1>✈️ Airports <span class="count" id="airportCount"></span></h1>
                 <div class="header-actions">
                     <input type="text" class="search-box" id="searchBox" placeholder="Search..." oninput="render()">
-                    <a href="/airports/new" class="btn btn--primary">+ Add Airport</a>
+                    <a href="/airports/new" target="_blank" class="btn btn--primary">+ Add Airport</a>
                 </div>
             </div>
 
@@ -168,9 +168,9 @@ function render() {
         const statusText = a.status === 'published' ? 'Published' : 'Draft';
         return `<tr>
             <td>
-                <div class="row-name"><a href="/airports/edit/${a.id}">${esc(a.name)}</a></div>
+                <div class="row-name"><a href="/airports/edit/${a.id}" target="_blank">${esc(a.name)}</a></div>
                 <div class="row-actions">
-                    <a class="row-action" href="/airports/edit/${a.id}">Edit</a>
+                    <a class="row-action" href="/airports/edit/${a.id}" target="_blank">Edit</a>
                     <span style="color:var(--gray-300)">|</span>
                     <span class="row-action row-action--danger" onclick="deleteAirport(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">Delete</span>
                 </div>

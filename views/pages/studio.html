@@ -305,6 +305,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
     <!-- Hero BG removed: featured image used as hero background -->
 
+    <!-- Airport Photos Gallery Panel -->
+    <div class="sb-box" id="airportPhotosBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📷 Airport Photos</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <p style="font-size:.75rem;color:var(--gray-400);margin-bottom:8px">Terminal interiors, exit gates, signage — helps patients navigate.</p>
+            <div id="airportGalleryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px"></div>
+            <button class="feat-img-btn" onclick="openMediaPicker('airport_photo')" style="width:100%">📷 Add Photos</button>
+            <input type="hidden" id="airport_photos" value="[]">
+        </div>
+    </div>
+
+    <!-- Airport Linked Hospitals Panel -->
+    <div class="sb-box" id="airportHospitalsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🏥 Linked Hospitals</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div id="airportHospitalsList" style="font-size:.82rem;color:var(--gray-600)">Loading...</div>
+        </div>
+    </div>
+
     <div class="sb-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📊 Content Analysis</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body" id="contentAnalysis"><div class="analysis-item">Start writing to see analysis...</div></div>
     </div>
@@ -396,6 +413,10 @@ function initPage() {
         const pa = document.querySelector('.permalink-area');
         if (pa) pa.innerHTML = '<span style="font-size:.75rem;color:var(--gray-400);font-style:italic">Videos appear on doctor &amp; hospital pages — no standalone URL</span>';
     }
+    // Airport CPT: show public URL after slug set
+    if (C.cpt === 'airport') {
+        document.getElementById('permalinkBase').textContent = 'ginger.healthcare/airports/';
+    }
     renderFields();
 }
 
@@ -410,14 +431,15 @@ function renderFields() {
         const fields = row.map(f => {
             const flex = f.flex ? ` style="flex:${f.flex}"` : '';
             let input = '';
-            if (f.type === 'select') {
+            if (f.type === 'select' || f.type === 'select-name') {
                 const onch = f.onchange ? ` onchange="${f.onchange}"` : '';
                 // Support both static options[] and remote source
                 const staticOpts = f.options
                     ? f.options.map(o => `<option value="${o.value}">${o.label}</option>`).join('')
                     : '';
                 const placeholder = f.options ? 'None' : `Select ${f.label}...`;
-                input = `<select id="${f.id}"${onch} style="width:100%"><option value="">${placeholder}</option>${staticOpts}</select>`;
+                const nameMode = f.type === 'select-name' ? ' data-name-mode="true"' : '';
+                input = `<select id="${f.id}"${onch}${nameMode} style="width:100%"><option value="">${placeholder}</option>${staticOpts}</select>`;
             } else if (f.type === 'number') {
                 input = `<input type="number" id="${f.id}" value="${f.default||0}" style="width:${f.width||'80px'}">`;
             } else if (f.type === 'emoji') {
@@ -463,11 +485,13 @@ async function loadSelectSource(f) {
         const r = await fetch(f.source);
         const data = await r.json();
         const sel = document.getElementById(f.id); if (!sel) return;
+        const nameMode = sel.dataset.nameMode === 'true';
         data.forEach(item => {
             const o = document.createElement('option');
-            o.value = item.id;
-            o.textContent = (item.icon ? item.icon + ' ' : '') + item.name;
+            o.value = nameMode ? item.name : item.id;
+            o.textContent = (item.flag ? item.flag + ' ' : item.icon ? item.icon + ' ' : '') + item.name;
             if (item.slug) o.dataset.slug = item.slug;
+            if (nameMode) o.dataset.slug = item.slug; // keep slug for city lookup
             sel.appendChild(o);
         });
         // After destination loads, populate city dropdown
@@ -742,6 +766,10 @@ function mpConfirm() {
     const url = (window.ADMIN_URL||'') + mpSelected.url;
     if (mpMode==='featured') { setFeatImage(url); closeMediaPicker(); return; }
     if (mpMode==='hero_bg') { setHeroBg(url); closeMediaPicker(); return; }
+    if (mpMode==='airport_photo') {
+        if (!airportPhotos.includes(mpSelected.url)) airportPhotos.push(mpSelected.url);
+        renderAirportGallery(); closeMediaPicker(); isDirty = true; return;
+    }
     const idx = quill.getSelection(true)?.index||quill.getLength();
     quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); closeMediaPicker();
 }
@@ -844,7 +872,18 @@ async function importFile(input) {
 // ─────────────────────────────────────────────
 function resetAutoSave() { isDirty=true; clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(()=>{if(editId)saveItem('auto');},15000); }
 function updateTopTitle() { const n=document.getElementById('name')?.value; document.getElementById('topTitle').textContent=n||(editId?'Loading...':('New '+(C.label||'Item'))); }
-function autoSlug() { if(!slugEdited&&!editId){const n=document.getElementById('name')?.value;document.getElementById('slug').value =n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');} }
+function autoSlug() {
+    if(!slugEdited&&!editId){
+        const n=document.getElementById('name')?.value||'';
+        if (C.cpt === 'airport') {
+            const code = (document.getElementById('code')?.value||'').toLowerCase();
+            const nameSlug = n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+            document.getElementById('slug').value = code ? code + '-' + nameSlug : nameSlug;
+        } else {
+            document.getElementById('slug').value = n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+        }
+    }
+}
 function showTab(t) {
     document.getElementById('tabWrite').classList.toggle('active',t==='write');
     document.getElementById('tabPreview').classList.toggle('active',t==='preview');
@@ -937,7 +976,19 @@ async function saveItem(status) {
         data.title = data.name;
         data.thumbnail = document.getElementById('thumbnail')?.value || '';
     }
+    // Airport: photos gallery array + arrival_instructions from Quill
+    if (C.cpt === 'airport') {
+        data.photos = airportPhotos;
+        data.arrival_instructions = quill.root.innerHTML === '<p><br></p>' ? null : quill.root.innerHTML;
+        data.code = (data.code || '').toUpperCase();
+        // Clear generic fields not used by airport API
+        delete data.long_description;
+        delete data.image;
+        delete data.is_featured;
+        delete data.display_order;
+    }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
+    if (C.cpt === 'airport' && !data.city) { if(!isAuto) alert('City is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     try {
         const url=editId ? C.api+'/'+editId : C.api;
@@ -952,9 +1003,10 @@ async function saveItem(status) {
             else {
                 const sv=document.getElementById('topSaved'); sv.style.display='inline';
                 if (result.status==='published'&&result.slug) {
-                    const viewUrl = C.cpt === 'video'
-                        ? (document.getElementById('youtube_url')?.value || '#')
-                        : buildViewUrl(result.slug);
+                    let viewUrl;
+                    if (C.cpt === 'video') viewUrl = document.getElementById('youtube_url')?.value || '#';
+                    else if (C.cpt === 'airport') viewUrl = 'https://ginger.healthcare/airports/' + result.slug + '/';
+                    else viewUrl = buildViewUrl(result.slug);
                     if (C.cpt !== 'video') setViewBtn(viewUrl);
                     sv.innerHTML='✅ Published! <a href="'+viewUrl+'" target="_blank" style="color:var(--teal);font-weight:700;margin-left:8px">'+(C.cpt==='video'?'Watch on YouTube →':'View →')+'</a>';
                     setTimeout(()=>sv.style.display='none',8000);
@@ -1019,6 +1071,8 @@ async function loadItem() {
                 const ytUrl = item.youtube_url || '#';
                 const b = document.getElementById('viewBtn');
                 b.href = ytUrl; b.textContent = 'Watch →'; b.style.display = 'flex';
+            } else if (C.cpt === 'airport') {
+                setViewBtn('https://ginger.healthcare/airports/' + item.slug + '/');
             } else {
                 setViewBtn(buildViewUrl(item.slug));
             }
@@ -1044,6 +1098,22 @@ async function loadItem() {
                     if (tr && freshThumb) tr.style.display = 'block';
                 }
             }, 400);
+            // Airport: restore photos + trigger city dropdown after country loads
+            if (C.cpt === 'airport') {
+                airportPhotos = Array.isArray(item.photos) ? [...item.photos] : [];
+                renderAirportGallery();
+                // Restore arrival_instructions into Quill (it's stored separately, not as long_description)
+                if (item.arrival_instructions) quill.root.innerHTML = item.arrival_instructions;
+                // After country select loads (async), trigger city reload
+                setTimeout(() => {
+                    const countrySel = document.getElementById('country');
+                    if (countrySel && countrySel.value) {
+                        const opt = countrySel.options[countrySel.selectedIndex];
+                        const slug = opt ? (opt.dataset.slug||'').toLowerCase() : '';
+                        loadCitiesForDest(slug, item.city||'');
+                    }
+                }, 500);
+            }
     } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
 }
 
@@ -1462,17 +1532,79 @@ function removeHeroBg() {
 }
 
 // ─────────────────────────────────────────────
+// AIRPORT PHOTOS GALLERY
+// ─────────────────────────────────────────────
+let airportPhotos = [];
+
+function initAirportPanels() {
+    if (C.cpt !== 'airport') return;
+    document.getElementById('airportPhotosBox').style.display = '';
+    document.getElementById('airportHospitalsBox').style.display = '';
+    // Hide featured image panel — airports use photo gallery instead
+    const featBox = document.querySelector('.sb-box:has(#featImgBox)');
+    if (featBox) featBox.style.display = 'none';
+    // Load linked hospitals
+    loadAirportHospitals();
+}
+
+async function loadAirportHospitals() {
+    if (!editId) { document.getElementById('airportHospitalsList').textContent = 'Save airport first to see linked hospitals.'; return; }
+    try {
+        const r = await fetch('/api/hospitals');
+        const hospitals = r.ok ? await r.json() : [];
+        const linked = hospitals.filter(h => h.airport_id == editId);
+        const el = document.getElementById('airportHospitalsList');
+        if (linked.length === 0) {
+            el.innerHTML = '<span style="color:var(--gray-400);font-size:.78rem">No hospitals linked yet.</span>';
+        } else {
+            el.innerHTML = linked.map(h =>
+                `<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:.82rem">
+                    <strong>${h.name}</strong> <span style="color:var(--gray-400)">(${h.city||''})</span>
+                </div>`
+            ).join('');
+        }
+    } catch(e) { document.getElementById('airportHospitalsList').textContent = 'Failed to load.'; }
+}
+
+function renderAirportGallery() {
+    const adminUrl = window.ADMIN_URL || '';
+    const grid = document.getElementById('airportGalleryGrid');
+    if (!grid) return;
+    grid.innerHTML = airportPhotos.map((img, i) => {
+        const src = img.startsWith('http') ? img : adminUrl + img;
+        return `<div style="position:relative;border-radius:6px;overflow:hidden;aspect-ratio:4/3;border:1.5px solid var(--gray-200)">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover">
+            <button onclick="removeAirportPhoto(${i})" style="position:absolute;top:2px;right:2px;background:var(--ginger);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+        </div>`;
+    }).join('');
+    document.getElementById('airport_photos').value = JSON.stringify(airportPhotos);
+}
+
+function removeAirportPhoto(idx) {
+    airportPhotos.splice(idx, 1);
+    renderAirportGallery();
+    isDirty = true;
+}
+
+// ─────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────
 initPage();
 initDoctorTreats();
 initDSpecialtyPanels();
+initAirportPanels();
 if (editId) loadItem();
 // Re-filter treatments when specialty changes
 document.addEventListener('change', function(e) {
     if (e.target.id === 'specialty_id' && C.cpt === 'doctor') treatRender();
     if (e.target.id === 'specialty_id' && C.cpt === 'd-specialty') updatePermalink();
     if ((e.target.id === 'treatment_id' || e.target.id === 'destination_id') && C.cpt === 'd-treatment') updatePermalink();
+    // Airport: country change → reload city dropdown
+    if (e.target.id === 'country' && C.cpt === 'airport') {
+        const opt = e.target.options[e.target.selectedIndex];
+        const slug = opt ? (opt.dataset.slug||'').toLowerCase() : '';
+        loadCitiesForDest(slug, '');
+    }
 });
 </script>
 </body></html>
