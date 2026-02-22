@@ -474,7 +474,7 @@ function renderFields() {
         return `<div class="spec-fields">${fields}</div>`;
     }).join('');
     // Populate selects from remote sources
-    rows.flat().filter(f => f.type === 'select' && f.source).forEach(loadSelectSource);
+    rows.flat().filter(f => (f.type === 'select' || f.type === 'select-name') && f.source).forEach(loadSelectSource);
     // Initialise any lang-select pickers (must run after innerHTML is set)
     (window._langSelectFields || []).forEach(id => langInit(id));
     window._langSelectFields = [];
