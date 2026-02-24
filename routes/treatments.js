@@ -1,55 +1,20 @@
-module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, serveStudio }) {
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage }) {
 
-// ─── CPT CONFIG ───────────────────────────────────────────────
-const TREATMENT_CONFIG = {
-    cpt: 'treatment',
-    label: 'Treatment',
-    api: '/api/treatments',
-    editBase: '/treatments/edit/',
-    listUrl: '/treatments',
-    viewBase: 'https://ginger.healthcare/treatments/',
-    placeholder: 'Treatment name...',
-    permalinkDynamic: {
-        selectId: 'specialty_id',
-        withSlug: 'ginger.healthcare/specialties/{slug}/',
-        withoutSlug: 'ginger.healthcare/specialties/.../'
-    },
-    viewUrlBuilder: {
-        selectId: 'specialty_id',
-        withParent: 'https://ginger.healthcare/specialties/{parent}/{slug}/'
-    },
-    fieldRows: [
-        [
-            { id: 'specialty_id',  label: 'Specialty',        type: 'select', source: '/api/specialties', flex: 1, onchange: 'updatePermalink()' },
-            { id: 'duration',      label: 'Duration',         type: 'text',   placeholder: 'e.g. 2-4 hrs',        width: '110px' },
-            { id: 'recovery_time', label: 'Recovery',         type: 'text',   placeholder: 'e.g. 2-3 weeks',      width: '110px' }
-        ],
-        [
-            { id: 'success_rate',   label: 'Success Rate',     type: 'text', placeholder: 'e.g. 95%',             width: '90px' },
-            { id: 'cost_range_usd', label: 'Cost Range (USD)', type: 'text', placeholder: 'e.g. $5,000–$15,000',  width: '170px' },
-            { id: 'description',    label: 'Short Description',type: 'text', placeholder: 'Brief overview...',    flex: 1 }
-        ]
-    ]
-};
-
-// ─── STUDIO ROUTES ────────────────────────────────────────────
-app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    serveStudio(res, TREATMENT_CONFIG);
-});
-app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    serveStudio(res, TREATMENT_CONFIG);
-});
-
-// ─── LISTING ──────────────────────────────────────────────────
+// ============== TREATMENTS CRUD ==============
 app.get('/treatments', authRequired, (req, res) => {
     servePage(res, 'treatments');
 });
+app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    servePage(res, 'treatment-studio');
+});
+app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
+    servePage(res, 'treatment-studio');
+});
 
-// ─── API ──────────────────────────────────────────────────────
 app.get('/api/treatments', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name FROM treatments t
+            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
              ORDER BY s.name ASC, t.name ASC`
         );
@@ -60,11 +25,9 @@ app.get('/api/treatments', apiAuth, async (req, res) => {
 app.get('/api/treatments/:id', apiAuth, async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug
-             FROM treatments t
+            `SELECT t.*, s.name as specialty_name, s.slug as specialty_slug FROM treatments t
              LEFT JOIN specialties s ON t.specialty_id = s.id
-             WHERE t.id = $1`, [req.params.id]
-        );
+             WHERE t.id = $1`, [req.params.id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -72,17 +35,11 @@ app.get('/api/treatments/:id', apiAuth, async (req, res) => {
 
 app.post('/api/treatments', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, specialty_id, description, long_description, duration,
-                recovery_time, success_rate, cost_range_usd, image, is_featured,
-                meta_title, meta_description, status } = req.body;
+        const { name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status } = req.body;
         const result = await pool.query(
-            `INSERT INTO treatments (name, slug, specialty_id, description, long_description,
-             duration, recovery_time, success_rate, cost_range_usd, image, is_featured,
-             meta_title, meta_description, status)
+            `INSERT INTO treatments (name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-            [name, slug, specialty_id, description, long_description, duration, recovery_time,
-             success_rate, cost_range_usd, image, is_featured||false,
-             meta_title, meta_description, status||'draft']
+            [name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured || false, meta_title, meta_description, status || 'draft']
         );
         await logActivity(req.user.id, 'create', 'treatment', result.rows[0].id, `Created: ${name}`);
         res.json(result.rows[0]);
@@ -91,24 +48,18 @@ app.post('/api/treatments', apiAuth, roleRequired('super_admin', 'editor'), asyn
 
 app.put('/api/treatments/:id', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
-        const { name, slug, specialty_id, description, long_description, duration,
-                recovery_time, success_rate, cost_range_usd, image, is_featured,
-                meta_title, meta_description, status } = req.body;
+        const { name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status } = req.body;
         const result = await pool.query(
-            `UPDATE treatments SET name=$1, slug=$2, specialty_id=$3, description=$4,
-             long_description=$5, duration=$6, recovery_time=$7, success_rate=$8,
-             cost_range_usd=$9, image=$10, is_featured=$11,
-             meta_title=$12, meta_description=$13, status=$14, updated_at=NOW()
+            `UPDATE treatments SET name=$1, slug=$2, specialty_id=$3, description=$4, long_description=$5, duration=$6, recovery_time=$7, success_rate=$8, cost_range_usd=$9, image=$10, is_featured=$11, meta_title=$12, meta_description=$13, status=$14, updated_at=NOW()
              WHERE id=$15 RETURNING *`,
-            [name, slug, specialty_id, description, long_description, duration, recovery_time,
-             success_rate, cost_range_usd, image, is_featured,
-             meta_title, meta_description, status, req.params.id]
+            [name, slug, specialty_id, description, long_description, duration, recovery_time, success_rate, cost_range_usd, image, is_featured, meta_title, meta_description, status, req.params.id]
         );
         await logActivity(req.user.id, 'update', 'treatment', req.params.id, `Updated: ${name}`);
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Treatments bulk actions
 app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'), async (req, res) => {
     try {
         const { ids, action } = req.body;
@@ -127,25 +78,29 @@ app.post('/api/treatments/bulk', apiAuth, roleRequired('super_admin', 'editor'),
             const result = await pool.query("UPDATE treatments SET status='draft', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
             count = result.rowCount;
             await logActivity(req.user.id, 'bulk_draft', 'treatment', null, `Bulk set ${count} treatments to draft`);
-        } else return res.status(400).json({ error: 'Invalid action' });
+        } else { return res.status(400).json({ error: 'Invalid action' }); }
         res.json({ success: true, count });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/treatments/:id', apiAuth, roleRequired('super_admin'), async (req, res) => {
     try {
-        const id = req.params.id; const deps = [];
-        const dt  = await pool.query('SELECT COUNT(*) FROM doctor_treatments WHERE treatment_id=$1', [id]);
+        const id = req.params.id;
+        const deps = [];
+        const dt = await pool.query('SELECT COUNT(*) FROM doctor_treatments WHERE treatment_id = $1', [id]);
         if (+dt.rows[0].count > 0) deps.push(`${dt.rows[0].count} doctor(s)`);
-        const dst = await pool.query('SELECT COUNT(*) FROM destination_treatments WHERE treatment_id=$1', [id]);
+        const dst = await pool.query('SELECT COUNT(*) FROM destination_treatments WHERE treatment_id = $1', [id]);
         if (+dst.rows[0].count > 0) deps.push(`${dst.rows[0].count} destination treatment page(s)`);
-        const tc  = await pool.query('SELECT COUNT(*) FROM treatment_costs WHERE treatment_id=$1', [id]);
+        const tc = await pool.query('SELECT COUNT(*) FROM treatment_costs WHERE treatment_id = $1', [id]);
         if (+tc.rows[0].count > 0) deps.push(`${tc.rows[0].count} cost record(s)`);
-        if (deps.length) return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
-        await pool.query('DELETE FROM treatments WHERE id=$1', [id]);
+        if (deps.length > 0) {
+            return res.status(409).json({ error: `Cannot delete — linked to ${deps.join(', ')}. Remove them first.` });
+        }
+        await pool.query('DELETE FROM treatments WHERE id = $1', [id]);
         await logActivity(req.user.id, 'delete', 'treatment', parseInt(id), 'Deleted treatment');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
+
 
 };
