@@ -799,7 +799,8 @@ function mpRenderGrid() {
     document.getElementById('mpGrid').innerHTML = items.length
         ? items.map(m => {
             // Multi-select mode: highlight all items in set; single mode: highlight mpSelected
-            const isSelected = mpMode === 'airport_photo'
+            const isMulti = ['airport_photo','hosp_gallery','hosp_people'].includes(mpMode);
+            const isSelected = isMulti
                 ? mpSelectedSet.has(m.id)
                 : (mpSelected && mpSelected.id === m.id);
             return `<div class="mp-item${isSelected ? ' selected' : ''}" onclick="mpSelectItem(${m.id})"><img src="${au}${m.url}" loading="lazy" alt="${m.alt_text||''}"></div>`;
@@ -810,8 +811,8 @@ function mpFilter() { mpRenderGrid(); }
 function mpSelectItem(id) {
     const item = mpMedia.find(m => m.id === id);
     if (!item) return;
-    // Airport photo mode: toggle multi-select
-    if (mpMode === 'airport_photo') {
+    // Multi-select modes: airport photos + hospital galleries
+    if (mpMode === 'airport_photo' || mpMode === 'hosp_gallery' || mpMode === 'hosp_people') {
         if (mpSelectedSet.has(id)) mpSelectedSet.delete(id);
         else mpSelectedSet.add(id);
         mpSelected = item; // keep sidebar showing last clicked
