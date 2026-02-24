@@ -315,6 +315,48 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
+    <!-- Hospital: Address + Location Image Panel -->
+    <div class="sb-box" id="hospitalLocationBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📍 Address & Location</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <div class="sb-label">Street Address</div>
+            <textarea class="sb-textarea" id="address" rows="2" placeholder="Full hospital address..." oninput="setIsDirty()"></textarea>
+            <div class="sb-label" style="margin-top:10px">Latitude</div>
+            <input class="sb-input" id="latitude" type="number" step="any" placeholder="e.g. 28.4595" oninput="setIsDirty()">
+            <div class="sb-label" style="margin-top:6px">Longitude</div>
+            <input class="sb-input" id="longitude" type="number" step="any" placeholder="e.g. 77.0266" oninput="setIsDirty()">
+            <div class="sb-hint">Coordinates used for Google Maps embed on public page.</div>
+            <div class="sb-label" style="margin-top:10px">Location Image</div>
+            <div id="locImgPreviewWrap" style="display:none;margin-bottom:8px;position:relative">
+                <img id="locImgPreview" src="" style="width:100%;border-radius:8px;object-fit:cover;max-height:120px">
+                <button onclick="removeLocImg()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:.75rem">✕</button>
+            </div>
+            <div id="locImgEmpty" style="background:var(--gray-100);border-radius:8px;padding:20px;text-align:center;color:var(--gray-400);font-size:.8rem;margin-bottom:8px">No location image set</div>
+            <button class="feat-img-btn" onclick="openMediaPicker('loc_image')" style="width:100%">🖼 Set Location Image</button>
+            <input type="hidden" id="location_image" value="">
+            <div class="sb-hint">Shown next to address. Uses featured image if not set.</div>
+        </div>
+    </div>
+
+    <!-- Hospital: Infrastructure Gallery Panel -->
+    <div class="sb-box" id="hospitalGalleryBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🏗️ Hospital Photos</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <p style="font-size:.75rem;color:var(--gray-400);margin-bottom:8px">Building exterior, wards, OTs, equipment — infrastructure photos.</p>
+            <div id="hospGalleryGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px"></div>
+            <button class="feat-img-btn" onclick="openMediaPicker('hosp_gallery')" style="width:100%">📷 Add Photos</button>
+            <input type="hidden" id="gallery" value="[]">
+        </div>
+    </div>
+
+    <!-- Hospital: People Gallery Panel -->
+    <div class="sb-box" id="hospitalPeopleBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">👥 Patients, Doctors & Staff</div><span class="sb-box__toggle">▾</span></div>
+        <div class="sb-box__body">
+            <p style="font-size:.75rem;color:var(--gray-400);margin-bottom:8px">Photos of patients, doctors, nursing staff and team.</p>
+            <div id="hospPeopleGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px"></div>
+            <button class="feat-img-btn" onclick="openMediaPicker('hosp_people')" style="width:100%">📷 Add Photos</button>
+            <input type="hidden" id="gallery_people" value="[]">
+        </div>
+    </div>
+
     <!-- Airport Linked Hospitals Panel -->
     <div class="sb-box" id="airportHospitalsBox" style="display:none"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">🏥 Linked Hospitals</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
@@ -726,9 +768,10 @@ function dataURLtoBlob(dataurl) {
 function openMediaPicker(mode) {
     mpMode = mode;
     mpSelectedSet.clear();
-    const isAirportPhoto = mode === 'airport_photo';
-    document.getElementById('mpTitle').textContent = mode === 'featured' ? 'Set Featured Image' : isAirportPhoto ? 'Select Airport Photos' : 'Insert Media';
-    document.getElementById('mpConfirmBtn').textContent = mode === 'featured' ? 'Set Featured Image' : isAirportPhoto ? 'Add Selected Photos' : 'Insert into editor';
+    const isMultiPhoto = ['airport_photo','hosp_gallery','hosp_people'].includes(mode);
+    const photoLabels = {airport_photo:'Airport Photos',hosp_gallery:'Hospital Photos',hosp_people:'People Photos'};
+    document.getElementById('mpTitle').textContent = mode === 'featured' ? 'Set Featured Image' : mode === 'loc_image' ? 'Set Location Image' : isMultiPhoto ? 'Select ' + photoLabels[mode] : 'Insert Media';
+    document.getElementById('mpConfirmBtn').textContent = mode === 'featured' ? 'Set Featured Image' : mode === 'loc_image' ? 'Set Location Image' : isMultiPhoto ? 'Add Selected Photos' : 'Insert into editor';
     document.getElementById('mediaPicker').classList.add('active');
     mpLoadMedia();
 }
@@ -819,6 +862,21 @@ function mpConfirm() {
             if (item && !airportPhotos.includes(item.url)) airportPhotos.push(item.url);
         });
         renderAirportGallery(); closeMediaPicker(); isDirty = true; return;
+    }
+    if (mpMode==='loc_image') { setLocImg(mpSelected.url); closeMediaPicker(); return; }
+    if (mpMode==='hosp_gallery') {
+        (mpSelectedSet.size > 0 ? [...mpSelectedSet] : [mpSelected?.id]).forEach(id => {
+            const item = mpMedia.find(m => m.id === id);
+            if (item && !hospGallery.includes(item.url)) hospGallery.push(item.url);
+        });
+        renderHospGallery(); closeMediaPicker(); isDirty = true; return;
+    }
+    if (mpMode==='hosp_people') {
+        (mpSelectedSet.size > 0 ? [...mpSelectedSet] : [mpSelected?.id]).forEach(id => {
+            const item = mpMedia.find(m => m.id === id);
+            if (item && !hospPeople.includes(item.url)) hospPeople.push(item.url);
+        });
+        renderHospPeople(); closeMediaPicker(); isDirty = true; return;
     }
     const idx = quill.getSelection(true)?.index||quill.getLength();
     quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); closeMediaPicker();
@@ -1037,6 +1095,14 @@ async function saveItem(status) {
         delete data.is_featured;
         delete data.display_order;
     }
+    if (C.cpt === 'hospital') {
+        data.gallery        = hospGallery;
+        data.gallery_people = hospPeople;
+        data.location_image = document.getElementById('location_image')?.value || null;
+        data.address        = document.getElementById('address')?.value || null;
+        data.latitude       = parseFloat(document.getElementById('latitude')?.value) || null;
+        data.longitude      = parseFloat(document.getElementById('longitude')?.value) || null;
+    }
     if (!data.name) { if(!isAuto) alert('Name is required'); return; }
     if (C.cpt === 'airport' && !data.city) { if(!isAuto) alert('City is required'); return; }
     if (!data.slug) data.slug=data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
@@ -1169,6 +1235,19 @@ async function loadItem() {
                         if (slug) loadCitiesForDest(slug, item.city || '');
                     }
                 }, 200);
+            }
+            if (C.cpt === 'hospital') {
+                hospGallery = Array.isArray(item.gallery) ? [...item.gallery] : [];
+                hospPeople  = Array.isArray(item.gallery_people) ? [...item.gallery_people] : [];
+                renderHospGallery();
+                renderHospPeople();
+                if (item.location_image) setLocImg(item.location_image);
+                const addrEl = document.getElementById('address');
+                const latEl  = document.getElementById('latitude');
+                const lngEl  = document.getElementById('longitude');
+                if (addrEl) addrEl.value = item.address  || '';
+                if (latEl)  latEl.value  = item.latitude  || '';
+                if (lngEl)  lngEl.value  = item.longitude || '';
             }
     } catch(e) { console.error('[loadItem] error:', e); showToast('⚠️ Load error: '+e.message); }
 }
@@ -1590,6 +1669,65 @@ function removeHeroBg() {
 // ─────────────────────────────────────────────
 // AIRPORT PHOTOS GALLERY
 // ─────────────────────────────────────────────
+// ── HOSPITAL PANELS ────────────────────────────────────────────
+let hospGallery = [], hospPeople = [];
+
+function setIsDirty() { isDirty = true; }
+
+function initHospitalPanels() {
+    if (C.cpt !== 'hospital') return;
+    document.getElementById('hospitalLocationBox').style.display = '';
+    document.getElementById('hospitalGalleryBox').style.display = '';
+    document.getElementById('hospitalPeopleBox').style.display = '';
+}
+
+// Location image
+function setLocImg(url) {
+    const adminUrl = window.ADMIN_URL || 'https://enter.ginger.healthcare';
+    document.getElementById('location_image').value = url;
+    document.getElementById('locImgPreview').src = url.startsWith('http') ? url : adminUrl + url;
+    document.getElementById('locImgPreviewWrap').style.display = '';
+    document.getElementById('locImgEmpty').style.display = 'none';
+    isDirty = true;
+}
+function removeLocImg() {
+    document.getElementById('location_image').value = '';
+    document.getElementById('locImgPreview').src = '';
+    document.getElementById('locImgPreviewWrap').style.display = 'none';
+    document.getElementById('locImgEmpty').style.display = '';
+    isDirty = true;
+}
+
+// Infrastructure gallery
+function renderHospGallery() {
+    const adminUrl = window.ADMIN_URL || 'https://enter.ginger.healthcare';
+    const grid = document.getElementById('hospGalleryGrid'); if (!grid) return;
+    grid.innerHTML = hospGallery.map((url, i) => {
+        const src = url.startsWith('http') ? url : adminUrl + url;
+        return `<div style="position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:var(--gray-200)">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover">
+            <button onclick="removeHospGallery(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:.65rem;line-height:1">✕</button>
+        </div>`;
+    }).join('');
+    document.getElementById('gallery').value = JSON.stringify(hospGallery);
+}
+function removeHospGallery(idx) { hospGallery.splice(idx, 1); renderHospGallery(); isDirty = true; }
+
+// People gallery
+function renderHospPeople() {
+    const adminUrl = window.ADMIN_URL || 'https://enter.ginger.healthcare';
+    const grid = document.getElementById('hospPeopleGrid'); if (!grid) return;
+    grid.innerHTML = hospPeople.map((url, i) => {
+        const src = url.startsWith('http') ? url : adminUrl + url;
+        return `<div style="position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:var(--gray-200)">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover">
+            <button onclick="removeHospPeople(${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:.65rem;line-height:1">✕</button>
+        </div>`;
+    }).join('');
+    document.getElementById('gallery_people').value = JSON.stringify(hospPeople);
+}
+function removeHospPeople(idx) { hospPeople.splice(idx, 1); renderHospPeople(); isDirty = true; }
+
 let airportPhotos = [];
 
 function initAirportPanels() {
@@ -1651,6 +1789,7 @@ function removeAirportPhoto(idx) {
 initPage();
 initDoctorTreats();
 initDSpecialtyPanels();
+initHospitalPanels();
 initAirportPanels();
 if (editId) loadItem();
 // Re-filter treatments when specialty changes
