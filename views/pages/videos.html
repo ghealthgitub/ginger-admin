@@ -224,11 +224,9 @@ function renderTable(filtered) {
             <td class="post-title-cell">
                 <strong><a href="/video-studio/edit/${v.id}" target="_blank">${esc(v.title)}</a></strong>
                 <div class="row-actions">
-                    <a href="/video-studio/edit/${v.id}" target="_blank">Edit in Studio</a>
-                                        <span class="sep">|</span>
-                    <a href="${esc(v.youtube_url)}" target="_blank">Watch</a>
-                    ${v.status === 'published' ? '<span class="sep">|</span><a href="https://ginger.healthcare/videos/" target="_blank">View Page</a>' : ''}
-                    <span class="sep">|</span>
+                    <a href="/video-studio/edit/${v.id}" target="_blank">Edit</a><span class="sep">|</span>
+                    <button onclick="toggleQE(${v.id})">Quick Edit</button><span class="sep">|</span>
+                    <a href="${esc(v.youtube_url)}" target="_blank">View</a><span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${v.id})">Trash</button>
                 </div>
             </td>
@@ -237,7 +235,7 @@ function renderTable(filtered) {
             <td><span class="badge badge--${v.status}">${v.status}</span></td>
             <td class="date-cell">${dateStr}<br><span class="date-sub">${timeStr}</span></td>
         </tr>
-        <tr class="quick-edit-row" id="qe-row-${v.id}" style="display:none">
+        <tr class="quick-edit-row" id="qe-${v.id}" style="display:none">
             <td colspan="7" style="padding:0;border:none">
                 <div class="quick-edit">
                     <div class="quick-edit__title">QUICK EDIT — ${esc(v.title)}</div>
@@ -320,6 +318,8 @@ function sortBy(field) {
 }
 function changePage(dir) { curPage += dir; doFilter(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
+
+function toggleQE(id){const r=document.getElementById('qe-'+id);if(!r)return;const open=r.style.display!=='none';document.querySelectorAll('.quick-edit-row').forEach(el=>el.style.display='none');if(!open)r.style.display='';}
 
 async function quickSave(id) {
     const v = items.find(x => x.id === id); if (!v) return;

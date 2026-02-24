@@ -410,11 +410,12 @@ const Listing = {
                 <span class="sep">|</span>
                 <button onclick="Listing.toggleQE(${item.id})">Quick Edit</button>
                 <span class="sep">|</span>
-                <button class="act-del" onclick="Listing.deleteItem(${item.id})">Trash</button>
                 ${isPublished && viewUrl
-                    ? `<span class="sep">|</span><a href="${viewUrl}" target="_blank" class="act-view">View</a>`
-                    : isPublished ? '' : '<span class="sep">|</span><span class="act-preview" style="color:var(--gray-400);cursor:default" title="Publish to view on site">Draft</span>'
+                    ? `<a href="${viewUrl}" target="_blank" class="act-view">View</a>`
+                    : `<span style="color:var(--gray-300);cursor:default">View</span>`
                 }
+                <span class="sep">|</span>
+                <button class="act-del" onclick="Listing.deleteItem(${item.id})">Trash</button>
             </div>`;
 
         // Date: show updated_at for drafts, published_at or created_at for published

@@ -219,14 +219,13 @@ function renderTable(f){
         return`<tr id="row-${i.id}" class="${sel}">
             <td class="cb-cell"><input type="checkbox" ${chk} onchange="toggleSel(${i.id},this.checked)"></td>
             <td class="post-title-cell">
-                <strong><a href="/d-specialty-studio/edit/${i.id}">${esc(i.name)}</a></strong>
+                <strong><a href="/d-specialty-studio/edit/${i.id}" target="_blank">${esc(i.name)}</a></strong>
                 <span class="post-slug">/destinations/${esc(i.destination_slug||'')}/${esc(i.specialty_slug||i.slug)}/</span>
                 <div class="row-actions">
-                    <a href="/d-specialty-studio/edit/${i.id}" style="color:var(--teal);font-weight:700">Edit</a><span class="sep">|</span>
-                    <a href="/d-specialty-studio/edit/${i.id}" target="_blank">Edit in Studio</a><span class="sep">|</span>
-                    <button onclick="toggleQE(${i.id})">Inline Edit</button><span class="sep">|</span>
+                    <a href="/d-specialty-studio/edit/${i.id}" target="_blank">Edit</a><span class="sep">|</span>
+                    <button onclick="toggleQE(${i.id})">Quick Edit</button><span class="sep">|</span>
+                    ${i.status==='published'?'<a href="'+viewUrl+'" target="_blank">View</a>':'<span style="color:var(--gray-300);cursor:default">View</span>'}<span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${i.id})">Trash</button>
-                    ${i.status==='published'?'<span class="sep">|</span><a href="'+viewUrl+'" target="_blank">View</a>':''}
                 </div>
             </td>
             <td><span class="dest-flag">${esc(i.destination_flag||'')}</span>${esc(i.destination_name||'—')}</td>

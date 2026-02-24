@@ -231,9 +231,9 @@ function renderTable(f){
                 <strong><a href="/d-treatment-studio/edit/${i.id}" target="_blank">${esc(i.name)}</a></strong>
                 <span class="post-slug">/destinations/${esc(i.destination_slug||'')}/${esc(i.specialty_slug||'')}/${esc(i.treatment_slug||i.slug)}/</span>
                 <div class="row-actions">
-                    <a href="#" onclick="openEditModal(${i.id});return false">Edit</a><span class="sep">|</span>
-                    <a class="act-edit" href="/d-treatment-studio/edit/${i.id}" target="_blank">Edit in Studio</a><span class="sep">|</span>
-                    ${i.status==='published'?'<a href="'+viewUrl+'" target="_blank">View</a><span class="sep">|</span>':''}
+                    <a href="/d-treatment-studio/edit/${i.id}" target="_blank">Edit</a><span class="sep">|</span>
+                    <button onclick="toggleQE(${i.id})">Quick Edit</button><span class="sep">|</span>
+                    ${i.status==='published'?'<a href="'+viewUrl+'" target="_blank">View</a>':'<span style="color:var(--gray-300);cursor:default">View</span>'}<span class="sep">|</span>
                     <button class="act-del" onclick="deleteItem(${i.id})">Trash</button>
                 </div>
             </td>

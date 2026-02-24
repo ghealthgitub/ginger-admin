@@ -37,6 +37,13 @@
         .card__status--published{background:#D1FAE5;color:#065F46}
         .card__status--draft{background:#FEF3C7;color:#92400E}
 
+        /* Uniform row/card actions */
+        .card__actions{display:flex;gap:4px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100);align-items:center}
+        .act-link{font-size:.75rem;color:var(--teal);font-weight:600;text-decoration:none;cursor:pointer;border:none;background:none;font-family:inherit;padding:2px 4px;border-radius:3px}
+        .act-link:hover{text-decoration:underline}
+        .act-del{color:#EF4444!important}.act-del:hover{color:#DC2626!important}
+        .act-sep{color:var(--gray-300);font-size:.75rem}
+
         /* Modal */
         .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}.modal-bg.open{display:flex}
         .modal{background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -197,9 +204,11 @@ function render() {
             '</div>' +
             (a.description ? '<div class="card__desc">' + a.description + '</div>' : '') +
             '<div class="card__actions">' +
-                '<a class="btn btn--outline btn--sm" href="https://ginger.healthcare/accreditations/' + (a.slug||'') + '/" target="_blank">👁 View</a>' +
-                '<button class="btn btn--outline btn--sm" onclick="editAccreditation(' + a.id + ')">✏️ Edit</button>' +
-                '<button class="btn btn--outline btn--sm btn--danger" onclick="deleteAccreditation(' + a.id + ',\'' + a.name.replace(/'/g, "\\'") + '\')">🗑️</button>' +
+                '<a class="act-link" onclick="editAccreditation(' + a.id + ')">Edit</a>' +
+                '<span class="act-sep">|</span>' +
+                '<a class="act-link" href="https://ginger.healthcare/accreditations/' + (a.slug||'') + '/" target="_blank">View</a>' +
+                '<span class="act-sep">|</span>' +
+                '<button class="act-link act-del" onclick="deleteAccreditation(' + a.id + ',\'' + a.name.replace(/'/g, "\\'") + '\')">Trash</button>' +
             '</div>' +
         '</div>';
     }).join('');
