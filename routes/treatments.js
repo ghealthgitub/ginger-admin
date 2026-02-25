@@ -27,7 +27,7 @@ const TREATMENT_CONFIG = {
             { id: 'recovery_time',  label: 'Recovery',         type: 'text',   placeholder: 'e.g. 2-3 weeks',       width: '110px' }
         ],
         [
-            { id: 'description', label: 'Short Description', type: 'text', placeholder: 'Brief overview for listings...', flex: 1 }
+            { id: 'description', label: 'Short Description', type: 'textarea', rows: 2, placeholder: 'Brief overview for listings...', flex: 1 }
         ]
     ]
 };
