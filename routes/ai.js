@@ -141,7 +141,7 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
 
         const message = await client.messages.create({
             model: "claude-sonnet-4-20250514",
-            max_tokens: 4096,
+            max_tokens: 8192,
             system: systemPrompts[type] || systemPrompts.general,
             messages: [
                 { role: "user", content: context ? `Context: ${context}\n\nRequest: ${prompt}` : prompt }

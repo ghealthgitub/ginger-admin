@@ -295,7 +295,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                     <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
                     <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
                     <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
-                    <button class="ai-btn" onclick="aiAction('spacing')">🧹 Clean Spacing</button>
+                    <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
+                    <button class="ai-btn" onclick="aiAction('shortdesc')" id="aiBtnShortdesc">✍ Write Description</button>
                 </div>
             </div>
         </div>
@@ -1267,12 +1268,60 @@ async function loadItem() {
 // ─────────────────────────────────────────────
 // AI HELPERS
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// CLEAN SPACING (pure DOM — instant, no AI needed)
+// ─────────────────────────────────────────────
+function cleanSpacing() {
+    const html = quill.root.innerHTML;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+
+    // Remove <p><br></p>, <p></p>, <p>&nbsp;</p>
+    tmp.querySelectorAll('p').forEach(p => {
+        const inner = p.innerHTML.trim();
+        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
+    });
+    // Remove empty headings and block elements
+    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote,div').forEach(el => {
+        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
+    });
+    // Collapse consecutive <br> tags to a single <br>
+    tmp.querySelectorAll('*').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+    });
+    // Trim leading/trailing whitespace in text nodes
+    (function trimNodes(node) {
+        node.childNodes.forEach(child => {
+            if (child.nodeType === 3) child.textContent = child.textContent.replace(/^[\s\u00a0]+|[\s\u00a0]+$/g, ' ');
+            else trimNodes(child);
+        });
+    })(tmp);
+    // Collapse multiple spaces / &nbsp; chains
+    (function collapseSpace(node) {
+        node.childNodes.forEach(child => {
+            if (child.nodeType === 3) child.textContent = child.textContent.replace(/[ \t]{2,}/g, ' ');
+            else collapseSpace(child);
+        });
+    })(tmp);
+
+    const result = tmp.innerHTML;
+    if (result === html) { showToast('✨ Already clean!'); return; }
+
+    quill.history.cutoff();
+    quill.root.innerHTML = result;
+    quill.history.cutoff();
+
+    updateStats(); if (typeof analyzeSEO === 'function') analyzeSEO();
+    showToast('✅ Spacing cleaned');
+}
+
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
     optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
     grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
     headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
-    spacing:  { label: '🧹 Cleaning up formatting...',    sub: 'Fixing spacing and paragraph structure'  }
+    spacing:  { label: '🧹 Cleaning up formatting...',    sub: 'Fixing spacing and paragraph structure'  },
+    shortdesc:{ label: '✍ Writing short description...', sub: 'Crafting a concise patient-friendly summary' }
 };
 
 function aiShowProgress(type) {
@@ -1305,15 +1354,21 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
-    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+content.substring(0,4000);
-    else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
-    else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return complete clean HTML:\n\n'+quill.root.innerHTML.substring(0,6000);
-    else if (type==='spacing') prompt='Clean up this HTML medical content. Rules:\n1. Remove ALL empty paragraphs — delete any <p><br></p> or <p></p> or <p> </p> tags completely\n2. Remove consecutive blank lines — maximum one blank line between sections\n3. Ensure exactly one blank line between paragraphs\n4. Ensure exactly one blank line after each heading before content starts\n5. Fix any inconsistent list formatting\n6. Do NOT change any text content, only fix spacing/structure\nReturn the complete cleaned HTML with no extra blank lines:\n\n'+quill.root.innerHTML.substring(0,6000);
+    else if (type==='shortdesc') prompt='Write a compelling short description (2-3 sentences, max 200 characters) for the medical treatment/page "'+itemName+'". It should be clear, patient-friendly, and suitable for use in listings and cards. Return ONLY the description text, no labels, no quotes, no explanation.';
+    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation, no markdown fences.\n\n'+content;
+    else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
+    else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
+    
     try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
         const d = await r.json(); let result = d.content || '';
-        const match = result.match(/```html?\n?([\s\S]*?)```/); if (match) result = match[1].trim();
+        // Strip markdown fences and any leading explanation text
+        const htmlMatch = result.match(/```html?\n?([\s\S]*?)```/);
+        if (htmlMatch) result = htmlMatch[1].trim();
+        else if (type !== 'seo' && type !== 'shortdesc') {
+            const firstTag = result.indexOf('<'); if (firstTag > 0) result = result.substring(firstTag);
+        }
         if (type==='seo') {
             result.split('\n').forEach(line => {
                 if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value =v; }
@@ -1321,14 +1376,13 @@ async function aiAction(type) {
                 if (line.toLowerCase().includes('short description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v&&v.length<250) setFieldVal('description',v); }
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
+        } else if (type==='shortdesc') {
+            // Strip any label prefix the AI may have added
+            const clean = result.replace(/^short description[:\s]*/i,'').replace(/^["']|["']$/g,'').trim();
+            setFieldVal('description', clean);
+            showToast('✅ Short description written');
         } else {
-            // Client-side cleanup: strip empty paragraphs the AI may have missed
-            if (type === 'spacing') {
-                result = result.replace(/<p>\s*<br\s*\/?>\s*<\/p>/gi, '');
-                result = result.replace(/<p>\s*<\/p>/gi, '');
-                // Collapse 3+ consecutive newlines to max 1
-                result = result.replace(/(\n\s*){3,}/g, '\n');
-            }
+
             quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
