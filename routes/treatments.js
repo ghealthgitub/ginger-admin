@@ -1,14 +1,46 @@
-module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage }) {
+module.exports = function(app, pool, { authRequired, apiAuth, roleRequired, logActivity, servePage, serveStudio }) {
 
-// ============== TREATMENTS CRUD ==============
+// ─── CPT CONFIG ───────────────────────────────────────────────
+const TREATMENT_CONFIG = {
+    cpt: 'treatment',
+    label: 'Treatment',
+    api: '/api/treatments',
+    editBase: '/treatments/edit/',
+    listUrl: '/treatments',
+    viewBase: 'https://ginger.healthcare/treatments/',
+    placeholder: 'Treatment name...',
+    permalinkDynamic: {
+        selectId: 'specialty_id',
+        withSlug: 'ginger.healthcare/specialties/{slug}/',
+        withoutSlug: 'ginger.healthcare/specialties/.../'
+    },
+    viewUrlBuilder: {
+        selectId: 'specialty_id',
+        withParent: 'https://ginger.healthcare/specialties/{parent}/{slug}/'
+    },
+    fieldRows: [
+        [
+            { id: 'specialty_id',   label: 'Specialty',        type: 'select', source: '/api/specialties', flex: 1, onchange: 'updatePermalink()' },
+            { id: 'success_rate',   label: 'Success Rate',     type: 'text',   placeholder: 'e.g. 95%',             width: '90px'  },
+            { id: 'cost_range_usd', label: 'Cost Range (USD)', type: 'text',   placeholder: 'e.g. $5,000–$15,000',  width: '170px' },
+            { id: 'duration',       label: 'Duration',         type: 'text',   placeholder: 'e.g. 2-4 hrs',         width: '110px' },
+            { id: 'recovery_time',  label: 'Recovery',         type: 'text',   placeholder: 'e.g. 2-3 weeks',       width: '110px' }
+        ],
+        [
+            { id: 'description', label: 'Short Description', type: 'text', placeholder: 'Brief overview for listings...', flex: 1 }
+        ]
+    ]
+};
+
+// ─── ROUTES ───────────────────────────────────────────────────
 app.get('/treatments', authRequired, (req, res) => {
     servePage(res, 'treatments');
 });
 app.get('/treatments/new', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    servePage(res, 'treatment-studio');
+    serveStudio(res, TREATMENT_CONFIG);
 });
 app.get('/treatments/edit/:id', authRequired, roleRequired('super_admin', 'editor'), (req, res) => {
-    servePage(res, 'treatment-studio');
+    serveStudio(res, TREATMENT_CONFIG);
 });
 
 app.get('/api/treatments', apiAuth, async (req, res) => {
