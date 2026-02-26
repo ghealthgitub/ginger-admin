@@ -282,6 +282,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                 <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
                 <div class="ai-helpers">
                     <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
+                    <button class="ai-btn" onclick="aiAction('shortdesc')">📝 Short Description</button>
                     <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
                     <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
                     <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
@@ -717,7 +718,10 @@ const resizeObserver = new ResizeObserver(entries => {
 // IMAGE UPLOAD (paste / drop / server)
 // ─────────────────────────────────────────────
 quill.root.addEventListener('paste', function(e) {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    const cbd = e.clipboardData || e.originalEvent.clipboardData;
+    const items = cbd.items;
+
+    // 1. Image paste — upload to server
     for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
             e.preventDefault();
@@ -727,8 +731,67 @@ quill.root.addEventListener('paste', function(e) {
             return;
         }
     }
+
+    // 2. HTML paste (Word / Google Docs / web) — handle ourselves to prevent Quill mangling
+    const htmlData = cbd.getData('text/html');
+    if (htmlData && htmlData.trim()) {
+        e.preventDefault();
+        const clean = cleanWordHtml(htmlData);
+        const range = quill.getSelection(true);
+        const idx = range ? range.index : quill.getLength();
+        quill.clipboard.dangerouslyPasteHTML(idx, clean, 'user');
+        setTimeout(() => fixPastedImages(), 500);
+        return;
+    }
+
+    // 3. Plain text — let Quill handle it
     setTimeout(() => fixPastedImages(), 500);
 });
+
+function cleanWordHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+
+    // Remove Word/Office junk elements
+    tmp.querySelectorAll('style, script, meta, link, xml, o\\:p, w\\:*, m\\:*').forEach(el => el.remove());
+    tmp.querySelectorAll('[class*="Mso"], [class*="mso"]').forEach(el => {
+        // Keep the element but strip the class
+        el.removeAttribute('class');
+    });
+
+    // Strip all inline styles (Word adds massive inline styles)
+    tmp.querySelectorAll('*').forEach(el => {
+        el.removeAttribute('style');
+        el.removeAttribute('lang');
+        el.removeAttribute('xml:lang');
+        el.removeAttribute('xmlns');
+        // Keep: href on <a>, src/alt/width/height on <img>
+    });
+
+    // Convert Word list items that use divs/spans into proper lists
+    // (Quill handles proper <ul>/<li> correctly)
+
+    // Remove empty paragraphs and spans
+    tmp.querySelectorAll('p, span').forEach(el => {
+        if (!el.textContent.trim() && !el.querySelector('img')) {
+            if (el.children.length === 0 || (el.children.length === 1 && el.children[0].tagName === 'BR')) {
+                el.remove();
+            }
+        }
+    });
+
+    // Unwrap meaningless span/div wrappers that only add noise
+    tmp.querySelectorAll('span').forEach(el => {
+        if (!el.hasAttribute('class') && !el.hasAttribute('style') &&
+            el.tagName === 'SPAN' && el.parentNode) {
+            const parent = el.parentNode;
+            while (el.firstChild) parent.insertBefore(el.firstChild, el);
+            parent.removeChild(el);
+        }
+    });
+
+    return tmp.innerHTML;
+}
 quill.root.addEventListener('drop', function(e) {
     if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
         e.preventDefault(); e.stopPropagation();
@@ -1259,6 +1322,7 @@ async function loadItem() {
 // ─────────────────────────────────────────────
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
+    shortdesc:{ label: '📝 Writing short description...',  sub: 'Summarising for the description field'   },
     optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
     grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
     headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
@@ -1295,16 +1359,12 @@ function cleanSpacing() {
     const html = quill.root.innerHTML;
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
-    // Remove empty paragraphs
-    tmp.querySelectorAll('p').forEach(p => {
-        const inner = p.innerHTML.trim();
-        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
+    tmp.querySelectorAll('p, h1, h2, h3, h4, li, blockquote').forEach(el => {
+        const inner = el.innerHTML.trim();
+        if ((inner === '<br>' || inner === '' || inner === '&nbsp;') && !el.querySelector('img')) {
+            el.remove();
+        }
     });
-    // Remove empty headings/blocks
-    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote').forEach(el => {
-        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
-    });
-    // Collapse multiple consecutive <br> to single
     tmp.querySelectorAll('*').forEach(el => {
         el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
     });
@@ -1323,19 +1383,26 @@ async function aiAction(type) {
     const itemName = document.getElementById('name')?.value || ('this ' + (C.label||'item').toLowerCase());
     const content = quill.getText().trim();
     let prompt = '';
-    if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
-    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+quill.root.innerHTML;
-    else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
-    else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
-
+    const fullHtml = quill.root.innerHTML;
+    const fullHtml = quill.root.innerHTML;
+    if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
+    else if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
+    else if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
+    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Preserve ALL existing content — do NOT remove or summarise any sections. Add depth to existing points. Return ONLY the complete HTML, no explanation, no markdown fences.\n\n'+fullHtml;
+    else if (type==='grammar') prompt='Fix grammar, spelling and improve readability in this medical content. Do NOT remove, summarise or condense any content. Return ONLY the complete corrected HTML, no explanation, no markdown fences.\n\n'+fullHtml;
+    else if (type==='headings') prompt='Improve the heading structure of this medical content. Add clear H2 section headings and H3 sub-headings where appropriate. Do NOT remove, summarise or condense ANY existing content — keep every paragraph. Return ONLY the complete HTML with improved headings, no explanation, no markdown fences.\n\n'+fullHtml;
     try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
         const d = await r.json(); let result = d.content || '';
-        if (d.truncated) { showToast('⚠️ Response was cut short — article too long. Try splitting into sections.'); aiHideProgress(); btns.forEach(b=>b.disabled=false); return; }
+        if (d.truncated) { showToast('⚠️ Content too long for AI — try splitting into sections'); aiHideProgress(); btns.forEach(b=>b.disabled=false); return; }
         const match = result.match(/```html?\n?([\s\S]*?)```/); if (match) result = match[1].trim();
-        else if (type !== 'seo') { const firstTag = result.indexOf('<'); if (firstTag > 0) result = result.substring(firstTag); }
-        if (type==='seo') {
+        else if (type !== 'seo' && type !== 'shortdesc') { const firstTag = result.indexOf('<'); if (firstTag > 0) result = result.substring(firstTag); }
+        if (type==='shortdesc') {
+            const v = result.replace(/^["']|["']$/g,'').trim();
+            if (v) { setFieldVal('description', v); showToast('✅ Short description written'); }
+            else showToast('❌ No description returned');
+        } else if (type==='seo') {
             result.split('\n').forEach(line => {
                 if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value =v; }
                 if (line.toLowerCase().includes('meta description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_description').value =v; }
