@@ -1384,7 +1384,6 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     const fullHtml = quill.root.innerHTML;
-    const fullHtml = quill.root.innerHTML;
     if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
     else if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
     else if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
