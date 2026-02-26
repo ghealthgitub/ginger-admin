@@ -51,6 +51,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
 .editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
+.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem}
+.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top}
+.editor-wrap .ql-editor th{background:var(--gray-100);font-weight:600;color:var(--navy)}
+.editor-wrap .ql-editor tr:nth-child(even) td{background:var(--gray-50)}
+.editor-wrap .ql-editor table:hover{outline:2px solid var(--teal);outline-offset:2px}
 .editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
@@ -732,14 +737,12 @@ quill.root.addEventListener('paste', function(e) {
         }
     }
 
-    // 2. HTML paste (Word / Google Docs / web) — handle ourselves to prevent Quill mangling
+    // 2. HTML paste (Word / Google Docs / web) — bypass Quill Delta to preserve tables
     const htmlData = cbd.getData('text/html');
     if (htmlData && htmlData.trim()) {
         e.preventDefault();
         const clean = cleanWordHtml(htmlData);
-        const range = quill.getSelection(true);
-        const idx = range ? range.index : quill.getLength();
-        quill.clipboard.dangerouslyPasteHTML(idx, clean, 'user');
+        injectHtmlAtCursor(clean);
         setTimeout(() => fixPastedImages(), 500);
         return;
     }
@@ -754,26 +757,43 @@ function cleanWordHtml(html) {
 
     // Remove Word/Office junk elements
     tmp.querySelectorAll('style, script, meta, link').forEach(el => el.remove());
-    Array.from(tmp.getElementsByTagName('*')).filter(function(el){ return el.tagName.indexOf(':') !== -1 || el.tagName.toLowerCase() === 'xml'; }).forEach(function(el){ el.remove(); });
+    Array.from(tmp.getElementsByTagName('*')).filter(function(el){
+        return el.tagName.indexOf(':') !== -1 || el.tagName.toLowerCase() === 'xml';
+    }).forEach(function(el){ el.remove(); });
+
+    // Strip MSO class attributes but keep the elements
     tmp.querySelectorAll('[class*="Mso"], [class*="mso"]').forEach(el => {
-        // Keep the element but strip the class
         el.removeAttribute('class');
     });
 
-    // Strip all inline styles (Word adds massive inline styles)
+    // Strip all inline styles, lang, xmlns (Word noise) — but preserve table structure attrs
     tmp.querySelectorAll('*').forEach(el => {
+        const tag = el.tagName.toLowerCase();
         el.removeAttribute('style');
         el.removeAttribute('lang');
         el.removeAttribute('xml:lang');
         el.removeAttribute('xmlns');
-        // Keep: href on <a>, src/alt/width/height on <img>
+        el.removeAttribute('valign');
+        el.removeAttribute('width');
+        el.removeAttribute('height');
+        // Keep: href on <a>, src/alt on <img>, colspan/rowspan on td/th
     });
 
-    // Convert Word list items that use divs/spans into proper lists
-    // (Quill handles proper <ul>/<li> correctly)
+    // Apply clean table styling directly so tables render properly in the editor
+    tmp.querySelectorAll('table').forEach(table => {
+        table.setAttribute('style', 'border-collapse:collapse;width:100%;margin:12px 0');
+    });
+    tmp.querySelectorAll('td, th').forEach(cell => {
+        const isTh = cell.tagName.toLowerCase() === 'th';
+        cell.setAttribute('style', 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;' + (isTh ? 'background:#f3f4f6;font-weight:600;' : ''));
+    });
+    tmp.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
+        cell.setAttribute('style', (cell.getAttribute('style')||'') + 'background:#f9fafb;');
+    });
 
-    // Remove empty paragraphs and spans
+    // Remove empty paragraphs (but NOT inside table cells)
     tmp.querySelectorAll('p, span').forEach(el => {
+        if (el.closest('td, th')) return; // don't touch table cell content
         if (!el.textContent.trim() && !el.querySelector('img')) {
             if (el.children.length === 0 || (el.children.length === 1 && el.children[0].tagName === 'BR')) {
                 el.remove();
@@ -781,10 +801,9 @@ function cleanWordHtml(html) {
         }
     });
 
-    // Unwrap meaningless span/div wrappers that only add noise
+    // Unwrap bare spans (no class, no meaningful attrs)
     tmp.querySelectorAll('span').forEach(el => {
-        if (!el.hasAttribute('class') && !el.hasAttribute('style') &&
-            el.tagName === 'SPAN' && el.parentNode) {
+        if (!el.hasAttribute('class') && !el.hasAttribute('style') && el.parentNode) {
             const parent = el.parentNode;
             while (el.firstChild) parent.insertBefore(el.firstChild, el);
             parent.removeChild(el);
@@ -792,6 +811,53 @@ function cleanWordHtml(html) {
     });
 
     return tmp.innerHTML;
+}
+
+// Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
+function injectHtmlAtCursor(html) {
+    const sel = window.getSelection();
+    const range = quill.getSelection();
+
+    if (!range) {
+        // No cursor — append to end
+        quill.root.innerHTML = quill.root.innerHTML + html;
+    } else {
+        // Split current content at cursor using Quill's character index
+        // Convert Quill index to DOM Range
+        const domRange = document.createRange();
+        const walker = document.createTreeWalker(quill.root, NodeFilter.SHOW_TEXT, null, false);
+        let charCount = 0, found = false;
+        let node;
+        while ((node = walker.nextNode())) {
+            const nodeLen = node.nodeValue.length;
+            if (charCount + nodeLen >= range.index) {
+                domRange.setStart(node, range.index - charCount);
+                domRange.setEnd(node, range.index - charCount);
+                found = true;
+                break;
+            }
+            charCount += nodeLen;
+        }
+
+        if (found) {
+            domRange.deleteContents();
+            const frag = document.createRange().createContextualFragment(html);
+            domRange.insertNode(frag);
+            // Move cursor to after inserted content
+            domRange.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(domRange);
+        } else {
+            // Fallback: append
+            quill.root.innerHTML = quill.root.innerHTML + html;
+        }
+    }
+
+    // Notify Quill that content changed
+    quill.update();
+    updateStats();
+    analyzeSEO();
+    resetAutoSave();
 }
 quill.root.addEventListener('drop', function(e) {
     if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
