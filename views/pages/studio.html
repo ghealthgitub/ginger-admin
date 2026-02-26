@@ -26,10 +26,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
 .panel-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:32px;width:3px;border-left:1px solid currentColor;border-right:1px solid currentColor;opacity:.35;pointer-events:none}
 .panel-right::-webkit-scrollbar{width:3px}
-/* === PANEL RESIZER === */
-.panel-resizer{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;z-index:5}
-.panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
-.panel-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:32px;width:3px;border-left:1px solid currentColor;border-right:1px solid currentColor;opacity:.35;pointer-events:none}
 .panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 .title-area{padding:20px 32px 0;flex-shrink:0}
 .title-input{width:100%;border:none;outline:none;font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:600;color:var(--navy);padding:0;margin-bottom:6px;line-height:1.3}.title-input::placeholder{color:var(--gray-300)}
@@ -56,10 +52,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-toolbar{border:none;border-bottom:1px solid var(--gray-100);padding:6px 32px;flex-shrink:0}
 .editor-wrap .ql-container{border:none;flex:1;overflow:auto;font-family:'DM Sans',sans-serif;font-size:15px}
 .editor-wrap .ql-editor{padding:20px 32px;min-height:100%}
+.editor-wrap .ql-editor h1,.editor-wrap .ql-editor h2,.editor-wrap .ql-editor h3,.editor-wrap .ql-editor h4{margin-bottom:0.75em}
+.editor-wrap .ql-editor h1+p,.editor-wrap .ql-editor h2+p,.editor-wrap .ql-editor h3+p,.editor-wrap .ql-editor h4+p{margin-top:0}
 .editor-wrap .ql-editor.ql-blank::before{left:32px;color:var(--gray-300)}
 .preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
 .editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
+.editor-wrap .ql-editor table{width:100%;border-collapse:collapse;margin:12px 0}
+.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid #D1D5DB;padding:8px 12px;vertical-align:top}
+.editor-wrap .ql-editor th{background:#F3F4F6;font-weight:600}
+.editor-wrap .ql-editor tr:nth-child(even) td{background:#FAFAFA}
 .editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
@@ -729,6 +731,8 @@ const resizeObserver = new ResizeObserver(entries => {
 // ─────────────────────────────────────────────
 quill.root.addEventListener('paste', function(e) {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+
+    // 1. If clipboard contains an image file, upload it directly
     for (let i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
             e.preventDefault();
@@ -738,6 +742,65 @@ quill.root.addEventListener('paste', function(e) {
             return;
         }
     }
+
+    // 2. If clipboard contains HTML (Word paste), extract and preserve tables
+    const htmlItem = Array.from(items).find(i => i.type === 'text/html');
+    if (htmlItem) {
+        htmlItem.getAsString(rawHtml => {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = rawHtml;
+
+            // Check if there are any tables
+            if (tmp.querySelector('table')) {
+                e.preventDefault();
+
+                // Convert Word tables to clean HTML tables
+                tmp.querySelectorAll('table').forEach(table => {
+                    table.removeAttribute('style');
+                    table.removeAttribute('class');
+                    table.removeAttribute('border');
+                    table.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0';
+                    table.querySelectorAll('td,th').forEach(cell => {
+                        const isHeader = cell.tagName === 'TH' ||
+                            (cell.closest('tr') === cell.closest('table').querySelector('tr') &&
+                             (cell.style.fontWeight === 'bold' || cell.querySelector('b,strong')));
+                        cell.removeAttribute('style');
+                        cell.removeAttribute('class');
+                        cell.removeAttribute('width');
+                        cell.style.cssText = 'border:1px solid #D1D5DB;padding:8px 12px;vertical-align:top;' +
+                            (isHeader ? 'background:#F3F4F6;font-weight:600;' : '');
+                    });
+                    table.querySelectorAll('tr').forEach(row => {
+                        row.removeAttribute('style'); row.removeAttribute('class');
+                    });
+                });
+
+                // Strip Word-specific tags and attributes but keep structure
+                tmp.querySelectorAll('[class*="Mso"],[style*="mso-"],[lang],[xml\\:lang]').forEach(el => {
+                    el.removeAttribute('class');
+                    el.removeAttribute('lang');
+                });
+                // Strip empty paragraphs that Word adds around tables
+                tmp.querySelectorAll('p').forEach(p => {
+                    if (!p.textContent.trim() && !p.querySelector('img,table')) p.remove();
+                });
+
+                // Insert at cursor
+                const idx = quill.getSelection(true)?.index || quill.getLength();
+                const cleanHtml = tmp.innerHTML;
+                // Quill can't render <table> natively — insert as raw HTML block
+                const Delta = Quill.import('delta');
+                quill.clipboard.dangerouslyPasteHTML(idx, cleanHtml);
+                isDirty = true;
+                setTimeout(() => fixPastedImages(), 300);
+                return;
+            }
+        });
+        // If no tables, let Quill handle the paste normally (with fixup after)
+        setTimeout(() => fixPastedImages(), 500);
+        return;
+    }
+
     setTimeout(() => fixPastedImages(), 500);
 });
 quill.root.addEventListener('drop', function(e) {
@@ -837,9 +900,10 @@ function mpSelectItem(id) {
         document.getElementById('mpSidebarImg').src = au + item.url;
         document.getElementById('mpSidebarName').textContent = item.original_name || item.url.split('/').pop();
         document.getElementById('mpSidebarMeta').textContent = item.file_size ? Math.round(item.file_size/1024)+' KB' : '';
-        document.getElementById('mpAltText').value = item.alt_text || '';
-        document.getElementById('mpTitleField').value = item.title || '';
-        document.getElementById('mpCaption').value = item.caption || '';
+        const _autoNameM = (item.original_name || item.url.split('/').pop() || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g,' ').trim();
+        document.getElementById('mpAltText').value = item.alt_text || _autoNameM;
+        document.getElementById('mpTitleField').value = item.title || _autoNameM;
+        document.getElementById('mpCaption').value = item.caption || _autoNameM;
         document.getElementById('mpFileUrl').value = au + item.url;
         document.getElementById('mpDelBtn').disabled = false;
         return;
@@ -850,9 +914,10 @@ function mpSelectItem(id) {
     document.getElementById('mpSidebarImg').src = au + mpSelected.url;
     document.getElementById('mpSidebarName').textContent = mpSelected.original_name || mpSelected.url.split('/').pop();
     document.getElementById('mpSidebarMeta').textContent = mpSelected.file_size ? Math.round(mpSelected.file_size/1024)+' KB' : '';
-    document.getElementById('mpAltText').value = mpSelected.alt_text || '';
-    document.getElementById('mpTitleField').value = mpSelected.title || '';
-    document.getElementById('mpCaption').value = mpSelected.caption || '';
+    const _autoName = (mpSelected.original_name || mpSelected.url.split('/').pop() || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g,' ').trim();
+    document.getElementById('mpAltText').value = mpSelected.alt_text || _autoName;
+    document.getElementById('mpTitleField').value = mpSelected.title || _autoName;
+    document.getElementById('mpCaption').value = mpSelected.caption || _autoName;
     document.getElementById('mpFileUrl').value = au + mpSelected.url;
     document.getElementById('mpConfirmBtn').disabled = false;
     document.getElementById('mpDelBtn').disabled = false;
@@ -1363,6 +1428,11 @@ async function aiAction(type) {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
         const d = await r.json(); let result = d.content || '';
+        // Warn if response was truncated by token limit
+        if (d.truncated) {
+            showToast('⚠️ Response was cut short — article may be too long. Try splitting into sections.');
+            aiHideProgress(); btns.forEach(b => b.disabled=false); return;
+        }
         // Strip markdown fences and any leading explanation text
         const htmlMatch = result.match(/```html?\n?([\s\S]*?)```/);
         if (htmlMatch) result = htmlMatch[1].trim();
