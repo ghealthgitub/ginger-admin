@@ -753,7 +753,8 @@ function cleanWordHtml(html) {
     tmp.innerHTML = html;
 
     // Remove Word/Office junk elements
-    tmp.querySelectorAll('style, script, meta, link, xml, o\\:p, w\\:*, m\\:*').forEach(el => el.remove());
+    tmp.querySelectorAll('style, script, meta, link').forEach(el => el.remove());
+    Array.from(tmp.getElementsByTagName('*')).filter(function(el){ return el.tagName.indexOf(':') !== -1 || el.tagName.toLowerCase() === 'xml'; }).forEach(function(el){ el.remove(); });
     tmp.querySelectorAll('[class*="Mso"], [class*="mso"]').forEach(el => {
         // Keep the element but strip the class
         el.removeAttribute('class');
