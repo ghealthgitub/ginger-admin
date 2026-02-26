@@ -20,17 +20,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .studio{display:flex;height:calc(100vh - 48px)}
 .panel-editor{flex:1;display:flex;flex-direction:column;min-width:300px;background:var(--white);overflow:hidden}
 .panel-right{width:340px;min-width:260px;background:var(--white);border-left:1px solid var(--gray-200);overflow-y:auto;flex-shrink:0}
-
-/* === PANEL RESIZER === */
-.panel-resizer{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;z-index:5}
-.panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
-.panel-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:32px;width:3px;border-left:1px solid currentColor;border-right:1px solid currentColor;opacity:.35;pointer-events:none}
-.panel-right::-webkit-scrollbar{width:3px}
-/* === PANEL RESIZER === */
-.panel-resizer{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;z-index:5}
-.panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
-.panel-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:32px;width:3px;border-left:1px solid currentColor;border-right:1px solid currentColor;opacity:.35;pointer-events:none}
-.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
+.panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 .title-area{padding:20px 32px 0;flex-shrink:0}
 .title-input{width:100%;border:none;outline:none;font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:600;color:var(--navy);padding:0;margin-bottom:6px;line-height:1.3}.title-input::placeholder{color:var(--gray-300)}
 .permalink-area{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-400);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-100)}
@@ -56,6 +46,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-toolbar{border:none;border-bottom:1px solid var(--gray-100);padding:6px 32px;flex-shrink:0}
 .editor-wrap .ql-container{border:none;flex:1;overflow:auto;font-family:'DM Sans',sans-serif;font-size:15px}
 .editor-wrap .ql-editor{padding:20px 32px;min-height:100%}
+.editor-wrap .ql-editor h1,.editor-wrap .ql-editor h2,.editor-wrap .ql-editor h3,.editor-wrap .ql-editor h4{margin-bottom:0.75em}
 .editor-wrap .ql-editor.ql-blank::before{left:32px;color:var(--gray-300)}
 .preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
@@ -263,8 +254,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="preview-pane" id="previewPane"></div>
 </div>
 
-<div class="panel-resizer" id="panelResizer"></div>
-<div class="panel-right" id="panelRight">
+<div class="panel-right">
     <div class="sb-box publish-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
             <div class="publish-row"><span>📌</span><strong>Status:</strong><span id="pubStatus">Draft</span></div>
@@ -296,7 +286,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                     <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
                     <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
                     <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
-                    <button class="ai-btn" onclick="aiAction('shortdesc')" id="aiBtnShortdesc">✍ Write Description</button>
                 </div>
             </div>
         </div>
@@ -1268,60 +1257,12 @@ async function loadItem() {
 // ─────────────────────────────────────────────
 // AI HELPERS
 // ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// CLEAN SPACING (pure DOM — instant, no AI needed)
-// ─────────────────────────────────────────────
-function cleanSpacing() {
-    const html = quill.root.innerHTML;
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-
-    // Remove <p><br></p>, <p></p>, <p>&nbsp;</p>
-    tmp.querySelectorAll('p').forEach(p => {
-        const inner = p.innerHTML.trim();
-        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
-    });
-    // Remove empty headings and block elements
-    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote,div').forEach(el => {
-        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
-    });
-    // Collapse consecutive <br> tags to a single <br>
-    tmp.querySelectorAll('*').forEach(el => {
-        el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
-    });
-    // Trim leading/trailing whitespace in text nodes
-    (function trimNodes(node) {
-        node.childNodes.forEach(child => {
-            if (child.nodeType === 3) child.textContent = child.textContent.replace(/^[\s\u00a0]+|[\s\u00a0]+$/g, ' ');
-            else trimNodes(child);
-        });
-    })(tmp);
-    // Collapse multiple spaces / &nbsp; chains
-    (function collapseSpace(node) {
-        node.childNodes.forEach(child => {
-            if (child.nodeType === 3) child.textContent = child.textContent.replace(/[ \t]{2,}/g, ' ');
-            else collapseSpace(child);
-        });
-    })(tmp);
-
-    const result = tmp.innerHTML;
-    if (result === html) { showToast('✨ Already clean!'); return; }
-
-    quill.history.cutoff();
-    quill.root.innerHTML = result;
-    quill.history.cutoff();
-
-    updateStats(); if (typeof analyzeSEO === 'function') analyzeSEO();
-    showToast('✅ Spacing cleaned');
-}
-
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
     optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
     grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
     headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
-    spacing:  { label: '🧹 Cleaning up formatting...',    sub: 'Fixing spacing and paragraph structure'  },
-    shortdesc:{ label: '✍ Writing short description...', sub: 'Crafting a concise patient-friendly summary' }
+    spacing:  { label: '🧹 Cleaning up formatting...',    sub: 'Fixing spacing and paragraph structure'  }
 };
 
 function aiShowProgress(type) {
@@ -1347,6 +1288,35 @@ function aiHideProgress() {
     }, 350);
 }
 
+// ─────────────────────────────────────────────
+// CLEAN SPACING — pure DOM, instant, no AI
+// ─────────────────────────────────────────────
+function cleanSpacing() {
+    const html = quill.root.innerHTML;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    // Remove empty paragraphs
+    tmp.querySelectorAll('p').forEach(p => {
+        const inner = p.innerHTML.trim();
+        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
+    });
+    // Remove empty headings/blocks
+    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote').forEach(el => {
+        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
+    });
+    // Collapse multiple consecutive <br> to single
+    tmp.querySelectorAll('*').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+    });
+    const result = tmp.innerHTML;
+    if (result === html) { showToast('✨ Already clean!'); return; }
+    quill.history.cutoff();
+    quill.root.innerHTML = result;
+    quill.history.cutoff();
+    updateStats(); analyzeSEO();
+    showToast('✅ Spacing cleaned');
+}
+
 async function aiAction(type) {
     const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled=true);
     aiShowProgress(type);
@@ -1354,25 +1324,17 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
-    else if (type==='shortdesc') prompt='Write a compelling short description (2-3 sentences, max 200 characters) for the medical treatment/page "'+itemName+'". It should be clear, patient-friendly, and suitable for use in listings and cards. Return ONLY the description text, no labels, no quotes, no explanation.';
-    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation, no markdown fences.\n\n'+content;
+    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Keep HTML formatting.\n\n'+quill.root.innerHTML;
     else if (type==='grammar') prompt='Fix grammar and improve readability in this medical content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
     else if (type==='headings') prompt='Improve the heading structure of the following medical content. Ensure clear H2 sections and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n'+quill.root.innerHTML;
-    
+
     try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
         const d = await r.json(); let result = d.content || '';
-        if (d.truncated) {
-            showToast('⚠️ Response was cut short — article too long. Try splitting into sections.');
-            aiHideProgress(); btns.forEach(b => b.disabled=false); return;
-        }
-        // Strip markdown fences and any leading explanation text
-        const htmlMatch = result.match(/```html?\n?([\s\S]*?)```/);
-        if (htmlMatch) result = htmlMatch[1].trim();
-        else if (type !== 'seo' && type !== 'shortdesc') {
-            const firstTag = result.indexOf('<'); if (firstTag > 0) result = result.substring(firstTag);
-        }
+        if (d.truncated) { showToast('⚠️ Response was cut short — article too long. Try splitting into sections.'); aiHideProgress(); btns.forEach(b=>b.disabled=false); return; }
+        const match = result.match(/```html?\n?([\s\S]*?)```/); if (match) result = match[1].trim();
+        else if (type !== 'seo') { const firstTag = result.indexOf('<'); if (firstTag > 0) result = result.substring(firstTag); }
         if (type==='seo') {
             result.split('\n').forEach(line => {
                 if (line.toLowerCase().includes('meta title')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v) document.getElementById('meta_title').value =v; }
@@ -1380,13 +1342,7 @@ async function aiAction(type) {
                 if (line.toLowerCase().includes('short description')) { const v=line.replace(/.*?[:]\s*/i,'').replace(/^["']|["']$/g,'').trim(); if(v&&v.length<250) setFieldVal('description',v); }
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
-        } else if (type==='shortdesc') {
-            // Strip any label prefix the AI may have added
-            const clean = result.replace(/^short description[:\s]*/i,'').replace(/^["']|["']$/g,'').trim();
-            setFieldVal('description', clean);
-            showToast('✅ Short description written');
         } else {
-
             quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
@@ -1874,44 +1830,5 @@ document.addEventListener('change', function(e) {
         loadCitiesForDest(slug, '');
     }
 });
-
-// ─────────────────────────────────────────────
-// PANEL RESIZER (drag the divider to widen sidebar)
-// ─────────────────────────────────────────────
-(function() {
-    const resizer = document.getElementById('panelResizer');
-    const right   = document.getElementById('panelRight');
-    const studio  = resizer && resizer.closest('.studio');
-    if (!resizer || !right || !studio) return;
-
-    const MIN_RIGHT = 240;
-    const MAX_RIGHT = 600;
-
-    // Restore saved width
-    const saved = parseInt(localStorage.getItem('gingerSidebarWidth'));
-    if (saved && saved >= MIN_RIGHT && saved <= MAX_RIGHT) right.style.width = saved + 'px';
-
-    resizer.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        resizer.classList.add('dragging');
-        const startX      = e.clientX;
-        const startWidth  = right.offsetWidth;
-
-        function onMove(ev) {
-            const delta    = startX - ev.clientX;   // dragging left → sidebar grows
-            const newWidth = Math.min(MAX_RIGHT, Math.max(MIN_RIGHT, startWidth + delta));
-            right.style.width = newWidth + 'px';
-        }
-        function onUp() {
-            resizer.classList.remove('dragging');
-            localStorage.setItem('gingerSidebarWidth', right.offsetWidth);
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup',   onUp);
-        }
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup',   onUp);
-    });
-})();
-
 </script>
 </body></html>

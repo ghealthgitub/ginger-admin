@@ -150,7 +150,7 @@ app.post('/api/ai/generate', apiAuth, roleRequired('super_admin', 'editor'), asy
 
         const responseText = message.content[0].text;
         const wasTruncated = message.stop_reason === 'max_tokens';
-        if (wasTruncated) console.warn('[AI] Hit max_tokens limit — content truncated. Prompt chars:', prompt.length);
+        if (wasTruncated) console.warn('[AI] Hit max_tokens — truncated. Prompt chars:', prompt.length);
         await logActivity(req.user.id, 'ai_generate', 'ai', null, `Type: ${type}, Prompt: ${prompt.substring(0, 100)}`);
         res.json({ content: responseText, truncated: wasTruncated });
     } catch (err) {
