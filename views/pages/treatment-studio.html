@@ -288,7 +288,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
                     <button class="ai-btn" id="aiBtnOptimize" onclick="aiAction('optimize')">🎯 Optimize</button>
                     <button class="ai-btn" id="aiBtnGrammar" onclick="aiAction('grammar')">✏ Grammar</button>
                     <button class="ai-btn" id="aiBtnHeadings" onclick="aiAction('headings')">📑 Headings</button>
-                    <button class="ai-btn" id="aiBtnSpacing" onclick="aiAction('spacing')">🧹 Clean Spacing</button>
+                    <button class="ai-btn" id="aiBtnSpacing" onclick="cleanSpacing()">🧹 Clean Spacing</button>
                 </div>
             </div>
         </div>
@@ -1127,6 +1127,36 @@ async function loadItem() {
     } catch(e) { console.error(e); }
 }
 
+// === CLEAN SPACING (pure DOM — instant, no AI) ===
+function cleanSpacing() {
+    const html = quill.root.innerHTML;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('p').forEach(p => {
+        const inner = p.innerHTML.trim();
+        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
+    });
+    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote,div').forEach(el => {
+        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
+    });
+    tmp.querySelectorAll('*').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+    });
+    (function trimNodes(node) {
+        node.childNodes.forEach(child => {
+            if (child.nodeType === 3) child.textContent = child.textContent.replace(/^[\s\u00a0]+|[\s\u00a0]+$/g, ' ');
+            else trimNodes(child);
+        });
+    })(tmp);
+    const result = tmp.innerHTML;
+    if (result === html) { showToast('✨ Already clean!'); return; }
+    quill.history.cutoff();
+    quill.root.innerHTML = result;
+    quill.history.cutoff();
+    updateStats(); analyzeSEO();
+    showToast('✅ Spacing cleaned');
+}
+
 // === AI HELPERS ===
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
@@ -1162,14 +1192,18 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "' + itemName + '". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
-    else if (type === 'optimize') prompt = 'Improve and expand the following medical content. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation.\n\n' + content.substring(0, 4000);
-    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this medical content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML.substring(0, 6000);
-    else if (type === 'headings') prompt = 'Improve the heading structure of the following medical content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML.substring(0, 6000);
-    else if (type === 'spacing') prompt = 'Clean up this HTML medical content. Rules:\n1. Remove ALL empty paragraphs — delete any <p><br></p> or <p></p> or <p> </p> tags completely\n2. Remove consecutive blank lines\n3. Fix any inconsistent list formatting\n4. Do NOT change any text content, only fix spacing/structure\nReturn ONLY the complete cleaned HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML.substring(0, 6000);
+    else if (type === 'optimize') prompt = 'Improve and expand the following medical content. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation.\n\n' + quill.root.innerHTML;
+    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this medical content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
+    else if (type === 'headings') prompt = 'Improve the heading structure of the following medical content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
+
     try {
         const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: CPT.itemLabel, context: CPT.itemLabel + ': ' + itemName }) });
         if (!r.ok) throw new Error('AI request failed');
         const data = await r.json(); let result = data.content || '';
+        if (data.truncated) {
+            showToast('⚠️ Response was cut short — article too long. Try splitting into sections.');
+            aiHideProgress(); btns.forEach(b => b.disabled = false); return;
+        }
         // Strip markdown fences and preamble — Claude sometimes wraps output in ```html ... ```
         const htmlMatch = result.match(/```html?\n?([\s\S]*?)```/);
         if (htmlMatch) result = htmlMatch[1].trim();
