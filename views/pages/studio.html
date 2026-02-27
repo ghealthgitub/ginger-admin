@@ -19,9 +19,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__btn--view{background:var(--white);color:var(--teal);border:1px solid var(--teal);text-decoration:none}.topbar__btn--view:hover{background:rgba(14,165,160,.08)}
 .studio{display:flex;height:calc(100vh - 48px)}
 .panel-editor{flex:1;display:flex;flex-direction:column;min-width:300px;background:var(--white);overflow:hidden}
-.panel-right{width:340px;min-width:240px;max-width:600px;background:var(--white);border-left:none;overflow-y:auto;flex-shrink:0}
-.panel-resizer{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;transition:background .15s}
-.panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
+.panel-right{width:340px;min-width:260px;background:var(--white);border-left:1px solid var(--gray-200);overflow-y:auto;flex-shrink:0}
 .panel-right::-webkit-scrollbar{width:3px}.panel-right::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:3px}
 .title-area{padding:20px 32px 0;flex-shrink:0}
 .title-input{width:100%;border:none;outline:none;font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:600;color:var(--navy);padding:0;margin-bottom:6px;line-height:1.3}.title-input::placeholder{color:var(--gray-300)}
@@ -53,67 +51,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
 .editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
-.editor-wrap .ql-editor .tp-table-wrap{display:block;width:100%;margin:16px 0;overflow-x:auto;clear:both}
-.editor-wrap .ql-editor .tp-table-wrap:hover{outline:2px solid var(--teal);outline-offset:3px;border-radius:3px;cursor:pointer}
-.editor-wrap .ql-editor .tp-table-wrap.tp-selected{outline:2px solid var(--ginger);outline-offset:3px;border-radius:3px}
-.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;font-size:.9rem;margin:0}
-.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top;min-width:80px}
-.editor-wrap .ql-editor th{background:#dbeafe;font-weight:600;color:var(--navy)}
-.editor-wrap .ql-editor tr:nth-child(even) td{background:#f9fafb}
-.editor-wrap .ql-editor table.tp-no-header th{background:none;font-weight:normal}
-.editor-wrap .ql-editor table.tp-minimal td,.editor-wrap .ql-editor table.tp-minimal th{border-color:transparent;border-bottom:1px solid var(--gray-200)}
-.editor-wrap .ql-editor table.tp-minimal th{background:none;border-bottom:2px solid var(--navy)}
-/* Table Tray — panel below the editor */
-.tbl-tray{border-top:2px solid var(--teal);background:var(--gray-50);flex-shrink:0;max-height:260px;overflow-y:auto;display:none}
-.tbl-tray.has-tables{display:block}
-.tbl-tray__head{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:1}
-.tbl-tray__title{font-size:.78rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
-.tbl-tray__hint{font-size:.72rem;color:var(--gray-400)}
-.tbl-tray__list{display:flex;flex-direction:column;gap:0}
-.tbl-tray__item{border-bottom:1px solid var(--gray-200);padding:10px 16px;display:flex;align-items:flex-start;gap:12px}
-.tbl-tray__item:last-child{border-bottom:none}
-.tbl-tray__preview{flex:1;overflow-x:auto;font-size:.8rem}
-.tbl-tray__preview table{border-collapse:collapse;min-width:200px}
-.tbl-tray__preview th{background:#dbeafe;color:var(--navy);font-weight:600;padding:5px 10px;border:1px solid #d1d5db;font-size:.78rem;white-space:nowrap}
-.tbl-tray__preview td{padding:5px 10px;border:1px solid #e5e7eb;font-size:.78rem;white-space:nowrap}
-.tbl-tray__preview tr:nth-child(even) td{background:#f9fafb}
-.tbl-tray__actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
-.tbl-tray__btn{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;border:1px solid;white-space:nowrap}
-.tbl-tray__btn--copy{background:var(--teal);color:#fff;border-color:var(--teal)}.tbl-tray__btn--copy:hover{background:#0c918c}
-.tbl-tray__btn--edit{background:var(--white);color:var(--navy);border-color:var(--gray-200)}.tbl-tray__btn--edit:hover{border-color:var(--navy)}
-.tbl-tray__btn--del{background:var(--white);color:#ef4444;border-color:#fca5a5}.tbl-tray__btn--del:hover{background:#fee2e2}
-.tbl-tray__copied{font-size:.7rem;color:var(--teal);font-weight:600;text-align:center;display:none}
-/* Table editor modal */
-.tbl-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:center;justify-content:center}
-.tbl-modal-overlay.active{display:flex}
-.tbl-modal{background:#fff;border-radius:12px;width:900px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.3);overflow:hidden}
-.tbl-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200);flex-shrink:0}
-.tbl-modal-head h3{font-size:.95rem;font-weight:700;color:var(--navy);font-family:'Playfair Display',serif}
-.tbl-modal-tabs{display:flex;gap:0;border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;margin-left:auto;margin-right:12px}
-.tbl-modal-tab{padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:var(--white);color:var(--gray-500);font-family:inherit;transition:all .15s}
-.tbl-modal-tab.active{background:var(--teal);color:#fff}
-.tbl-modal-body{flex:1;overflow:hidden;display:flex;flex-direction:column}
-.tbl-paste-area{padding:16px 20px;flex:1;display:flex;flex-direction:column;gap:10px}
-.tbl-paste-area textarea{flex:1;min-height:160px;padding:10px;border:1px solid var(--gray-200);border-radius:8px;font-size:.82rem;font-family:monospace;resize:none}
-.tbl-paste-area textarea:focus{outline:none;border-color:var(--teal)}
-.tbl-preview-wrap{overflow:auto;border:1px solid var(--gray-200);border-radius:8px;background:#fafafa;min-height:80px;max-height:280px}
-.tbl-preview-wrap table{border-collapse:collapse;width:100%;font-size:.85rem}
-.tbl-preview-wrap th{background:#dbeafe;color:var(--navy);font-weight:600;padding:7px 12px;border:1px solid #d1d5db;text-align:left}
-.tbl-preview-wrap td{padding:7px 12px;border:1px solid #e5e7eb;vertical-align:top}
-.tbl-preview-wrap tr:nth-child(even) td{background:#f9fafb}
-/* Manual builder grid */
-.tbl-builder{padding:16px 20px;flex:1;overflow:auto;display:none}
-.tbl-builder-grid{display:inline-grid;gap:1px;background:var(--gray-300);border:1px solid var(--gray-300);border-radius:4px;overflow:hidden}
-.tbl-builder-cell{background:#fff;padding:0}
-.tbl-builder-cell input{width:100%;padding:6px 8px;border:none;font-size:.82rem;font-family:inherit;min-width:90px;outline:none}
-.tbl-builder-cell input:focus{background:#f0f9ff}
-.tbl-builder-cell.is-header input{background:#dbeafe;font-weight:600}
-.tbl-builder-controls{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
-.tbl-ctrl-btn{padding:5px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-600);font-family:inherit;transition:all .15s}
-.tbl-ctrl-btn:hover{border-color:var(--teal);color:var(--teal)}
-.tbl-modal-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50);flex-shrink:0;gap:8px}
-.tbl-style-pick{display:flex;gap:6px;align-items:center;font-size:.78rem;color:var(--gray-500)}
-.tbl-style-pick select{padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-family:inherit}
+.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem}
+.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top}
+.editor-wrap .ql-editor th{background:var(--gray-100);font-weight:600;color:var(--navy)}
+.editor-wrap .ql-editor tr:nth-child(even) td{background:var(--gray-50)}
+.editor-wrap .ql-editor table:hover{outline:2px solid var(--teal);outline-offset:2px}
 .editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
@@ -284,7 +226,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="import-bar" id="editorImportBar">
         <button class="import-btn import-btn--primary" onclick="openMediaPicker('insert')">🖼 Add Media</button>
         <label class="import-btn"><input type="file" style="display:none" accept=".docx,.doc,.txt,image/*" onchange="importFile(this)">📄 Import from Word</label>
-        <button class="import-btn import-btn--primary" onclick="openTableEditor(null)" style="background:var(--navy);border-color:var(--navy)">📊 Insert Table</button>
         <span class="import-hint">Tip: Paste images directly into the editor</span>
     </div>
     <div class="editor-toolbar-area" id="editorToolbarArea">
@@ -318,17 +259,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="preview-pane" id="previewPane"></div>
 </div>
 
-<!-- TABLE TRAY — sits below editor, inside panel-editor -->
-<div class="tbl-tray" id="tblTray">
-  <div class="tbl-tray__head">
-    <div class="tbl-tray__title">📊 Table Tray <span id="tblTrayCount" style="background:var(--teal);color:#fff;border-radius:50px;padding:1px 8px;font-size:.7rem">0</span></div>
-    <div class="tbl-tray__hint">Click in the article where you want the table, then click <strong>⬆ Insert</strong></div>
-  </div>
-  <div class="tbl-tray__list" id="tblTrayList"></div>
-</div>
-</div><!-- end panel-editor -->
-<div class="panel-resizer" id="panelResizer"></div>
-<div class="panel-right" id="panelRight">
+<div class="panel-right">
     <div class="sb-box publish-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span></div>
         <div class="sb-box__body">
             <div class="publish-row"><span>📌</span><strong>Status:</strong><span id="pubStatus">Draft</span></div>
@@ -353,7 +284,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="sb-label">Meta Description <span class="char-count" id="metaDescCount">0/160</span></div>
             <textarea class="sb-textarea" id="meta_description" placeholder="SEO description" oninput="updateCharCount('meta_description','metaDescCount',160);analyzeSEO()"></textarea>
             <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div class="sb-label" style="margin:0">✨ AI Actions</div><button onclick="openPromptEditor()" title="Edit AI prompts" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--gray-400);padding:2px 6px;border-radius:4px;font-family:inherit;transition:color .15s" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--gray-400)'">⚙ Prompts</button></div>
+                <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
                 <div class="ai-helpers">
                     <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
                     <button class="ai-btn" onclick="aiAction('shortdesc')">📝 Short Description</button>
@@ -752,7 +683,6 @@ quill = new Quill('#editor', {
     }
 });
 quill.on('text-change', () => { resetAutoSave(); updateStats(); });
-quill.on('selection-change', (range) => { if (range) window._lastQuillRange = range; });
 } // end if (!C.noQuill)
 
 // ─────────────────────────────────────────────
@@ -807,22 +737,9 @@ quill.root.addEventListener('paste', function(e) {
         }
     }
 
-    // 2. HTML paste — check for tables first
+    // 2. HTML paste (Word / Google Docs / web) — bypass Quill Delta to preserve tables
     const htmlData = cbd.getData('text/html');
     if (htmlData && htmlData.trim()) {
-        const hasTable = /<table[\s>]/i.test(htmlData);
-        if (hasTable) {
-            // Route to Table Editor modal — Quill cannot handle tables natively
-            e.preventDefault();
-            showToast('📊 Table detected — opening Table Editor...');
-            setTimeout(() => {
-                document.getElementById('tblPasteInput').value = htmlData;
-                tblParsePaste(htmlData);
-                openTableEditor(null);
-            }, 50);
-            return;
-        }
-        // No table — clean and inject via Quill normally
         e.preventDefault();
         const clean = cleanWordHtml(htmlData);
         injectHtmlAtCursor(clean);
@@ -862,8 +779,17 @@ function cleanWordHtml(html) {
         // Keep: href on <a>, src/alt on <img>, colspan/rowspan on td/th
     });
 
-    // Tables are handled by the Table Editor modal — remove any that slip through
-    tmp.querySelectorAll('table').forEach(t => t.closest('table') && t.remove());
+    // Apply clean table styling directly so tables render properly in the editor
+    tmp.querySelectorAll('table').forEach(table => {
+        table.setAttribute('style', 'border-collapse:collapse;width:100%;margin:12px 0');
+    });
+    tmp.querySelectorAll('td, th').forEach(cell => {
+        const isTh = cell.tagName.toLowerCase() === 'th';
+        cell.setAttribute('style', 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;' + (isTh ? 'background:#f3f4f6;font-weight:600;' : ''));
+    });
+    tmp.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
+        cell.setAttribute('style', (cell.getAttribute('style')||'') + 'background:#f9fafb;');
+    });
 
     // Remove empty paragraphs (but NOT inside table cells)
     tmp.querySelectorAll('p, span').forEach(el => {
@@ -887,13 +813,51 @@ function cleanWordHtml(html) {
     return tmp.innerHTML;
 }
 
-// Inject non-table HTML at cursor (Word paste without tables).
-// Tables are handled separately via the Table Tray (tblAddToTray).
+// Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
 function injectHtmlAtCursor(html) {
-    const range = quill.getSelection(true);
-    const idx = range ? range.index : quill.getLength();
-    quill.clipboard.dangerouslyPasteHTML(idx, html);
-    updateStats(); analyzeSEO(); resetAutoSave(); isDirty = true;
+    const sel = window.getSelection();
+    const range = quill.getSelection();
+
+    if (!range) {
+        // No cursor — append to end
+        quill.root.innerHTML = quill.root.innerHTML + html;
+    } else {
+        // Split current content at cursor using Quill's character index
+        // Convert Quill index to DOM Range
+        const domRange = document.createRange();
+        const walker = document.createTreeWalker(quill.root, NodeFilter.SHOW_TEXT, null, false);
+        let charCount = 0, found = false;
+        let node;
+        while ((node = walker.nextNode())) {
+            const nodeLen = node.nodeValue.length;
+            if (charCount + nodeLen >= range.index) {
+                domRange.setStart(node, range.index - charCount);
+                domRange.setEnd(node, range.index - charCount);
+                found = true;
+                break;
+            }
+            charCount += nodeLen;
+        }
+
+        if (found) {
+            domRange.deleteContents();
+            const frag = document.createRange().createContextualFragment(html);
+            domRange.insertNode(frag);
+            // Move cursor to after inserted content
+            domRange.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(domRange);
+        } else {
+            // Fallback: append
+            quill.root.innerHTML = quill.root.innerHTML + html;
+        }
+    }
+
+    // Notify Quill that content changed
+    quill.update();
+    updateStats();
+    analyzeSEO();
+    resetAutoSave();
 }
 quill.root.addEventListener('drop', function(e) {
     if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
@@ -1138,7 +1102,7 @@ function removeFeatImage() {
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
     if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){const impHtml=tblDeserialise(d.html);quill.setContents([]);quill.clipboard.dangerouslyPasteHTML(0,impHtml);updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.root.innerHTML=d.html;updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
     if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
@@ -1426,7 +1390,6 @@ async function loadItem() {
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
     shortdesc:{ label: '📝 Writing short description...',  sub: 'Summarising for the description field'   },
-    spacing:  { label: '🧹 Cleaning spacing with AI...',    sub: 'Fixing whitespace and paragraph gaps'        },
     optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
     grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
     headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
@@ -1460,12 +1423,6 @@ function aiHideProgress() {
 // CLEAN SPACING — pure DOM, instant, no AI
 // ─────────────────────────────────────────────
 function cleanSpacing() {
-    // If user has set a custom spacing prompt, use AI; otherwise use fast DOM method
-    const P = getPrompts();
-    if (P.spacing && P.spacing.trim()) {
-        aiAction('spacing');
-        return;
-    }
     const html = quill.root.innerHTML;
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
@@ -1487,41 +1444,6 @@ function cleanSpacing() {
     showToast('✅ Spacing cleaned');
 }
 
-// ─────────────────────────────────────────────
-// PROMPT MANAGEMENT
-// ─────────────────────────────────────────────
-const DEFAULT_PROMPTS = {
-    shortdesc: 'Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "{name}". Return ONLY the description text, nothing else.',
-    seo:       'Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "{name}". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...',
-    optimize:  'Improve and expand the following medical content. Make it more detailed, engaging and informative. Preserve ALL existing content — do NOT remove or summarise any sections. Add depth and detail to existing points. Return ONLY the complete HTML, no explanation, no markdown fences.',
-    grammar:   'Fix grammar, spelling and improve readability in this medical content. Do NOT remove, summarise or condense any content — every paragraph, sentence, word and punctuation must be preserved. Return ONLY the complete corrected HTML, no explanation, no markdown fences.',
-    headings:  'Improve the heading structure of this medical content. Add clear H2 section headings and H3 sub-headings where appropriate. Do NOT remove, summarise or condense ANY existing content — every paragraph, sentence, word and punctuation must remain unchanged. Return ONLY the complete HTML with improved headings, no explanation, no markdown fences.',
-    spacing:   '',
-};
-function getPrompts() {
-    try { const sv = localStorage.getItem('ginger_ai_prompts'); return sv ? Object.assign({}, DEFAULT_PROMPTS, JSON.parse(sv)) : DEFAULT_PROMPTS; }
-    catch(e) { return DEFAULT_PROMPTS; }
-}
-function savePrompts(p) { try { localStorage.setItem('ginger_ai_prompts', JSON.stringify(p)); } catch(e) {} }
-function openPromptEditor() {
-    const P = getPrompts();
-    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = P[k]; });
-    document.getElementById('promptEditorModal').style.display = 'flex';
-}
-function closePromptEditor() { document.getElementById('promptEditorModal').style.display = 'none'; }
-function savePromptEdits() {
-    const p = {};
-    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); p[k] = (el&&el.value.trim()) ? el.value.trim() : DEFAULT_PROMPTS[k]; });
-    savePrompts(p); closePromptEditor(); showToast('✅ Prompts saved');
-}
-function resetPrompts() {
-    if (!confirm('Reset all prompts to defaults?')) return;
-    localStorage.removeItem('ginger_ai_prompts');
-    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = DEFAULT_PROMPTS[k]; });
-    showToast('↩️ Reset to defaults');
-}
-
-
 async function aiAction(type) {
     const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled=true);
     aiShowProgress(type);
@@ -1529,14 +1451,13 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     const fullHtml = quill.root.innerHTML;
-    const P = getPrompts();
-    if (type==='shortdesc') prompt = P.shortdesc.replace('{name}', itemName);
-    else if (type==='seo')      prompt = P.seo.replace('{name}', itemName);
-    else if (type==='optimize') prompt = P.optimize + '\n\n' + fullHtml;
-    else if (type==='grammar')  prompt = P.grammar  + '\n\n' + fullHtml;
-    else if (type==='headings') prompt = P.headings + '\n\n' + fullHtml;
-    else if (type==='spacing')  prompt = P.spacing  + '\n\n' + fullHtml;
-        try {
+    if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
+    else if (type==='seo') prompt='Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "'+itemName+'". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
+    else if (type==='shortdesc') prompt='Write a compelling short description (1–2 sentences, max 180 characters) for a medical page about "'+itemName+'". Return ONLY the description text, nothing else.';
+    else if (type==='optimize') prompt='Improve and expand the following medical content. Make it more detailed, engaging and informative. Preserve ALL existing content — do NOT remove or summarise any sections. Add depth to existing points. Return ONLY the complete HTML, no explanation, no markdown fences.\n\n'+fullHtml;
+    else if (type==='grammar') prompt='Fix grammar, spelling and improve readability in this medical content. Do NOT remove, summarise or condense any content. Return ONLY the complete corrected HTML, no explanation, no markdown fences.\n\n'+fullHtml;
+    else if (type==='headings') prompt='Improve the heading structure of this medical content. Add clear H2 section headings and H3 sub-headings where appropriate. Do NOT remove, summarise or condense ANY existing content — keep every paragraph. Return ONLY the complete HTML with improved headings, no explanation, no markdown fences.\n\n'+fullHtml;
+    try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
         const d = await r.json(); let result = d.content || '';
@@ -1555,352 +1476,12 @@ async function aiAction(type) {
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else {
-            // AI returns HTML without tables — safe to use dangerouslyPasteHTML
-            quill.setContents([]);
-            quill.clipboard.dangerouslyPasteHTML(0, result);
-            updateStats(); analyzeSEO(); showToast('✅ Content updated');
+            quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
     aiHideProgress();
     btns.forEach(b => b.disabled=false);
 }
-
-// ─────────────────────────────────────────────
-// TABLE SYSTEM — Tray-based, zero Quill API calls
-//
-// Tables are built/pasted in the modal → added to tableStore + rendered
-// in the Tray panel below the editor. User copies HTML from tray, pastes
-// into the article manually. Quill's own paste handler handles clean HTML.
-// On save: tray tables are serialised into long_description.
-// ─────────────────────────────────────────────
-let tableStore    = {};  // { tbl_1: {html, style, label} }
-let tblCounter    = 0;
-let tblEditingId  = null;
-let tblCurrentTab = 'paste';
-let tblParsedHtml = '';
-
-// ── TRAY: render all tables ──
-function tblRenderTray() {
-    const tray  = document.getElementById('tblTray');
-    const list  = document.getElementById('tblTrayList');
-    const count = document.getElementById('tblTrayCount');
-    const ids   = Object.keys(tableStore);
-    count.textContent = ids.length;
-    tray.classList.toggle('has-tables', ids.length > 0);
-    if (!ids.length) { list.innerHTML = ''; return; }
-    list.innerHTML = ids.map(tid => {
-        const t = tableStore[tid];
-        return `<div class="tbl-tray__item" id="tray_${tid}">
-            <div class="tbl-tray__preview">${t.html}</div>
-            <div class="tbl-tray__actions">
-                <button class="tbl-tray__btn tbl-tray__btn--copy" onclick="tblInsertAtCursor('${tid}')">⬆ Insert</button>
-                <div class="tbl-tray__copied" id="copied_${tid}">✅ Inserted!</div>
-                <button class="tbl-tray__btn tbl-tray__btn--edit" onclick="openTableEditor('${tid}')">✏️ Edit</button>
-                <button class="tbl-tray__btn tbl-tray__btn--del"  onclick="tblDeleteFromTray('${tid}')">🗑</button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function tblInsertAtCursor(tid) {
-    const t = tableStore[tid];
-    if (!t) return;
-    const style    = t.style ? ' ' + t.style : '';
-    // Build a contenteditable=false block — Quill treats this as an opaque atom
-    // and will NOT strip or modify its contents. Safe to insert via pure DOM.
-    const block = document.createElement('div');
-    block.className       = 'tp-table-wrap' + style;
-    block.contentEditable = 'false';
-    block.innerHTML       = t.html;
-
-    // Find insertion point using last known Quill cursor index
-    const range      = window._lastQuillRange;
-    const targetIdx  = range ? range.index : null;
-    let   anchorNode = null;
-
-    if (targetIdx !== null) {
-        // Walk quill.root children accumulating char counts to find the right block
-        let charCount = 0;
-        for (const child of quill.root.children) {
-            const len = (child.textContent || '').length + 1; // +1 for block newline
-            if (charCount + len > targetIdx) { anchorNode = child; break; }
-            charCount += len;
-        }
-    }
-
-    if (anchorNode) {
-        anchorNode.insertAdjacentElement('afterend', block);
-    } else {
-        quill.root.appendChild(block);
-    }
-
-    // Insert an empty paragraph after the block so cursor can continue
-    const p = document.createElement('p');
-    p.innerHTML = '<br>';
-    block.insertAdjacentElement('afterend', p);
-
-    // Move cursor to after the block — use native selection, no Quill API
-    const sel = window.getSelection();
-    const r   = document.createRange();
-    r.setStart(p, 0); r.collapse(true);
-    sel.removeAllRanges(); sel.addRange(r);
-    quill.root.focus();
-
-    // Show feedback
-    const el = document.getElementById('copied_' + tid);
-    if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
-    showToast('✅ Table inserted');
-    resetAutoSave(); isDirty = true;
-}
-
-function tblDeleteFromTray(tid) {
-    if (!confirm('Remove this table from tray?')) return;
-    delete tableStore[tid];
-    tblRenderTray();
-    resetAutoSave(); isDirty = true;
-}
-
-// ── MODAL: open/close ──
-function openTableEditor(placeholderId) {
-    tblEditingId  = placeholderId;
-    tblParsedHtml = '';
-    const isEdit  = placeholderId && tableStore[placeholderId];
-    document.getElementById('tblModalTitle').textContent    = isEdit ? '📊 Edit Table' : '📊 Build Table';
-    document.getElementById('tblInsertBtn').textContent     = isEdit ? '💾 Update Table' : '📊 Add to Tray';
-    document.getElementById('tblInsertBtn').disabled        = !isEdit;
-    document.getElementById('tblStyleSelect').value        = isEdit ? (tableStore[placeholderId].style || '') : '';
-    if (isEdit) {
-        document.getElementById('tblPasteInput').value = tableStore[placeholderId].html;
-        tblParsePasteHtml(tableStore[placeholderId].html);
-        tblSwitchTab('paste');
-    } else {
-        document.getElementById('tblPasteInput').value = '';
-        document.getElementById('tblPreview').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-300);font-size:.85rem">Paste a table above to preview it here</div>';
-        tblSwitchTab('paste');
-        tblRebuildGrid();
-    }
-    document.getElementById('tblModalOverlay').classList.add('active');
-    setTimeout(() => document.getElementById('tblPasteInput').focus(), 80);
-}
-
-function closeTblModal() {
-    document.getElementById('tblModalOverlay').classList.remove('active');
-    tblEditingId  = null;
-    tblParsedHtml = '';
-}
-
-function tblSwitchTab(tab) {
-    tblCurrentTab = tab;
-    document.getElementById('tblTabPaste').classList.toggle('active', tab === 'paste');
-    document.getElementById('tblTabBuild').classList.toggle('active', tab === 'build');
-    document.getElementById('tblPasteArea').style.display   = tab === 'paste' ? 'flex' : 'none';
-    document.getElementById('tblBuilderArea').style.display = tab === 'build' ? 'block' : 'none';
-    if (tab === 'build') { tblRebuildGrid(); tblBuildRefreshInsertBtn(); }
-}
-
-// ── PASTE TAB ──
-function tblParsePaste(raw) {
-    if (!raw || !raw.trim()) {
-        tblParsedHtml = '';
-        document.getElementById('tblPreview').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-300);font-size:.85rem">Paste a table above to preview it here</div>';
-        document.getElementById('tblInsertBtn').disabled = true;
-        return;
-    }
-    if (/<table[\s>]/i.test(raw)) { tblParsePasteHtml(raw); return; }
-    const sep  = raw.includes('\t') ? '\t' : ',';
-    const rows = raw.trim().split('\n').map(r => r.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
-    if (rows.length && rows[0].length) { tblParseTsv(rows); return; }
-    tblParsedHtml = '';
-    document.getElementById('tblInsertBtn').disabled = true;
-}
-
-function tblParsePasteHtml(html) {
-    const tmp   = document.createElement('div');
-    tmp.innerHTML = html;
-    const table = tmp.querySelector('table');
-    if (!table) { tblParsedHtml = ''; document.getElementById('tblInsertBtn').disabled = true; return; }
-    table.removeAttribute('style'); table.removeAttribute('width');
-    table.removeAttribute('border'); table.removeAttribute('cellpadding'); table.removeAttribute('cellspacing');
-    table.querySelectorAll('*').forEach(el => {
-        el.removeAttribute('style'); el.removeAttribute('width'); el.removeAttribute('bgcolor');
-        el.removeAttribute('valign'); el.removeAttribute('lang');
-    });
-    tblParsedHtml = table.outerHTML;
-    document.getElementById('tblPreview').innerHTML = tblParsedHtml;
-    document.getElementById('tblInsertBtn').disabled = false;
-}
-
-function tblParseTsv(rows) {
-    let html = '<table><thead><tr>';
-    rows[0].forEach(c => { html += '<th>' + tblEsc(c) + '</th>'; });
-    html += '</tr></thead><tbody>';
-    for (let i = 1; i < rows.length; i++) {
-        if (rows[i].every(c => !c)) continue;
-        html += '<tr>';
-        rows[i].forEach(c => { html += '<td>' + tblEsc(c) + '</td>'; });
-        html += '</tr>';
-    }
-    html += '</tbody></table>';
-    tblParsedHtml = html;
-    document.getElementById('tblPreview').innerHTML = html;
-    document.getElementById('tblInsertBtn').disabled = false;
-}
-function tblEsc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-// ── BUILD TAB ──
-function tblRebuildGrid() {
-    const cols   = parseInt(document.getElementById('tblBuildCols').value) || 4;
-    const rows   = parseInt(document.getElementById('tblBuildRows').value) || 4;
-    const hasHdr = document.getElementById('tblHasHeader').checked;
-    const grid   = document.getElementById('tblBuilderGrid');
-    grid.style.gridTemplateColumns = 'repeat(' + cols + ', auto)';
-    grid.innerHTML = '';
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            const cell = document.createElement('div');
-            cell.className = 'tbl-builder-cell' + (r === 0 && hasHdr ? ' is-header' : '');
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.placeholder = (r === 0 && hasHdr) ? 'Column ' + (c+1) : '';
-            inp.dataset.r = r; inp.dataset.c = c;
-            inp.addEventListener('keydown', tblBuildNavKeys);
-            inp.addEventListener('input', tblBuildRefreshInsertBtn);
-            cell.appendChild(inp);
-            grid.appendChild(cell);
-        }
-    }
-    tblBuildRefreshInsertBtn();
-}
-
-function tblBuildNavKeys(e) {
-    const cols = parseInt(document.getElementById('tblBuildCols').value) || 4;
-    const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
-    let nr = r, nc = c;
-    if (e.key === 'Tab' && !e.shiftKey)  { e.preventDefault(); nc = c+1 >= cols ? (nr=r+1, 0)     : c+1; }
-    if (e.key === 'Tab' &&  e.shiftKey)  { e.preventDefault(); nc = c-1 < 0    ? (nr=r-1, cols-1) : c-1; }
-    if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); nr = r+1; nc = c; }
-    if (e.key === 'ArrowRight' && e.target.selectionStart === e.target.value.length) nc = c+1;
-    if (e.key === 'ArrowLeft'  && e.target.selectionStart === 0)                     nc = c-1;
-    if (nr !== r || nc !== c) { const nx = document.querySelector('[data-r="'+nr+'"][data-c="'+nc+'"]'); if (nx) nx.focus(); }
-}
-
-function tblAddBuildRow() { const s=document.getElementById('tblBuildRows'); s.value=Math.min(20,parseInt(s.value)+1); tblRebuildGrid(); }
-function tblDelBuildRow() { const s=document.getElementById('tblBuildRows'); s.value=Math.max(1, parseInt(s.value)-1); tblRebuildGrid(); }
-function tblAddBuildCol() { const s=document.getElementById('tblBuildCols'); s.value=Math.min(12,parseInt(s.value)+1); tblRebuildGrid(); }
-function tblDelBuildCol() { const s=document.getElementById('tblBuildCols'); s.value=Math.max(1, parseInt(s.value)-1); tblRebuildGrid(); }
-
-function tblBuildRefreshInsertBtn() {
-    const has = Array.from(document.querySelectorAll('.tbl-builder-cell input')).some(i => i.value.trim());
-    document.getElementById('tblInsertBtn').disabled = !has;
-}
-
-function tblBuildToHtml() {
-    const cols   = parseInt(document.getElementById('tblBuildCols').value) || 4;
-    const rows   = parseInt(document.getElementById('tblBuildRows').value) || 4;
-    const hasHdr = document.getElementById('tblHasHeader').checked;
-    let html = '<table>';
-    for (let r = 0; r < rows; r++) {
-        const tag = (r === 0 && hasHdr) ? 'th' : 'td';
-        if      (r === 0 && hasHdr)  html += '<thead><tr>';
-        else if (r === 1 && hasHdr)  html += '<tbody><tr>';
-        else if (r === 0 && !hasHdr) html += '<tbody><tr>';
-        else                          html += '<tr>';
-        for (let c = 0; c < cols; c++) {
-            const inp = document.querySelector('[data-r="'+r+'"][data-c="'+c+'"]');
-            html += '<' + tag + '>' + tblEsc(inp ? inp.value : '') + '</' + tag + '>';
-        }
-        html += (r === 0 && hasHdr) ? '</tr></thead>' : '</tr>';
-    }
-    html += (hasHdr ? '</tbody>' : '') + '</table>';
-    return html;
-}
-
-// ── ADD / UPDATE in tray ──
-function tblAddToTray() {
-    const tableHtml = tblCurrentTab === 'build' ? tblBuildToHtml() : tblParsedHtml;
-    if (!tableHtml) return;
-    const style = document.getElementById('tblStyleSelect').value;
-
-    if (tblEditingId && tableStore[tblEditingId]) {
-        tableStore[tblEditingId] = { html: tableHtml, style };
-        showToast('✅ Table updated in tray');
-    } else {
-        tblCounter++;
-        const tid = 'tbl_' + tblCounter;
-        tableStore[tid] = { html: tableHtml, style };
-        showToast('✅ Table ready — click in the article where you want it, then click ⬆ Insert');
-    }
-    closeTblModal();
-    tblRenderTray();
-    resetAutoSave(); isDirty = true;
-    // Scroll tray into view so user sees it
-    setTimeout(() => document.getElementById('tblTray').scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
-}
-
-// ── Serialise for save: append all tray tables at end of content ──
-function tblSerialise(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    // Remove any existing serialised tables (prevent duplication on re-save)
-    tmp.querySelectorAll('.tp-table-wrap[data-tid]').forEach(el => el.remove());
-    // Append each table from tray
-    Object.entries(tableStore).forEach(([tid, t]) => {
-        if (!t.html) return;
-        const wrap = document.createElement('div');
-        wrap.className = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
-        wrap.dataset.tid = tid;
-        wrap.innerHTML = t.html;
-        tmp.appendChild(wrap);
-    });
-    return tmp.innerHTML;
-}
-
-// ── Deserialise on load: extract tp-table-wrap[data-tid] into tray ──
-function tblDeserialise(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    tmp.querySelectorAll('.tp-table-wrap').forEach(wrap => {
-        const table = wrap.querySelector('table');
-        if (!table) { wrap.remove(); return; }
-        tblCounter++;
-        const tid   = wrap.dataset.tid || ('tbl_' + tblCounter);
-        const style = wrap.className.replace('tp-table-wrap','').trim();
-        tableStore[tid] = { html: table.outerHTML, style };
-        wrap.remove(); // remove from article — it lives in tray now
-    });
-    tblRenderTray();
-    return tmp.innerHTML;
-}
-
-// ── Patch saveItem ──
-const _origSaveItem = saveItem;
-window.saveItem = async function(status) {
-    const realHtml  = quill.root.innerHTML;
-    const serialised = tblSerialise(realHtml);
-    Object.defineProperty(quill.root, 'innerHTML', {
-        get() { return serialised; }, configurable: true
-    });
-    try {
-        await _origSaveItem(status);
-    } finally {
-        Object.defineProperty(quill.root, 'innerHTML', {
-            get() { return Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').get.call(this); },
-            set(v) { Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').set.call(this, v); },
-            configurable: true
-        });
-    }
-};
-
-// ── Patch loadItem ──
-const _origLoadItem = loadItem;
-window.loadItem = async function() {
-    await _origLoadItem();
-    const current = quill.root.innerHTML;
-    if (current.includes('tp-table-wrap')) {
-        quill.root.innerHTML = tblDeserialise(current);
-    }
-};
-
 
 // ─────────────────────────────────────────────
 // KEYBOARD SHORTCUTS
@@ -2383,117 +1964,4 @@ document.addEventListener('change', function(e) {
     }
 });
 </script>
-
-<!-- TABLE EDITOR MODAL -->
-<div class="tbl-modal-overlay" id="tblModalOverlay" onclick="if(event.target===this)closeTblModal()">
-<div class="tbl-modal">
-  <div class="tbl-modal-head">
-    <h3 id="tblModalTitle">📊 Insert Table</h3>
-    <div class="tbl-modal-tabs">
-      <button class="tbl-modal-tab active" id="tblTabPaste"   onclick="tblSwitchTab('paste')">Paste / Import</button>
-      <button class="tbl-modal-tab"        id="tblTabBuild"   onclick="tblSwitchTab('build')">Build Manually</button>
-    </div>
-    <button onclick="closeTblModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px;line-height:1">✕</button>
-  </div>
-  <div class="tbl-modal-body">
-    <!-- PASTE TAB -->
-    <div class="tbl-paste-area" id="tblPasteArea">
-      <div style="font-size:.8rem;color:var(--gray-500)">Paste a table from <strong>Word, Excel, Google Sheets, or any website</strong>. Or paste raw HTML. Preview updates automatically.</div>
-      <textarea id="tblPasteInput" placeholder="Paste table here (Ctrl+V)..." oninput="tblParsePaste(this.value)" onpaste="setTimeout(()=>tblParsePaste(this.value),50)"></textarea>
-      <div style="font-size:.75rem;font-weight:600;color:var(--gray-500);margin-bottom:4px">Preview</div>
-      <div class="tbl-preview-wrap" id="tblPreview"><div style="padding:20px;text-align:center;color:var(--gray-300);font-size:.85rem">Paste a table above to preview it here</div></div>
-    </div>
-    <!-- BUILD TAB -->
-    <div class="tbl-builder" id="tblBuilderArea">
-      <div class="tbl-builder-controls">
-        <span style="font-size:.78rem;font-weight:600;color:var(--gray-600)">Size:</span>
-        <select id="tblBuildCols" onchange="tblRebuildGrid()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-family:inherit">
-          <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
-        <span style="font-size:.78rem;color:var(--gray-400)">cols ×</span>
-        <select id="tblBuildRows" onchange="tblRebuildGrid()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:.78rem;font-family:inherit">
-          <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option><option>10</option>
-        </select>
-        <span style="font-size:.78rem;color:var(--gray-400)">rows</span>
-        <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--gray-600);margin-left:8px"><input type="checkbox" id="tblHasHeader" checked onchange="tblRebuildGrid()"> Header row</label>
-        <button class="tbl-ctrl-btn" onclick="tblAddBuildRow()">+ Row</button>
-        <button class="tbl-ctrl-btn" onclick="tblAddBuildCol()">+ Col</button>
-        <button class="tbl-ctrl-btn" onclick="tblDelBuildRow()" style="color:#ef4444;border-color:#fca5a5">- Row</button>
-        <button class="tbl-ctrl-btn" onclick="tblDelBuildCol()" style="color:#ef4444;border-color:#fca5a5">- Col</button>
-      </div>
-      <div class="tbl-builder-grid" id="tblBuilderGrid"></div>
-    </div>
-  </div>
-  <div class="tbl-modal-foot">
-    <div class="tbl-style-pick">
-      <span>Style:</span>
-      <select id="tblStyleSelect">
-        <option value="">Default (striped header)</option>
-        <option value="tp-minimal">Minimal (clean lines)</option>
-        <option value="tp-no-header">No header style</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="closeTblModal()" style="padding:7px 16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray-600)">Cancel</button>
-      <button id="tblInsertBtn" onclick="tblAddToTray()" disabled style="padding:7px 20px;background:var(--teal);border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;color:#fff">📊 Add to Tray</button>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- PROMPT EDITOR MODAL -->
-<div id="promptEditorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:12px;width:660px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.3);display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--gray-200);flex-shrink:0">
-      <div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--navy)">⚙ Edit AI Prompts</div>
-        <div style="font-size:.75rem;color:var(--gray-400);margin-top:3px">Saved in this browser. Use <code style="background:var(--gray-100);padding:1px 5px;border-radius:3px">{name}</code> for the page title.</div>
-      </div>
-      <button onclick="closePromptEditor()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);line-height:1;padding:4px">✕</button>
-    </div>
-    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📝 Short Description</div><textarea id="pe_shortdesc" style="width:100%;height:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🏷 Auto SEO</div><textarea id="pe_seo" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🎯 Optimize</div><textarea id="pe_optimize" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">✏ Grammar</div><textarea id="pe_grammar" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📑 Headings</div><textarea id="pe_headings" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
-      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🧹 Clean Spacing <span style="font-weight:400;text-transform:none;font-size:.7rem;color:var(--gray-400)">(leave empty for instant DOM mode; add a prompt to use AI instead)</span></div><textarea id="pe_spacing" style="width:100%;height:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box" placeholder="Leave empty to use fast DOM cleanup (recommended)&#10;Or enter a prompt to use AI for spacing..."></textarea></div>
-    </div>
-    <div style="display:flex;gap:8px;padding:16px 24px;border-top:1px solid var(--gray-200);flex-shrink:0">
-      <button onclick="savePromptEdits()" style="flex:1;padding:9px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit">💾 Save Prompts</button>
-      <button onclick="resetPrompts()" style="padding:9px 14px;background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200);border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit">↩️ Defaults</button>
-      <button onclick="closePromptEditor()" style="padding:9px 14px;background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200);border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// Panel resizer
-(function initPanelResizer() {
-    const resizer = document.getElementById('panelResizer');
-    const right   = document.getElementById('panelRight');
-    if (!resizer || !right) return;
-    const saved = localStorage.getItem('ginger_panel_right_width');
-    if (saved) right.style.width = saved + 'px';
-    let startX, startW;
-    resizer.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        startX = e.clientX; startW = right.offsetWidth;
-        resizer.classList.add('dragging');
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    });
-    function onMove(e) {
-        const w = Math.min(600, Math.max(240, startW + (startX - e.clientX)));
-        right.style.width = w + 'px';
-    }
-    function onUp() {
-        resizer.classList.remove('dragging');
-        localStorage.setItem('ginger_panel_right_width', right.offsetWidth);
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-    }
-})();
-</script>
-
 </body></html>
