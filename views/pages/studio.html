@@ -58,13 +58,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-editor th{background:var(--gray-100);font-weight:600;color:var(--navy)}
 .editor-wrap .ql-editor tr:nth-child(even) td{background:var(--gray-50)}
 .editor-wrap .ql-editor table:hover{outline:2px solid var(--teal);outline-offset:2px}
-/* Imported table styles (.ginger-table class added by docx import) */
-.editor-wrap .ql-editor .table-wrap{overflow-x:auto;margin:16px 0;border-radius:8px}
-.editor-wrap .ql-editor .ginger-table{border-collapse:collapse;width:100%;font-size:.9rem;border:1.5px solid var(--gray-200);border-radius:8px;overflow:hidden}
-.editor-wrap .ql-editor .ginger-table td,.editor-wrap .ql-editor .ginger-table th{border:1px solid var(--gray-200);padding:10px 14px;text-align:left;vertical-align:top}
-.editor-wrap .ql-editor .ginger-table th{background:var(--navy);color:#fff;font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
-.editor-wrap .ql-editor .ginger-table tr:nth-child(even) td{background:var(--gray-50)}
-.editor-wrap .ql-editor .ginger-table tr:hover td{background:#e6f7f7}
 .editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
@@ -455,7 +448,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-// CPT_CONFIG is injected by the server as a <script> block before this file loads.
+// CPT_CONFIG is injected by the server as a SCRIPT block before this file loads.
 // Shape: { cpt, api, editBase, listUrl, viewBase, label, placeholder, permalinkPrefix,
 //          fieldRows: [ [{id,label,type,placeholder,width,flex,source,onchange,default},...], ... ],
 //          permalinkDynamic: { selectId, withSlug, withoutSlug },
@@ -1126,7 +1119,7 @@ function removeFeatImage() {
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
     if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.setContents([]);quill.clipboard.dangerouslyPasteHTML(0,d.html);await fixPastedImages();updateStats();analyzeSEO();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.root.innerHTML=d.html;updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
     if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
