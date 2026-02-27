@@ -1119,7 +1119,12 @@ function removeFeatImage() {
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
     if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.setContents([]);quill.clipboard.dangerouslyPasteHTML(0,d.html);updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){
+    // Use direct DOM injection — dangerouslyPasteHTML strips <table> tags (Quill 1.3.7 has no table support)
+    quill.root.innerHTML = d.html;
+    quill.update();
+    updateStats();analyzeSEO();await fixPastedImages();
+}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
     if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{const html=e.target.result.replace(/\n/g,'<br>');quill.clipboard.dangerouslyPasteHTML(quill.getLength(),html);updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
@@ -1296,7 +1301,7 @@ async function loadItem() {
         const item=await r.json();
         const _name = document.getElementById('name'); if(_name) _name.value = item.name||item.title||'';
         const _slug = document.getElementById('slug'); if(_slug) { _slug.value = item.slug||''; slugEdited=true; }
-        quill.root.innerHTML=item.long_description||'';
+        quill.root.innerHTML=item.long_description||''; quill.update();
         const _stat = document.getElementById('status'); if(_stat) _stat.value = item.status||'draft';
         const _feat = document.getElementById('is_featured'); if(_feat) _feat.value = item.is_featured?'true':'false';
         const _do=document.getElementById('display_order'); if(_do) _do.value=item.display_order||0;
@@ -1373,7 +1378,7 @@ async function loadItem() {
                 airportPhotos = Array.isArray(item.photos) ? [...item.photos] : [];
                 renderAirportGallery();
                 // Restore arrival_instructions into Quill
-                if (item.arrival_instructions) { quill.setContents([]); quill.clipboard.dangerouslyPasteHTML(0, item.arrival_instructions); }
+                if (item.arrival_instructions) { quill.root.innerHTML = item.arrival_instructions; quill.update(); }
                 // Country select is already populated at boot — just set value, then load cities
                 setTimeout(() => {
                     const countrySel = document.getElementById('country');
@@ -1536,7 +1541,8 @@ async function aiAction(type) {
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else {
-            quill.setContents([]); quill.clipboard.dangerouslyPasteHTML(0, result); updateStats(); analyzeSEO(); showToast('✅ Content updated');
+            // Direct DOM injection — dangerouslyPasteHTML strips <table> tags (Quill 1.3.7)
+            quill.root.innerHTML = result; quill.update(); updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
     aiHideProgress();
