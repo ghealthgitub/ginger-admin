@@ -861,28 +861,43 @@ function cleanWordHtml(html) {
 
 // Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
 function injectHtmlAtCursor(html) {
-    // Pause Quill's MutationObserver so tables survive injection
     const obs = quill.scroll && quill.scroll.observer;
     if (obs) obs.disconnect();
 
     try {
-        quill.root.focus();
+        // Save selection BEFORE focus() — focus() resets the cursor
         const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).commonAncestorContainer)) {
-            const range = sel.getRangeAt(0);
-            range.deleteContents();
-            const frag = range.createContextualFragment(html);
-            const lastNode = frag.lastChild;
-            range.insertNode(frag);
-            if (lastNode) {
+        const savedRange = (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).commonAncestorContainer))
+            ? sel.getRangeAt(0).cloneRange()
+            : null;
+
+        // Parse HTML safely via a temp container (avoids createContextualFragment node-ordering bugs)
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+
+        if (savedRange) {
+            savedRange.deleteContents();
+            // Insert nodes one by one, track the last inserted for cursor placement
+            let lastInserted = null;
+            const nodes = Array.from(tmp.childNodes);
+            nodes.forEach(node => {
+                savedRange.insertNode(node);
+                savedRange.setStartAfter(node);
+                lastInserted = node;
+            });
+            // Place cursor after last inserted node
+            if (lastInserted) {
                 const after = document.createRange();
-                after.setStartAfter(lastNode);
-                after.collapse(true);
-                sel.removeAllRanges();
-                sel.addRange(after);
+                try {
+                    after.setStartAfter(lastInserted);
+                    after.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(after);
+                } catch(e) { /* node detached - ignore */ }
             }
         } else {
-            quill.root.innerHTML += html;
+            // No cursor in editor — append to end
+            Array.from(tmp.childNodes).forEach(node => quill.root.appendChild(node));
         }
     } finally {
         if (obs) obs.observe(quill.root, { childList:true, subtree:true, characterData:true, attributes:true });
@@ -1600,16 +1615,20 @@ function showTableToolbar(wrap) {
 
 function positionTableToolbar(wrap) {
     if (!wrap) return;
+    // Use getBoundingClientRect (viewport coords) + position:fixed — works regardless of scroll container
     const r = wrap.getBoundingClientRect();
     const tb = tableToolbar;
+    tb.style.position = 'fixed';
     tb.style.display = 'flex';
     const tbH = tb.offsetHeight || 36;
-    let top = r.top - tbH - 8 + window.scrollY;
-    if (top < 8) top = r.bottom + 8 + window.scrollY;
-    let left = r.left + window.scrollX;
-    const maxLeft = window.innerWidth - (tb.offsetWidth || 400) - 8;
-    if (left > maxLeft) left = maxLeft;
-    if (left < 8) left = 8;
+    const tbW = tb.offsetWidth  || 480;
+    // Try to show above the table; if not enough room show below
+    let top = r.top - tbH - 8;
+    if (top < 8) top = r.bottom + 8;
+    // Clamp to viewport
+    top = Math.max(8, Math.min(top, window.innerHeight - tbH - 8));
+    let left = r.left;
+    left = Math.max(8, Math.min(left, window.innerWidth - tbW - 8));
     tb.style.top  = top  + 'px';
     tb.style.left = left + 'px';
 }
@@ -1627,8 +1646,14 @@ quill.root.addEventListener('click', function(e) {
     else hideTableToolbar();
 });
 
-// Reposition toolbar on scroll
-quill.root.closest('.panel-editor').addEventListener('scroll', function() {
+// Reposition toolbar on scroll — listen on the editor-wrap (actual scroll container) + window
+const _editorScrollEl = quill.root.closest('.editor-wrap') || quill.root.parentElement;
+if (_editorScrollEl) {
+    _editorScrollEl.addEventListener('scroll', function() {
+        if (activeTable) positionTableToolbar(activeTable.closest('.tp-table-wrap'));
+    });
+}
+window.addEventListener('scroll', function() {
     if (activeTable) positionTableToolbar(activeTable.closest('.tp-table-wrap'));
 });
 
