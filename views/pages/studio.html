@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title id="pageTitle">Studio | Ginger Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<!-- CKEditor 5 replaces Quill — styles handled via .ck-* CSS below -->
 <style>
 :root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -44,26 +44,31 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-tab{padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray-500);background:var(--white);transition:all .15s}
 .editor-tab.active{background:var(--teal);color:#fff}
 .editor-stats{font-size:.75rem;color:var(--gray-400)}
-.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
-.editor-wrap .ql-toolbar{border:none;border-bottom:1px solid var(--gray-100);padding:6px 32px;flex-shrink:0}
-.editor-wrap .ql-container{border:none;flex:1;overflow:auto;font-family:'DM Sans',sans-serif;font-size:15px}
-.editor-wrap .ql-editor{padding:20px 32px;min-height:100%}
-.editor-wrap .ql-editor h1,.editor-wrap .ql-editor h2,.editor-wrap .ql-editor h3,.editor-wrap .ql-editor h4{margin-bottom:0.75em}
-.editor-wrap .ql-editor.ql-blank::before{left:32px;color:var(--gray-300)}
-.preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
-.preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
-.editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
-.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem}
-.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top}
-.editor-wrap .ql-editor th{background:var(--gray-100);font-weight:600;color:var(--navy)}
-.editor-wrap .ql-editor tr:nth-child(even) td{background:var(--gray-50)}
-.editor-wrap .ql-editor table:hover{outline:2px solid var(--teal);outline-offset:2px}
-.editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
+.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:0}
+/* CKEditor 5 editor styles */
+.editor-wrap .ck-editor{display:flex;flex-direction:column;flex:1;overflow:hidden;border:none!important;box-shadow:none!important}
+.editor-wrap .ck-editor__top .ck-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;padding:4px 28px!important;background:var(--white)!important;box-shadow:none!important;flex-shrink:0}
+.editor-wrap .ck-editor__main{flex:1;overflow:auto;min-height:0}
+.editor-wrap .ck-editor__editable{border:none!important;box-shadow:none!important;padding:20px 32px!important;min-height:450px;font-family:'DM Sans',sans-serif!important;font-size:15px!important;line-height:1.7!important}
+.editor-wrap .ck-editor__editable:focus{border:none!important;box-shadow:none!important;outline:none!important}
+.editor-wrap .ck.ck-editor__editable_inline{border:none!important}
+.editor-wrap .ck-content h2,.editor-wrap .ck-content h3,.editor-wrap .ck-content h4{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
+.editor-wrap .ck-content img{max-width:100%;border-radius:4px}
+.editor-wrap .ck-content p{margin:0 0 .8em}
+/* Table styles in CKEditor */
+.editor-wrap .ck-content .table{overflow-x:auto;margin:16px 0}
+.editor-wrap .ck-content .table table{border-collapse:collapse;width:100%}
+.editor-wrap .ck-content .table td,.editor-wrap .ck-content .table th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top;min-width:80px}
+.editor-wrap .ck-content .table th{background:var(--navy);color:#fff;font-weight:600}
+.editor-wrap .ck-content .table tr:nth-child(even) td{background:var(--gray-50)}
+.editor-wrap .ck-content figure.image{margin:12px 0;text-align:center}
+.editor-wrap .ck-content figure.image img{max-width:100%;border-radius:4px}
+.editor-wrap .ck-content img.img-align-left,.editor-wrap .ck-content figure.image.img-align-left{float:left;margin:0 16px 12px 0}
+.editor-wrap .ck-content img.img-align-right,.editor-wrap .ck-content figure.image.img-align-right{float:right;margin:0 0 12px 16px}
+.editor-wrap .ck-content img.img-align-center,.editor-wrap .ck-content figure.image.img-align-center{display:block;margin:12px auto;float:none;text-align:center}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
-.editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
-.editor-wrap .ql-editor img.img-align-right{float:right;margin:0 0 12px 16px}
-.editor-wrap .ql-editor img.img-align-center{display:block;margin:12px auto;float:none}
-.editor-wrap .ql-editor img.img-align-none{float:none;display:inline;margin:0}
+/* Hide CKEditor powered-by badge */
+.ck.ck-powered-by{display:none!important}
 .sb-box{border-bottom:1px solid var(--gray-100)}
 .sb-box.collapsed .sb-box__body{display:none}
 .sb-box__head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none}
@@ -162,7 +167,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .img-edit-actions .btn-remove{color:#EF4444;border-color:#FCA5A5}.img-edit-actions .btn-remove:hover{background:#FEE2E2;border-color:#EF4444;color:#DC2626}
 .img-edit-actions .btn-done{background:var(--teal);color:#fff;border-color:var(--teal);margin-left:auto}.img-edit-actions .btn-done:hover{background:#0c918c}
 .autosave-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:8px 20px;border-radius:8px;font-size:.8rem;font-weight:600;display:none;z-index:100;box-shadow:0 4px 15px rgba(0,0,0,.2)}
-.ai-progress{position:absolute;inset:0;background:rgba(255,255,255,.92);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:4px}
+.ai-progress{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.97);z-index:200;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:12px;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,.2);min-width:280px}
 .ai-progress.active{display:flex}
 .ai-progress__label{font-size:.9rem;font-weight:600;color:var(--navy)}
 .ai-progress__bar-wrap{width:260px;height:6px;background:var(--gray-200);border-radius:50px;overflow:hidden}
@@ -446,7 +451,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="img-size-badge" id="imgSizeBadge"></div>
 <div class="autosave-toast" id="autoToast"></div>
 
-<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
 <script>
 // CPT_CONFIG is injected by the server as a SCRIPT block before this file loads.
 // Shape: { cpt, api, editBase, listUrl, viewBase, label, placeholder, permalinkPrefix,
@@ -676,7 +681,28 @@ function buildViewUrl(itemSlug) {
 // ─────────────────────────────────────────────
 // QUILL
 // ─────────────────────────────────────────────
+// ── CKEditor Custom Image Upload Adapter ─────────────────────
+class CustomImageUploadAdapter {
+    constructor(loader) { this.loader = loader; }
+    async upload() {
+        const file = await this.loader.file;
+        const fd = new FormData(); fd.append('file', file);
+        const r = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (!r.ok) throw new Error('Upload failed ' + r.status);
+        const d = await r.json();
+        return { default: (window.ADMIN_URL || '') + d.url };
+    }
+    abort() {}
+}
+function CustomImageUploadAdapterPlugin(editor) {
+    editor.plugins.get('FileRepository').createUploadAdapter = loader => new CustomImageUploadAdapter(loader);
+}
+
+// ── EDITOR LAYER ── CKEditor 5 with quill-compatible shim ────
+// window._ck = CKEditor instance
+// quill = compatibility shim so existing code works unchanged
 let quill;
+
 if (C.noQuill) {
     document.getElementById('editorWrap').style.display = 'none';
     document.getElementById('videoPreviewPanel').style.display = 'flex';
@@ -684,89 +710,119 @@ if (C.noQuill) {
     const ib = document.getElementById('editorImportBar');
     if (tb) tb.style.display = 'none';
     if (ib) ib.style.display = 'none';
-    quill = { root:{ innerHTML:'', addEventListener:()=>{}, querySelectorAll:()=>[], querySelector:()=>null, classList:{} },
-              getLength:()=>0, on:()=>{}, getSelection:()=>null, getText:()=>'',
-              insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{} };
+    // Null shim for noQuill CPTs (video)
+    quill = {
+        root: { innerHTML:'', addEventListener:()=>{}, querySelectorAll:()=>[], querySelector:()=>null, classList:{add:()=>{},remove:()=>{},toggle:()=>{}} },
+        getLength:()=>0, on:()=>{}, getSelection:()=>null, getText:()=>'',
+        insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{}, setContents:()=>{},
+        update:()=>{}, history:{cutoff:()=>{}},
+        clipboard:{dangerouslyPasteHTML:()=>{}}
+    };
+    _afterEditorReady();
 } else {
-quill = new Quill('#editor', {
-    theme: 'snow',
-    placeholder: 'Write content...',
-    modules: {
+    ClassicEditor.create(document.getElementById('editor'), {
         toolbar: {
-            container: [[{header:[1,2,3,false]}],['bold','italic','underline','strike'],[{color:[]},{background:[]}],[{list:'ordered'},{list:'bullet'}],['blockquote','code-block'],['link','image'],[{align:[]}],['clean']],
-            handlers: { image: function() { openMediaPicker('insert'); } }
+            items: [
+                'heading', '|',
+                'bold', 'italic', 'underline', 'strikethrough', '|',
+                'fontColor', 'fontBackgroundColor', '|',
+                'bulletedList', 'numberedList', '|',
+                'outdent', 'indent', '|',
+                'blockQuote', 'insertTable', '|',
+                'link', 'uploadImage', '|',
+                'alignment', '|',
+                'undo', 'redo'
+            ]
         },
-        clipboard: { matchVisual: false }
+        heading: {
+            options: [
+                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
+                { model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' },
+            ]
+        },
+        table: {
+            contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties']
+        },
+        image: {
+            toolbar: ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block', 'imageStyle:side'],
+        },
+        placeholder: 'Write content here...',
+        extraPlugins: [CustomImageUploadAdapterPlugin]
+    }).then(editor => {
+        window._ck = editor;
+        const editorEl = editor.editing.view.getDomRoot();
+        // Build quill compatibility shim
+        quill = {
+            root: editorEl,
+            getLength: () => editor.getData().length,
+            getText: () => editorEl.innerText || '',
+            getSelection: () => null,
+            insertEmbed: (idx, type, val) => {
+                if (type === 'image') {
+                    const html = `<figure class="image"><img src="${val}"></figure>`;
+                    const vf = editor.data.processor.toView(html);
+                    const mf = editor.data.toModel(vf);
+                    editor.model.insertContent(mf);
+                }
+            },
+            insertText: () => {},
+            setSelection: () => {},
+            setContents: () => { editor.setData(''); },
+            update: () => {},
+            history: { cutoff: () => {} },
+            clipboard: { dangerouslyPasteHTML: (idx, html) => { editor.setData(editor.getData() + html); } },
+            on: () => {}
+        };
+        editor.model.document.on('change:data', () => { resetAutoSave(); updateStats(); });
+        _afterEditorReady();
+    }).catch(err => {
+        console.error('CKEditor init error:', err);
+        // Fallback null shim if CKEditor fails
+        quill = {
+            root: document.getElementById('editor') || document.createElement('div'),
+            getLength:()=>0, getText:()=>'', getSelection:()=>null,
+            insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{}, setContents:()=>{},
+            update:()=>{}, history:{cutoff:()=>{}},
+            clipboard:{dangerouslyPasteHTML:()=>{}}
+        };
+        _afterEditorReady();
+    });
+}
+
+// Called once CKEditor is ready (or immediately for noQuill)
+function _afterEditorReady() {
+    // Wire image double-click (editor root is now available)
+    if (quill && quill.root && quill.root.addEventListener) {
+        quill.root.addEventListener('dblclick', function(e) {
+            if (e.target.tagName === 'IMG') { e.preventDefault(); openImgEdit(e.target); }
+        });
     }
-});
-quill.on('text-change', () => { resetAutoSave(); updateStats(); });
-} // end if (!C.noQuill)
+    if (editId) loadItem();
+}
+
 
 // ─────────────────────────────────────────────
 // IMAGE INTERACTION
 // ─────────────────────────────────────────────
-quill.root.addEventListener('mousedown', function(e) {
-    if (e.target.tagName !== 'IMG') return;
-    e.preventDefault(); e.stopPropagation();
-    clearImageSelection();
-    e.target.classList.add('ql-img-selected');
-    currentEditImg = e.target;
-    nativeSelectNode(e.target);
-    resizeObserver.observe(e.target);
-});
-quill.root.addEventListener('dblclick', function(e) { if (e.target.tagName === 'IMG') { e.preventDefault(); openImgEdit(e.target); } });
+// CKEditor handles click/resize/drag. We only add dblclick for image details modal.
+// NOTE: dblclick listener is attached in _afterEditorReady() once editor.root exists.
 document.addEventListener('mousedown', function(e) { if (currentEditImg && !e.target.closest('.img-edit-overlay') && e.target !== currentEditImg) clearImageSelection(); });
-quill.root.addEventListener('dragstart', function(e) { if (e.target.tagName === 'IMG') e.preventDefault(); });
+
 
 function clearImageSelection() {
-    if (currentEditImg) { currentEditImg.classList.remove('ql-img-selected'); resizeObserver.unobserve(currentEditImg); currentEditImg = null; }
-    document.getElementById('imgSizeBadge').style.display = 'none';
+    if (currentEditImg) { currentEditImg = null; }
+    const b = document.getElementById('imgSizeBadge');
+    if (b) b.style.display = 'none';
 }
-const badge = document.getElementById('imgSizeBadge');
-const resizeObserver = new ResizeObserver(entries => {
-    for (const e of entries) {
-        const img = e.target;
-        const w = Math.round(e.contentRect.width), h = Math.round(e.contentRect.height);
-        img.setAttribute('width', w); img.setAttribute('height', h);
-        badge.textContent = w + ' × ' + h;
-        const r = img.getBoundingClientRect();
-        badge.style.left = (r.left + r.width/2 - badge.offsetWidth/2) + 'px';
-        badge.style.top = (r.top - 26) + 'px';
-        badge.style.display = 'block';
-    }
-});
+// CKEditor handles image resize natively via its own UI
+const resizeObserver = { observe: ()=>{}, unobserve: ()=>{}, disconnect: ()=>{} };
 
 // ─────────────────────────────────────────────
 // IMAGE UPLOAD (paste / drop / server)
 // ─────────────────────────────────────────────
-quill.root.addEventListener('paste', function(e) {
-    const cbd = e.clipboardData || e.originalEvent.clipboardData;
-    const items = cbd.items;
-
-    // 1. Image paste — upload to server
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-            e.preventDefault();
-            uploadImageToServer(items[i].getAsFile()).then(url => {
-                if (url) { const idx = quill.getSelection(true)?.index || quill.getLength(); quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); }
-            });
-            return;
-        }
-    }
-
-    // 2. HTML paste (Word / Google Docs / web) — bypass Quill Delta to preserve tables
-    const htmlData = cbd.getData('text/html');
-    if (htmlData && htmlData.trim()) {
-        e.preventDefault();
-        const clean = cleanWordHtml(htmlData);
-        injectHtmlAtCursor(clean);
-        setTimeout(() => fixPastedImages(), 500);
-        return;
-    }
-
-    // 3. Plain text — let Quill handle it
-    setTimeout(() => fixPastedImages(), 500);
-});
+// Paste handling (including image paste) handled natively by CKEditor + custom upload adapter
 
 function cleanWordHtml(html) {
     const tmp = document.createElement('div');
@@ -830,60 +886,20 @@ function cleanWordHtml(html) {
     return tmp.innerHTML;
 }
 
-// Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
+// injectHtmlAtCursor: insert HTML at the CKEditor cursor position
 function injectHtmlAtCursor(html) {
-    const sel = window.getSelection();
-    const range = quill.getSelection();
-
-    if (!range) {
-        // No cursor — append to end
-        quill.clipboard.dangerouslyPasteHTML(quill.getLength(), html);
-    } else {
-        // Split current content at cursor using Quill's character index
-        // Convert Quill index to DOM Range
-        const domRange = document.createRange();
-        const walker = document.createTreeWalker(quill.root, NodeFilter.SHOW_TEXT, null, false);
-        let charCount = 0, found = false;
-        let node;
-        while ((node = walker.nextNode())) {
-            const nodeLen = node.nodeValue.length;
-            if (charCount + nodeLen >= range.index) {
-                domRange.setStart(node, range.index - charCount);
-                domRange.setEnd(node, range.index - charCount);
-                found = true;
-                break;
-            }
-            charCount += nodeLen;
-        }
-
-        if (found) {
-            domRange.deleteContents();
-            const frag = document.createRange().createContextualFragment(html);
-            domRange.insertNode(frag);
-            // Move cursor to after inserted content
-            domRange.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(domRange);
-        } else {
-            // Fallback: append
-            quill.clipboard.dangerouslyPasteHTML(quill.getLength(), html);
-        }
+    if (window._ck) {
+        // CKEditor: insert at current selection position
+        const viewFrag = window._ck.data.processor.toView(html);
+        const modelFrag = window._ck.data.toModel(viewFrag);
+        window._ck.model.insertContent(modelFrag);
     }
-
-    // Notify Quill that content changed
-    quill.update();
     updateStats();
     analyzeSEO();
     resetAutoSave();
 }
-quill.root.addEventListener('drop', function(e) {
-    if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
-        e.preventDefault(); e.stopPropagation();
-        uploadImageToServer(e.dataTransfer.files[0]).then(url => {
-            if (url) { const idx = quill.getSelection(true)?.index || quill.getLength(); quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); }
-        });
-    }
-});
+// Drop-to-upload handled natively by CKEditor via CustomImageUploadAdapter
+// CKEditor intercepts file drops on the editing area automatically
 async function uploadImageToServer(file) {
     const fd = new FormData(); fd.append('file', file);
     try {
@@ -894,14 +910,8 @@ async function uploadImageToServer(file) {
     return null;
 }
 async function fixPastedImages() {
-    for (const img of quill.root.querySelectorAll('img')) {
-        if (img.src.startsWith('data:')) { const url = await uploadImageToServer(dataURLtoBlob(img.src)); if (url) img.src = url; }
-        else if (img.src.startsWith('file:///') || img.src === '//:0') {
-            const p = document.createElement('p');
-            p.innerHTML = '<span style="background:#FEF3C7;color:#92400E;padding:6px 12px;border-radius:6px;font-size:.85rem;display:inline-block">⚠️ Image couldn\'t paste from Word. Use "Add Media" to insert it.</span>';
-            img.parentNode.replaceChild(p, img);
-        }
-    }
+    // CKEditor's upload adapter handles base64 images automatically on paste.
+    // This is kept as a no-op for any legacy call paths.
 }
 function dataURLtoBlob(dataurl) {
     const arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1];
@@ -1027,8 +1037,13 @@ function mpConfirm() {
         });
         renderHospPeople(); closeMediaPicker(); isDirty = true; return;
     }
-    const idx = quill.getSelection(true)?.index||quill.getLength();
-    quill.insertEmbed(idx,'image',url); quill.insertText(idx+1,'\n'); closeMediaPicker();
+    if (window._ck) {
+        const html = `<figure class="image"><img src="${url}"></figure>`;
+        const vf = window._ck.data.processor.toView(html);
+        const mf = window._ck.data.toModel(vf);
+        window._ck.model.insertContent(mf);
+    }
+    closeMediaPicker();
 }
 async function mpDelete() {
     if (!mpSelected||!confirm('Delete "'+(mpSelected.original_name||'file')+'"?')) return;
@@ -1083,6 +1098,12 @@ function applyImgEdit() {
     currentEditImg.dataset.caption=document.getElementById('imgEditCaption').value;
     const w=parseInt(document.getElementById('imgEditW').value),h=parseInt(document.getElementById('imgEditH').value);
     if (w) currentEditImg.style.width=w+'px'; if (h) currentEditImg.style.height=h+'px';
+    // Sync DOM changes back into CKEditor model
+    // IMPORTANT: use getData() not getDomRoot().innerHTML — getDomRoot() contains
+    // CKEditor internal UI elements that would corrupt the saved data
+    if (window._ck) {
+        window._ck.model.change(() => {}); // trigger model refresh
+    }
     closeImgEdit(); isDirty=true;
 }
 async function replaceEditorImage(input) {
@@ -1092,7 +1113,28 @@ async function replaceEditorImage(input) {
 }
 function removeEditorImage() {
     if (!currentEditImg||!confirm('Remove this image?')) return;
-    currentEditImg.remove(); clearImageSelection(); closeImgEdit(); isDirty=true; showToast('🗑 Image removed');
+    if (window._ck) {
+        // Remove via CKEditor model API - find the model element and delete it
+        const domImg = currentEditImg;
+        const viewEl = window._ck.editing.view.domConverter.domToView(domImg);
+        if (viewEl) {
+            const modelEl = window._ck.editing.mapper.toModelElement(viewEl) ||
+                            window._ck.editing.mapper.toModelElement(viewEl.parent);
+            if (modelEl) {
+                window._ck.model.change(writer => { writer.remove(modelEl); });
+            } else {
+                // Fallback: rebuild from clean getData snapshot minus this image
+                const src = domImg.src;
+                const clean = window._ck.getData().replace(
+                    new RegExp('<figure[^>]*class="image"[^>]*>\s*<img[^>]*src="' + src.replace(/[.*+?^${}()|[\]\]/g,'\$&') + '"[^>]*>.*?</figure>', 's'), ''
+                ).replace(new RegExp('<img[^>]*src="' + src.replace(/[.*+?^${}()|[\]\]/g,'\$&') + '"[^>]*/?>','s'), '');
+                window._ck.setData(clean);
+            }
+        }
+    } else {
+        currentEditImg.remove();
+    }
+    clearImageSelection(); closeImgEdit(); isDirty=true; showToast('🗑 Image removed');
 }
 
 // ─────────────────────────────────────────────
@@ -1118,14 +1160,9 @@ function removeFeatImage() {
 // ─────────────────────────────────────────────
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
-    if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){
-    // Use direct DOM injection — dangerouslyPasteHTML strips <table> tags (Quill 1.3.7 has no table support)
-    quill.root.innerHTML = d.html;
-    quill.update();
-    updateStats();analyzeSEO();await fixPastedImages();
-}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
-    if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{const html=e.target.result.replace(/\n/g,'<br>');quill.clipboard.dangerouslyPasteHTML(quill.getLength(),html);updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
+    if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url&&window._ck){const html=`<figure class="image"><img src="${url}"></figure>`;const vf=window._ck.data.processor.toView(html);const mf=window._ck.data.toModel(vf);window._ck.model.insertContent(mf);showToast('✅ Inserted');}else if(!url) showToast('❌ Failed'); return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){if(window._ck){window._ck.setData(d.html);}else{quill.root.innerHTML=d.html;}updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{const _html=(e.target.result||'').replace(/\n/g,'<br>');if(window._ck){window._ck.setData((window._ck.getData()||'')+_html);}else{quill.root.innerHTML=(quill.root.innerHTML||'')+_html;}updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
 
@@ -1149,12 +1186,12 @@ function autoSlug() {
 function showTab(t) {
     document.getElementById('tabWrite').classList.toggle('active',t==='write');
     document.getElementById('tabPreview').classList.toggle('active',t==='preview');
-    document.getElementById('editorWrap').style.display=t==='write'?'flex':'none';
+    document.getElementById('editorWrap').style.display=t==='write'?'block':'none';
     const pp=document.getElementById('previewPane'); pp.style.display=t==='preview'?'block':'none';
-    if(t==='preview') pp.innerHTML=quill.root.innerHTML;
+    if(t==='preview') pp.innerHTML=window._ck ? window._ck.getData() : quill.root.innerHTML;
 }
 function updateStats() {
-    const text=quill.getText().trim();
+    const text=(window._ck ? window._ck.editing.view.getDomRoot().innerText : quill.getText()).trim();
     const words=text?text.split(/\s+/).filter(w=>w).length:0;
     document.getElementById('wordCount').textContent=words+' words — '+Math.max(1,Math.ceil(words/200))+' min read';
     analyzeSEO();
@@ -1163,10 +1200,10 @@ function analyzeSEO() {
     let score=0; const items=[];
     const title=document.getElementById('meta_title')?.value||'';
     const desc=document.getElementById('meta_description')?.value||'';
-    const words=(quill.getText().trim()||'').split(/\s+/).filter(w=>w).length;
-    const h2s=quill.root.querySelectorAll('h2').length;
-    const imgs=quill.root.querySelectorAll('img').length;
-    const imgsAlt=quill.root.querySelectorAll('img[alt]:not([alt=""])').length;
+    const words=((window._ck ? window._ck.editing.view.getDomRoot().innerText : quill.getText()).trim()||'').split(/\s+/).filter(w=>w).length;
+    const h2s=(window._ck ? window._ck.editing.view.getDomRoot() : quill.root).querySelectorAll('h2').length;
+    const imgs=(window._ck ? window._ck.editing.view.getDomRoot() : quill.root).querySelectorAll('img').length;
+    const imgsAlt=(window._ck ? window._ck.editing.view.getDomRoot() : quill.root).querySelectorAll('img[alt]:not([alt=""])').length;
     if(title){score+=15;items.push('✅ Title present');}else items.push('⚠️ Add meta title');
     if(title.length>=30&&title.length<=60){score+=20;items.push('✅ Title length ('+title.length+'/60)');}else if(title)items.push('⚠️ Meta title '+title.length+'/60');
     if(desc.length>=80&&desc.length<=160){score+=20;items.push('✅ Description ('+desc.length+'/160)');}else if(desc)items.push('⚠️ Meta desc '+desc.length+'/160');
@@ -1222,7 +1259,7 @@ async function saveItem(status) {
     const data = {
         name: document.getElementById('name')?.value,
         slug: document.getElementById('slug')?.value,
-        long_description: quill.root.innerHTML==='<p><br></p>' ? '' : quill.root.innerHTML,
+        long_description: (window._ck ? window._ck.getData() : quill.root.innerHTML) || '',
         image: document.getElementById('image')?.value,
         is_featured: document.getElementById('is_featured').value ==='true',
         display_order: parseInt(document.getElementById('display_order')?.value)||0,
@@ -1241,7 +1278,7 @@ async function saveItem(status) {
     // Airport: photos gallery array + arrival_instructions from Quill
     if (C.cpt === 'airport') {
         data.photos = airportPhotos;
-        data.arrival_instructions = quill.root.innerHTML === '<p><br></p>' ? null : quill.root.innerHTML;
+        data.arrival_instructions = (window._ck ? window._ck.getData() : quill.root.innerHTML) || null;
         data.code = (data.code || '').toUpperCase();
         // Clear generic fields not used by airport API
         delete data.long_description;
@@ -1301,7 +1338,7 @@ async function loadItem() {
         const item=await r.json();
         const _name = document.getElementById('name'); if(_name) _name.value = item.name||item.title||'';
         const _slug = document.getElementById('slug'); if(_slug) { _slug.value = item.slug||''; slugEdited=true; }
-        quill.root.innerHTML=item.long_description||''; quill.update();
+        if(window._ck){window._ck.setData(item.long_description||'');}else{quill.root.innerHTML=item.long_description||'';}
         const _stat = document.getElementById('status'); if(_stat) _stat.value = item.status||'draft';
         const _feat = document.getElementById('is_featured'); if(_feat) _feat.value = item.is_featured?'true':'false';
         const _do=document.getElementById('display_order'); if(_do) _do.value=item.display_order||0;
@@ -1378,7 +1415,7 @@ async function loadItem() {
                 airportPhotos = Array.isArray(item.photos) ? [...item.photos] : [];
                 renderAirportGallery();
                 // Restore arrival_instructions into Quill
-                if (item.arrival_instructions) { quill.root.innerHTML = item.arrival_instructions; quill.update(); }
+                if (item.arrival_instructions) { if(window._ck){window._ck.setData(item.arrival_instructions);}else{quill.root.innerHTML=item.arrival_instructions;} }
                 // Country select is already populated at boot — just set value, then load cities
                 setTimeout(() => {
                     const countrySel = document.getElementById('country');
@@ -1448,7 +1485,7 @@ function aiHideProgress() {
 function cleanSpacing() {
     const P = getPrompts();
     if (P.spacing && P.spacing.trim()) { aiAction('spacing'); return; }
-    const html = quill.root.innerHTML;
+    const html = window._ck ? window._ck.getData() : quill.root.innerHTML;
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     tmp.querySelectorAll('p, h1, h2, h3, h4, li, blockquote').forEach(el => {
@@ -1462,9 +1499,7 @@ function cleanSpacing() {
     });
     const result = tmp.innerHTML;
     if (result === html) { showToast('✨ Already clean!'); return; }
-    quill.history.cutoff();
-    quill.root.innerHTML = result;
-    quill.history.cutoff();
+    if(window._ck){window._ck.setData(result);}else{quill.root.innerHTML=result;}
     updateStats(); analyzeSEO();
     showToast('✅ Spacing cleaned');
 }
@@ -1514,7 +1549,7 @@ async function aiAction(type) {
     const itemName = document.getElementById('name')?.value || ('this ' + (C.label||'item').toLowerCase());
     const content = quill.getText().trim();
     let prompt = '';
-    const fullHtml = quill.root.innerHTML;
+    const fullHtml = window._ck ? window._ck.getData() : quill.root.innerHTML;
     const P = getPrompts();
     if (type==='shortdesc') prompt = P.shortdesc.replace('{name}', itemName);
     else if (type==='seo')      prompt = P.seo.replace('{name}', itemName);
@@ -1541,8 +1576,7 @@ async function aiAction(type) {
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else {
-            // Direct DOM injection — dangerouslyPasteHTML strips <table> tags (Quill 1.3.7)
-            quill.root.innerHTML = result; quill.update(); updateStats(); analyzeSEO(); showToast('✅ Content updated');
+            if(window._ck){window._ck.setData(result);}else{quill.root.innerHTML=result;} updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
     aiHideProgress();
@@ -1557,10 +1591,7 @@ document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveItem(editId?'auto':null);}
     if(e.key==='Escape'){clearImageSelection();closeImgEdit();closeMediaPicker();}
 });
-quill.root.addEventListener('keydown',function(e){
-    if(!currentEditImg) return;
-    if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopPropagation();currentEditImg.remove();clearImageSelection();showToast('🗑 Image removed');}
-});
+// Image delete key handling done natively by CKEditor
 document.getElementById('name').addEventListener('input',()=>isDirty=true);
 
 
@@ -1865,7 +1896,6 @@ function extractYTThumb() {
 // ─────────────────────────────────────────────
 // D. SPECIALTY PANELS (why_choose + hero_bg)
 // ─────────────────────────────────────────────
-let dsWhyQuill = null;
 
 function initDSpecialtyPanels() {
     // No extra panels needed — cost fields are in fieldRows, hero bg uses featured image
@@ -2016,7 +2046,7 @@ initDoctorTreats();
 initDSpecialtyPanels();
 initHospitalPanels();
 initAirportPanels();
-if (editId) loadItem();
+// loadItem() called by _afterEditorReady() once CKEditor initializes
 // Re-filter treatments when specialty changes
 document.addEventListener('change', function(e) {
     if (e.target.id === 'specialty_id' && C.cpt === 'doctor') treatRender();
@@ -2029,8 +2059,8 @@ document.addEventListener('change', function(e) {
         loadCitiesForDest(slug, '');
     }
 });
-
 </script>
+
 <!-- PROMPT EDITOR MODAL -->
 <div class="pe-overlay" id="promptEditorModal" onclick="if(event.target===this)closePromptEditor()">
 <div class="pe-modal">
@@ -2092,6 +2122,7 @@ document.addEventListener('change', function(e) {
   </div>
 </div>
 </div>
+
 
 
 <script>
