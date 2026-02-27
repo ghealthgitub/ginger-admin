@@ -838,49 +838,34 @@ function cleanWordHtml(html) {
 
 // Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
 function injectHtmlAtCursor(html) {
-    const sel = window.getSelection();
-    const range = quill.getSelection();
+    // Pause Quill's MutationObserver so tables survive injection
+    const obs = quill.scroll && quill.scroll.observer;
+    if (obs) obs.disconnect();
 
-    if (!range) {
-        // No cursor — append to end
-        quill.root.innerHTML = quill.root.innerHTML + html;
-    } else {
-        // Split current content at cursor using Quill's character index
-        // Convert Quill index to DOM Range
-        const domRange = document.createRange();
-        const walker = document.createTreeWalker(quill.root, NodeFilter.SHOW_TEXT, null, false);
-        let charCount = 0, found = false;
-        let node;
-        while ((node = walker.nextNode())) {
-            const nodeLen = node.nodeValue.length;
-            if (charCount + nodeLen >= range.index) {
-                domRange.setStart(node, range.index - charCount);
-                domRange.setEnd(node, range.index - charCount);
-                found = true;
-                break;
+    try {
+        quill.root.focus();
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).commonAncestorContainer)) {
+            const range = sel.getRangeAt(0);
+            range.deleteContents();
+            const frag = range.createContextualFragment(html);
+            const lastNode = frag.lastChild;
+            range.insertNode(frag);
+            if (lastNode) {
+                const after = document.createRange();
+                after.setStartAfter(lastNode);
+                after.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(after);
             }
-            charCount += nodeLen;
-        }
-
-        if (found) {
-            domRange.deleteContents();
-            const frag = document.createRange().createContextualFragment(html);
-            domRange.insertNode(frag);
-            // Move cursor to after inserted content
-            domRange.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(domRange);
         } else {
-            // Fallback: append
-            quill.root.innerHTML = quill.root.innerHTML + html;
+            quill.root.innerHTML += html;
         }
+    } finally {
+        if (obs) obs.observe(quill.root, { childList:true, subtree:true, characterData:true, attributes:true });
     }
 
-    // Notify Quill that content changed
-    quill.update();
-    updateStats();
-    analyzeSEO();
-    resetAutoSave();
+    updateStats(); analyzeSEO(); resetAutoSave(); isDirty = true;
 }
 quill.root.addEventListener('drop', function(e) {
     if (e.dataTransfer.files.length && e.dataTransfer.files[0].type.startsWith('image/')) {
@@ -1125,7 +1110,7 @@ function removeFeatImage() {
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
     if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.root.innerHTML=d.html;updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){const _io=quill.scroll&&quill.scroll.observer;if(_io)_io.disconnect();quill.root.innerHTML=d.html;if(_io)_io.observe(quill.root,{childList:true,subtree:true,characterData:true,attributes:true});updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
     if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
@@ -1413,6 +1398,7 @@ async function loadItem() {
 const AI_LABELS = {
     seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
     shortdesc:{ label: '📝 Writing short description...',  sub: 'Summarising for the description field'   },
+    spacing:  { label: '🧹 Cleaning spacing with AI...',    sub: 'Fixing whitespace and paragraph gaps'        },
     optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
     grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
     headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  },
@@ -1446,6 +1432,12 @@ function aiHideProgress() {
 // CLEAN SPACING — pure DOM, instant, no AI
 // ─────────────────────────────────────────────
 function cleanSpacing() {
+    // If user has set a custom spacing prompt, use AI; otherwise use fast DOM method
+    const P = getPrompts();
+    if (P.spacing && P.spacing.trim()) {
+        aiAction('spacing');
+        return;
+    }
     const html = quill.root.innerHTML;
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
@@ -1476,6 +1468,7 @@ const DEFAULT_PROMPTS = {
     optimize:  'Improve and expand the following medical content. Make it more detailed, engaging and informative. Preserve ALL existing content — do NOT remove or summarise any sections. Add depth and detail to existing points. Return ONLY the complete HTML, no explanation, no markdown fences.',
     grammar:   'Fix grammar, spelling and improve readability in this medical content. Do NOT remove, summarise or condense any content — every paragraph, sentence, word and punctuation must be preserved. Return ONLY the complete corrected HTML, no explanation, no markdown fences.',
     headings:  'Improve the heading structure of this medical content. Add clear H2 section headings and H3 sub-headings where appropriate. Do NOT remove, summarise or condense ANY existing content — every paragraph, sentence, word and punctuation must remain unchanged. Return ONLY the complete HTML with improved headings, no explanation, no markdown fences.',
+    spacing:   '',
 };
 function getPrompts() {
     try { const sv = localStorage.getItem('ginger_ai_prompts'); return sv ? Object.assign({}, DEFAULT_PROMPTS, JSON.parse(sv)) : DEFAULT_PROMPTS; }
@@ -1484,19 +1477,19 @@ function getPrompts() {
 function savePrompts(p) { try { localStorage.setItem('ginger_ai_prompts', JSON.stringify(p)); } catch(e) {} }
 function openPromptEditor() {
     const P = getPrompts();
-    ['shortdesc','seo','optimize','grammar','headings'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = P[k]; });
+    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = P[k]; });
     document.getElementById('promptEditorModal').style.display = 'flex';
 }
 function closePromptEditor() { document.getElementById('promptEditorModal').style.display = 'none'; }
 function savePromptEdits() {
     const p = {};
-    ['shortdesc','seo','optimize','grammar','headings'].forEach(k => { const el = document.getElementById('pe_'+k); p[k] = (el&&el.value.trim()) ? el.value.trim() : DEFAULT_PROMPTS[k]; });
+    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); p[k] = (el&&el.value.trim()) ? el.value.trim() : DEFAULT_PROMPTS[k]; });
     savePrompts(p); closePromptEditor(); showToast('✅ Prompts saved');
 }
 function resetPrompts() {
     if (!confirm('Reset all prompts to defaults?')) return;
     localStorage.removeItem('ginger_ai_prompts');
-    ['shortdesc','seo','optimize','grammar','headings'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = DEFAULT_PROMPTS[k]; });
+    ['shortdesc','seo','optimize','grammar','headings','spacing'].forEach(k => { const el = document.getElementById('pe_'+k); if(el) el.value = DEFAULT_PROMPTS[k]; });
     showToast('↩️ Reset to defaults');
 }
 
@@ -1514,6 +1507,7 @@ async function aiAction(type) {
     else if (type==='optimize') prompt = P.optimize + '\n\n' + fullHtml;
     else if (type==='grammar')  prompt = P.grammar  + '\n\n' + fullHtml;
     else if (type==='headings') prompt = P.headings + '\n\n' + fullHtml;
+    else if (type==='spacing')  prompt = P.spacing  + '\n\n' + fullHtml;
         try {
         const r = await fetch('/api/ai/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt, type:C.cpt||'item', context:(C.label||'Item')+': '+itemName})});
         if (!r.ok) throw new Error('AI request failed');
@@ -1533,7 +1527,8 @@ async function aiAction(type) {
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else {
-            quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
+            { const _o = quill.scroll&&quill.scroll.observer; if(_o)_o.disconnect(); quill.root.innerHTML=result; if(_o)_o.observe(quill.root,{childList:true,subtree:true,characterData:true,attributes:true}); }
+            updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
     aiHideProgress();
@@ -2038,6 +2033,7 @@ document.addEventListener('change', function(e) {
       <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🎯 Optimize</div><textarea id="pe_optimize" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
       <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">✏ Grammar</div><textarea id="pe_grammar" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
       <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📑 Headings</div><textarea id="pe_headings" style="width:100%;height:90px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box"></textarea></div>
+      <div><div style="font-size:.72rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🧹 Clean Spacing <span style="font-weight:400;text-transform:none;font-size:.7rem;color:var(--gray-400)">(leave empty for instant DOM mode; add a prompt to use AI instead)</span></div><textarea id="pe_spacing" style="width:100%;height:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.5;box-sizing:border-box" placeholder="Leave empty to use fast DOM cleanup (recommended)&#10;Or enter a prompt to use AI for spacing..."></textarea></div>
     </div>
     <div style="display:flex;gap:8px;padding:16px 24px;border-top:1px solid var(--gray-200);flex-shrink:0">
       <button onclick="savePromptEdits()" style="flex:1;padding:9px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;font-family:inherit">💾 Save Prompts</button>
