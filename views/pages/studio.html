@@ -322,7 +322,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 <div class="tbl-tray" id="tblTray">
   <div class="tbl-tray__head">
     <div class="tbl-tray__title">📊 Table Tray <span id="tblTrayCount" style="background:var(--teal);color:#fff;border-radius:50px;padding:1px 8px;font-size:.7rem">0</span></div>
-    <div class="tbl-tray__hint">Click <strong>Copy HTML</strong> on a table, then paste it (Ctrl+V) anywhere in the article above</div>
+    <div class="tbl-tray__hint">Click in the article where you want the table, then click <strong>⬆ Insert</strong></div>
   </div>
   <div class="tbl-tray__list" id="tblTrayList"></div>
 </div>
@@ -752,6 +752,7 @@ quill = new Quill('#editor', {
     }
 });
 quill.on('text-change', () => { resetAutoSave(); updateStats(); });
+quill.on('selection-change', (range) => { if (range) window._lastQuillRange = range; });
 } // end if (!C.noQuill)
 
 // ─────────────────────────────────────────────
@@ -1589,12 +1590,11 @@ function tblRenderTray() {
     if (!ids.length) { list.innerHTML = ''; return; }
     list.innerHTML = ids.map(tid => {
         const t = tableStore[tid];
-        const wrapClass = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
         return `<div class="tbl-tray__item" id="tray_${tid}">
             <div class="tbl-tray__preview">${t.html}</div>
             <div class="tbl-tray__actions">
-                <button class="tbl-tray__btn tbl-tray__btn--copy" onclick="tblCopyHtml('${tid}')">📋 Copy HTML</button>
-                <div class="tbl-tray__copied" id="copied_${tid}">✅ Copied!</div>
+                <button class="tbl-tray__btn tbl-tray__btn--copy" onclick="tblInsertAtCursor('${tid}')">⬆ Insert</button>
+                <div class="tbl-tray__copied" id="copied_${tid}">✅ Inserted!</div>
                 <button class="tbl-tray__btn tbl-tray__btn--edit" onclick="openTableEditor('${tid}')">✏️ Edit</button>
                 <button class="tbl-tray__btn tbl-tray__btn--del"  onclick="tblDeleteFromTray('${tid}')">🗑</button>
             </div>
@@ -1602,24 +1602,55 @@ function tblRenderTray() {
     }).join('');
 }
 
-function tblCopyHtml(tid) {
+function tblInsertAtCursor(tid) {
     const t = tableStore[tid];
     if (!t) return;
-    const wrapClass = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
-    const fullHtml  = '<div class="' + wrapClass + '">' + t.html + '</div>';
-    navigator.clipboard.writeText(fullHtml).then(() => {
-        const el = document.getElementById('copied_' + tid);
-        if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
-        showToast('📋 Table HTML copied — now paste (Ctrl+V) in the article');
-    }).catch(() => {
-        // Fallback for older browsers
-        const ta = document.createElement('textarea');
-        ta.value = fullHtml;
-        ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); ta.remove();
-        showToast('📋 Copied! Paste in the article with Ctrl+V');
-    });
+    const style    = t.style ? ' ' + t.style : '';
+    // Build a contenteditable=false block — Quill treats this as an opaque atom
+    // and will NOT strip or modify its contents. Safe to insert via pure DOM.
+    const block = document.createElement('div');
+    block.className       = 'tp-table-wrap' + style;
+    block.contentEditable = 'false';
+    block.innerHTML       = t.html;
+
+    // Find insertion point using last known Quill cursor index
+    const range      = window._lastQuillRange;
+    const targetIdx  = range ? range.index : null;
+    let   anchorNode = null;
+
+    if (targetIdx !== null) {
+        // Walk quill.root children accumulating char counts to find the right block
+        let charCount = 0;
+        for (const child of quill.root.children) {
+            const len = (child.textContent || '').length + 1; // +1 for block newline
+            if (charCount + len > targetIdx) { anchorNode = child; break; }
+            charCount += len;
+        }
+    }
+
+    if (anchorNode) {
+        anchorNode.insertAdjacentElement('afterend', block);
+    } else {
+        quill.root.appendChild(block);
+    }
+
+    // Insert an empty paragraph after the block so cursor can continue
+    const p = document.createElement('p');
+    p.innerHTML = '<br>';
+    block.insertAdjacentElement('afterend', p);
+
+    // Move cursor to after the block — use native selection, no Quill API
+    const sel = window.getSelection();
+    const r   = document.createRange();
+    r.setStart(p, 0); r.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r);
+    quill.root.focus();
+
+    // Show feedback
+    const el = document.getElementById('copied_' + tid);
+    if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+    showToast('✅ Table inserted');
+    resetAutoSave(); isDirty = true;
 }
 
 function tblDeleteFromTray(tid) {
@@ -1797,7 +1828,7 @@ function tblAddToTray() {
         tblCounter++;
         const tid = 'tbl_' + tblCounter;
         tableStore[tid] = { html: tableHtml, style };
-        showToast('✅ Table added to tray — copy & paste it into the article');
+        showToast('✅ Table ready — click in the article where you want it, then click ⬆ Insert');
     }
     closeTblModal();
     tblRenderTray();
