@@ -687,26 +687,6 @@ if (C.noQuill) {
     quill = { root:{ innerHTML:'', addEventListener:()=>{}, querySelectorAll:()=>[], querySelector:()=>null, classList:{} },
               getLength:()=>0, on:()=>{}, getSelection:()=>null, getText:()=>'',
               insertEmbed:()=>{}, insertText:()=>{}, setSelection:()=>{} };
-// ─── TABLE BLOTS — register before new Quill() ───
-(function registerTableBlots() {
-    const Quill = window.Quill;
-    if (!Quill) return;
-    const Block = Quill.import('blots/block');
-    const Container = Quill.import('blots/container');
-    class TableCell extends Block {}
-    TableCell.blotName = 'table-cell'; TableCell.tagName = ['TD','TH'];
-    class TableRow extends Container {}
-    TableRow.blotName = 'table-row'; TableRow.tagName = 'TR';
-    TableRow.allowedChildren = [TableCell]; TableRow.defaultChild = TableCell;
-    class TableBody extends Container {}
-    TableBody.blotName = 'table-body'; TableBody.tagName = ['TBODY','THEAD','TFOOT'];
-    TableBody.allowedChildren = [TableRow]; TableBody.defaultChild = TableRow;
-    class TableContainer extends Container {}
-    TableContainer.blotName = 'table-container'; TableContainer.tagName = 'TABLE';
-    TableContainer.allowedChildren = [TableBody,TableRow]; TableContainer.defaultChild = TableBody;
-    [TableCell,TableRow,TableBody,TableContainer].forEach(b => Quill.register(b, true));
-})();
-
 } else {
 quill = new Quill('#editor', {
     theme: 'snow',
@@ -833,6 +813,7 @@ function cleanWordHtml(html) {
         // Wrap in tp-table-wrap for correct flow positioning
         const wrap = document.createElement('div');
         wrap.className = 'tp-table-wrap';
+        wrap.contentEditable = 'false'; // Quill treats this as atomic - won't strip table contents
         table.parentNode.insertBefore(wrap, table);
         wrap.appendChild(table);
     });
@@ -861,48 +842,18 @@ function cleanWordHtml(html) {
 
 // Inject HTML at cursor position, bypassing Quill's Delta system (preserves tables)
 function injectHtmlAtCursor(html) {
-    const obs = quill.scroll && quill.scroll.observer;
-    if (obs) obs.disconnect();
+    // Use Quill's own API to insert at cursor - safe for all content except tables.
+    // Tables are wrapped in contenteditable=false so Quill treats them as atomic blocks.
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    // Mark table wrappers as non-editable so Quill's observer ignores their internals
+    tmp.querySelectorAll('.tp-table-wrap').forEach(w => { w.contentEditable = 'false'; });
 
-    try {
-        // Save selection BEFORE focus() — focus() resets the cursor
-        const sel = window.getSelection();
-        const savedRange = (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).commonAncestorContainer))
-            ? sel.getRangeAt(0).cloneRange()
-            : null;
+    const range = quill.getSelection(true);
+    const idx = range ? range.index : quill.getLength();
 
-        // Parse HTML safely via a temp container (avoids createContextualFragment node-ordering bugs)
-        const tmp = document.createElement('div');
-        tmp.innerHTML = html;
-
-        if (savedRange) {
-            savedRange.deleteContents();
-            // Insert nodes one by one, track the last inserted for cursor placement
-            let lastInserted = null;
-            const nodes = Array.from(tmp.childNodes);
-            nodes.forEach(node => {
-                savedRange.insertNode(node);
-                savedRange.setStartAfter(node);
-                lastInserted = node;
-            });
-            // Place cursor after last inserted node
-            if (lastInserted) {
-                const after = document.createRange();
-                try {
-                    after.setStartAfter(lastInserted);
-                    after.collapse(true);
-                    sel.removeAllRanges();
-                    sel.addRange(after);
-                } catch(e) { /* node detached - ignore */ }
-            }
-        } else {
-            // No cursor in editor — append to end
-            Array.from(tmp.childNodes).forEach(node => quill.root.appendChild(node));
-        }
-    } finally {
-        if (obs) obs.observe(quill.root, { childList:true, subtree:true, characterData:true, attributes:true });
-    }
-
+    // Use clipboard.dangerouslyPasteHTML at cursor index - Quill handles this safely
+    quill.clipboard.dangerouslyPasteHTML(idx, tmp.innerHTML);
     updateStats(); analyzeSEO(); resetAutoSave(); isDirty = true;
 }
 quill.root.addEventListener('drop', function(e) {
@@ -1148,7 +1099,7 @@ function removeFeatImage() {
 async function importFile(input) {
     const file=input.files[0]; if(!file) return; input.value='';
     if (file.type.startsWith('image/')) { showToast('📤 Uploading...'); const url=await uploadImageToServer(file); if(url){const idx=quill.getSelection(true)?.index||quill.getLength();quill.insertEmbed(idx,'image',url);quill.insertText(idx+1,'\n');showToast('✅ Inserted');}else showToast('❌ Failed'); return; }
-    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){const _io=quill.scroll&&quill.scroll.observer;if(_io)_io.disconnect();quill.root.innerHTML=d.html;if(_io)_io.observe(quill.root,{childList:true,subtree:true,characterData:true,attributes:true});updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
+    if (file.name.endsWith('.docx')||file.name.endsWith('.doc')) { showToast('📄 Importing...'); const fd=new FormData();fd.append('file',file);try{const r=await fetch('/api/import/docx',{method:'POST',body:fd});if(r.ok){const d=await r.json();if(d.html){quill.clipboard.dangerouslyPasteHTML(0, d.html);updateStats();analyzeSEO();await fixPastedImages();}showToast('✅ Imported');}else showToast('❌ Failed');}catch(e){showToast('❌ Failed');}return; }
     if (file.name.endsWith('.txt')||file.name.endsWith('.md')) { const reader=new FileReader();reader.onload=e=>{quill.root.innerHTML+=e.target.result.replace(/\n/g,'<br>');updateStats();analyzeSEO();showToast('✅ Imported');};reader.readAsText(file);return; }
     alert('Supported: .docx, .txt, images');
 }
@@ -1565,7 +1516,7 @@ async function aiAction(type) {
             });
             analyzeSEO(); showToast('✅ SEO tags generated');
         } else {
-            { const _o = quill.scroll&&quill.scroll.observer; if(_o)_o.disconnect(); quill.root.innerHTML=result; if(_o)_o.observe(quill.root,{childList:true,subtree:true,characterData:true,attributes:true}); }
+            quill.clipboard.dangerouslyPasteHTML(0, result);
             updateStats(); analyzeSEO(); showToast('✅ Content updated');
         }
     } catch(e) { showToast('❌ AI error: '+e.message); }
@@ -1675,14 +1626,7 @@ quill.root.addEventListener('dblclick', function(e) {
     sel.addRange(range);
 });
 
-// Click outside cell → stop editing
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('td, th')) {
-        quill.root.querySelectorAll('td[contenteditable],th[contenteditable]').forEach(c => {
-            c.removeAttribute('contenteditable');
-        });
-    }
-});
+
 
 // Keyboard: Tab between cells, Escape to stop editing
 quill.root.addEventListener('keydown', function(e) {
@@ -1719,12 +1663,6 @@ quill.root.addEventListener('keydown', function(e) {
 });
 
 // ── Table manipulation functions ──
-function tblGetActiveRow() {
-    if (!activeTable) return null;
-    // Return last focused row or first tbody row
-    return activeTable.querySelector('tbody tr') || activeTable.querySelector('tr');
-}
-
 function tblAddRowBelow() {
     if (!activeTable) return;
     const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
@@ -1824,8 +1762,11 @@ function tblDelete() {
     resetAutoSave(); isDirty = true; showToast('🗑 Table deleted');
 }
 
-// Hide toolbar when clicking outside editor
+// Unified click handler: hide toolbar + stop cell editing when clicking outside
 document.addEventListener('click', function(e) {
+    if (!e.target.closest('td, th')) {
+        quill.root.querySelectorAll('td[contenteditable],th[contenteditable]').forEach(c => c.removeAttribute('contenteditable'));
+    }
     if (!e.target.closest('.tp-table-wrap') && !e.target.closest('.tp-table-toolbar')) {
         hideTableToolbar();
     }
