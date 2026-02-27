@@ -1552,9 +1552,23 @@ let tblEditingId = null;   // id of placeholder being edited (null = new)
 let tblCurrentTab = 'paste';
 let tblParsedHtml = '';    // HTML parsed from paste/build, ready to insert
 
+let tblInsertAfterNode = null; // DOM node to insert after (saved before modal opens)
+
 function openTableEditor(placeholderId) {
     tblEditingId = placeholderId;
     tblParsedHtml = '';
+    // Save the last child of quill.root as the insert anchor.
+    // We can't save a Range (modal steals focus), but we can save
+    // the last focused block-level child as a reference node.
+    // If nothing is focused, we'll append to end.
+    tblInsertAfterNode = null;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).startContainer)) {
+        // Walk up to find the direct block child of quill.root
+        let node = sel.getRangeAt(0).startContainer;
+        while (node && node.parentNode !== quill.root) node = node.parentNode;
+        tblInsertAfterNode = node || null;
+    }
     document.getElementById('tblModalTitle').textContent = placeholderId ? '📊 Edit Table' : '📊 Insert Table';
     document.getElementById('tblInsertBtn').textContent  = placeholderId ? '💾 Update Table' : '📊 Insert Table';
     document.getElementById('tblInsertBtn').disabled = true;
@@ -1757,22 +1771,26 @@ function tblInsertIntoEditor() {
                 '<strong>' + info.label + '</strong>' +
                 '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>' +
             '</div></div>';
-        // Insert: use a unique marker text, find its paragraph, swap for placeholder
-        const MARKER = '___TBL_INSERT___';
-        const range = quill.getSelection(true);
-        const idx   = range ? range.index : quill.getLength();
-        quill.insertText(idx, MARKER + '\n', 'user');
-        // Find the paragraph containing the marker and replace it
-        let markerP = null;
-        for (const child of quill.root.children) {
-            if (child.textContent.includes(MARKER)) { markerP = child; break; }
-        }
-        if (markerP) {
-            markerP.insertAdjacentHTML('afterend', phHtml);
-            markerP.remove();
+        // Pure DOM insertion — no Quill APIs (modal stole focus, Quill APIs crash)
+        const phNode = document.createElement('div');
+        phNode.className = 'tbl-embed';
+        phNode.dataset.tid = tid;
+        phNode.contentEditable = 'false';
+        phNode.innerHTML = '<span class="tbl-embed__icon">📊</span>' +
+            '<div class="tbl-embed__info">' +
+                '<strong>' + info.label + '</strong>' +
+                '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>' +
+            '</div>';
+        // Insert after saved anchor node, or append to end
+        if (tblInsertAfterNode && tblInsertAfterNode.parentNode === quill.root) {
+            tblInsertAfterNode.insertAdjacentElement('afterend', phNode);
         } else {
-            quill.root.insertAdjacentHTML('beforeend', phHtml);
+            quill.root.appendChild(phNode);
         }
+        // Add an empty paragraph after so cursor has somewhere to go
+        const emptyP = document.createElement('p');
+        emptyP.innerHTML = '<br>';
+        phNode.insertAdjacentElement('afterend', emptyP);
         showToast('✅ Table inserted');
     }
     closeTblModal();
