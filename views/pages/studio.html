@@ -53,11 +53,25 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .preview-pane{flex:1;overflow:auto;padding:20px 32px;display:none;font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7}
 .preview-pane h1,.preview-pane h2,.preview-pane h3{font-family:'Playfair Display',serif;color:var(--navy);margin:1.2em 0 .5em}
 .editor-wrap .ql-editor img{max-width:100%;border-radius:4px;cursor:pointer;transition:all .2s}
-.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.9rem}
-.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top}
-.editor-wrap .ql-editor th{background:var(--gray-100);font-weight:600;color:var(--navy)}
-.editor-wrap .ql-editor tr:nth-child(even) td{background:var(--gray-50)}
-.editor-wrap .ql-editor table:hover{outline:2px solid var(--teal);outline-offset:2px}
+.editor-wrap .ql-editor .tp-table-wrap{display:block;width:100%;margin:16px 0;overflow-x:auto;clear:both}
+.editor-wrap .ql-editor .tp-table-wrap:hover{outline:2px solid var(--teal);outline-offset:3px;border-radius:3px;cursor:pointer}
+.editor-wrap .ql-editor .tp-table-wrap.tp-selected{outline:2px solid var(--ginger);outline-offset:3px;border-radius:3px}
+.editor-wrap .ql-editor table{border-collapse:collapse;width:100%;font-size:.9rem;margin:0}
+.editor-wrap .ql-editor td,.editor-wrap .ql-editor th{border:1px solid var(--gray-300);padding:8px 12px;text-align:left;vertical-align:top;min-width:80px}
+.editor-wrap .ql-editor th{background:#dbeafe;font-weight:600;color:var(--navy)}
+.editor-wrap .ql-editor tr:nth-child(even) td{background:#f9fafb}
+.editor-wrap .ql-editor table.tp-no-header th{background:none;font-weight:normal}
+.editor-wrap .ql-editor table.tp-minimal td,.editor-wrap .ql-editor table.tp-minimal th{border-color:transparent;border-bottom:1px solid var(--gray-200)}
+.editor-wrap .ql-editor table.tp-minimal th{background:none;border-bottom:2px solid var(--navy)}
+/* Table toolbar */
+.tp-table-toolbar{position:fixed;background:var(--navy);border-radius:8px;padding:4px 6px;display:flex;gap:2px;z-index:9000;box-shadow:0 4px 16px rgba(0,0,0,.3);align-items:center}
+.tp-table-toolbar button{background:none;border:none;color:#fff;cursor:pointer;padding:4px 7px;border-radius:5px;font-size:.75rem;font-family:inherit;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:3px}
+.tp-table-toolbar button:hover{background:rgba(255,255,255,.15)}
+.tp-table-toolbar .tp-sep{width:1px;background:rgba(255,255,255,.2);height:18px;margin:0 3px}
+.tp-table-toolbar select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:5px;padding:3px 6px;font-size:.75rem;font-family:inherit;cursor:pointer}
+.tp-table-toolbar select option{background:var(--navy);color:#fff}
+/* Cell editor */
+.ql-editor td[contenteditable=true]:focus,.ql-editor th[contenteditable=true]:focus{outline:2px solid var(--teal);outline-offset:-2px;background:rgba(14,165,160,.05)!important}
 .editor-wrap .ql-editor img.ql-img-selected{outline:3px solid var(--teal);outline-offset:2px;border-radius:4px;resize:both;overflow:hidden;cursor:grab}
 .img-size-badge{position:fixed;background:rgba(14,165,160,.9);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;display:none;z-index:9999}
 .editor-wrap .ql-editor img.img-align-left{float:left;margin:0 16px 12px 0}
@@ -802,16 +816,25 @@ function cleanWordHtml(html) {
         // Keep: href on <a>, src/alt on <img>, colspan/rowspan on td/th
     });
 
-    // Apply clean table styling directly so tables render properly in the editor
+    // Wrap tables in a block div so they sit in document flow correctly
     tmp.querySelectorAll('table').forEach(table => {
-        table.setAttribute('style', 'border-collapse:collapse;width:100%;margin:12px 0');
-    });
-    tmp.querySelectorAll('td, th').forEach(cell => {
-        const isTh = cell.tagName.toLowerCase() === 'th';
-        cell.setAttribute('style', 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;' + (isTh ? 'background:#f3f4f6;font-weight:600;' : ''));
-    });
-    tmp.querySelectorAll('tr:nth-child(even) td').forEach(cell => {
-        cell.setAttribute('style', (cell.getAttribute('style')||'') + 'background:#f9fafb;');
+        table.removeAttribute('style');
+        table.removeAttribute('width');
+        table.removeAttribute('border');
+        table.removeAttribute('cellpadding');
+        table.removeAttribute('cellspacing');
+        // Clean all cell inline styles and attrs
+        table.querySelectorAll('td, th').forEach(cell => {
+            cell.removeAttribute('style');
+            cell.removeAttribute('width');
+            cell.removeAttribute('bgcolor');
+            cell.removeAttribute('valign');
+        });
+        // Wrap in tp-table-wrap for correct flow positioning
+        const wrap = document.createElement('div');
+        wrap.className = 'tp-table-wrap';
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
     });
 
     // Remove empty paragraphs (but NOT inside table cells)
@@ -1534,6 +1557,254 @@ async function aiAction(type) {
     aiHideProgress();
     btns.forEach(b => b.disabled=false);
 }
+
+// ─────────────────────────────────────────────
+// TABLE EDITING — click to select, toolbar for add/remove rows/cols
+// ─────────────────────────────────────────────
+let activeTable = null;
+const tableToolbar = document.createElement('div');
+tableToolbar.className = 'tp-table-toolbar';
+tableToolbar.style.display = 'none';
+tableToolbar.innerHTML = `
+    <button onclick="tblAddRowBelow()" title="Add row below">➕ Row ↓</button>
+    <button onclick="tblAddRowAbove()" title="Add row above">➕ Row ↑</button>
+    <button onclick="tblAddColRight()" title="Add column right">➕ Col →</button>
+    <button onclick="tblAddColLeft()" title="Add column left">➕ Col ←</button>
+    <div class="tp-sep"></div>
+    <button onclick="tblDelRow()" title="Delete selected row" style="color:#fca5a5">🗑 Row</button>
+    <button onclick="tblDelCol()" title="Delete selected column" style="color:#fca5a5">🗑 Col</button>
+    <div class="tp-sep"></div>
+    <select onchange="tblStyle(this.value)" title="Table style">
+        <option value="default">Default</option>
+        <option value="minimal">Minimal</option>
+        <option value="no-header">No Header Style</option>
+    </select>
+    <div class="tp-sep"></div>
+    <button onclick="tblDelete()" style="color:#fca5a5" title="Delete table">🗑 Delete Table</button>
+`;
+document.body.appendChild(tableToolbar);
+
+function showTableToolbar(wrap) {
+    activeTable = wrap ? wrap.querySelector('table') : null;
+    if (!wrap || !activeTable) { tableToolbar.style.display = 'none'; return; }
+    document.querySelectorAll('.tp-selected').forEach(el => el.classList.remove('tp-selected'));
+    wrap.classList.add('tp-selected');
+    // Sync style selector
+    const sel = tableToolbar.querySelector('select');
+    if (activeTable.classList.contains('tp-minimal'))   sel.value = 'minimal';
+    else if (activeTable.classList.contains('tp-no-header')) sel.value = 'no-header';
+    else sel.value = 'default';
+    positionTableToolbar(wrap);
+    tableToolbar.style.display = 'flex';
+}
+
+function positionTableToolbar(wrap) {
+    if (!wrap) return;
+    const r = wrap.getBoundingClientRect();
+    const tb = tableToolbar;
+    tb.style.display = 'flex';
+    const tbH = tb.offsetHeight || 36;
+    let top = r.top - tbH - 8 + window.scrollY;
+    if (top < 8) top = r.bottom + 8 + window.scrollY;
+    let left = r.left + window.scrollX;
+    const maxLeft = window.innerWidth - (tb.offsetWidth || 400) - 8;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 8) left = 8;
+    tb.style.top  = top  + 'px';
+    tb.style.left = left + 'px';
+}
+
+function hideTableToolbar() {
+    tableToolbar.style.display = 'none';
+    document.querySelectorAll('.tp-selected').forEach(el => el.classList.remove('tp-selected'));
+    activeTable = null;
+}
+
+// Click on table wrap → select + show toolbar
+quill.root.addEventListener('click', function(e) {
+    const wrap = e.target.closest('.tp-table-wrap');
+    if (wrap) { e.stopPropagation(); showTableToolbar(wrap); }
+    else hideTableToolbar();
+});
+
+// Reposition toolbar on scroll
+quill.root.closest('.panel-editor').addEventListener('scroll', function() {
+    if (activeTable) positionTableToolbar(activeTable.closest('.tp-table-wrap'));
+});
+
+// Double-click cell → make it editable
+quill.root.addEventListener('dblclick', function(e) {
+    const cell = e.target.closest('td, th');
+    if (!cell) return;
+    e.preventDefault(); e.stopPropagation();
+    // Make all cells in this table non-editable first
+    const tbl = cell.closest('table');
+    if (tbl) tbl.querySelectorAll('td,th').forEach(c => c.removeAttribute('contenteditable'));
+    cell.contentEditable = 'true';
+    cell.focus();
+    // Select all text in cell
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+});
+
+// Click outside cell → stop editing
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('td, th')) {
+        quill.root.querySelectorAll('td[contenteditable],th[contenteditable]').forEach(c => {
+            c.removeAttribute('contenteditable');
+        });
+    }
+});
+
+// Keyboard: Tab between cells, Escape to stop editing
+quill.root.addEventListener('keydown', function(e) {
+    const cell = e.target.closest('td[contenteditable], th[contenteditable]');
+    if (!cell) return;
+    if (e.key === 'Escape') { cell.removeAttribute('contenteditable'); return; }
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const cells = Array.from(cell.closest('table').querySelectorAll('td, th'));
+        const idx = cells.indexOf(cell);
+        const next = e.shiftKey ? cells[idx-1] : cells[idx+1];
+        if (next) {
+            cell.removeAttribute('contenteditable');
+            next.contentEditable = 'true';
+            next.focus();
+            const r = document.createRange(); r.selectNodeContents(next);
+            const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        }
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+        // Move to cell below
+        e.preventDefault();
+        const row = cell.closest('tr');
+        const colIdx = Array.from(row.cells).indexOf(cell);
+        const nextRow = row.nextElementSibling || (row.closest('tbody')?.nextElementSibling?.querySelector('tr'));
+        if (nextRow && nextRow.cells[colIdx]) {
+            cell.removeAttribute('contenteditable');
+            const nc = nextRow.cells[colIdx];
+            nc.contentEditable = 'true'; nc.focus();
+            const r = document.createRange(); r.selectNodeContents(nc);
+            const sv = window.getSelection(); sv.removeAllRanges(); sv.addRange(r);
+        }
+    }
+});
+
+// ── Table manipulation functions ──
+function tblGetActiveRow() {
+    if (!activeTable) return null;
+    // Return last focused row or first tbody row
+    return activeTable.querySelector('tbody tr') || activeTable.querySelector('tr');
+}
+
+function tblAddRowBelow() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const refRow = focusedCell ? focusedCell.closest('tr') : activeTable.querySelector('tbody tr:last-child') || activeTable.querySelector('tr:last-child');
+    if (!refRow) return;
+    const newRow = refRow.cloneNode(false);
+    const cols = refRow.cells.length;
+    for (let i = 0; i < cols; i++) {
+        const cell = document.createElement('td');
+        cell.innerHTML = '&nbsp;';
+        newRow.appendChild(cell);
+    }
+    refRow.parentNode.insertBefore(newRow, refRow.nextSibling);
+    resetAutoSave(); isDirty = true; showToast('✅ Row added');
+}
+
+function tblAddRowAbove() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const refRow = focusedCell ? focusedCell.closest('tr') : activeTable.querySelector('tbody tr:first-child') || activeTable.querySelector('tr:first-child');
+    if (!refRow) return;
+    const newRow = refRow.cloneNode(false);
+    const cols = refRow.cells.length;
+    for (let i = 0; i < cols; i++) {
+        const cell = document.createElement('td');
+        cell.innerHTML = '&nbsp;';
+        newRow.appendChild(cell);
+    }
+    refRow.parentNode.insertBefore(newRow, refRow);
+    resetAutoSave(); isDirty = true; showToast('✅ Row added');
+}
+
+function tblAddColRight() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const refRow = focusedCell ? focusedCell.closest('tr') : null;
+    const colIdx = refRow ? Array.from(refRow.cells).indexOf(focusedCell) : -1;
+    activeTable.querySelectorAll('tr').forEach(row => {
+        const insertAfter = colIdx >= 0 ? row.cells[colIdx] : row.cells[row.cells.length - 1];
+        const cell = document.createElement(row.closest('thead') ? 'th' : 'td');
+        cell.innerHTML = '&nbsp;';
+        if (insertAfter) insertAfter.insertAdjacentElement('afterend', cell);
+        else row.appendChild(cell);
+    });
+    resetAutoSave(); isDirty = true; showToast('✅ Column added');
+}
+
+function tblAddColLeft() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const refRow = focusedCell ? focusedCell.closest('tr') : null;
+    const colIdx = refRow ? Array.from(refRow.cells).indexOf(focusedCell) : 0;
+    activeTable.querySelectorAll('tr').forEach(row => {
+        const insertBefore = colIdx >= 0 ? row.cells[colIdx] : row.cells[0];
+        const cell = document.createElement(row.closest('thead') ? 'th' : 'td');
+        cell.innerHTML = '&nbsp;';
+        if (insertBefore) insertBefore.insertAdjacentElement('beforebegin', cell);
+        else row.insertBefore(cell, row.firstChild);
+    });
+    resetAutoSave(); isDirty = true; showToast('✅ Column added');
+}
+
+function tblDelRow() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const row = focusedCell ? focusedCell.closest('tr') : activeTable.querySelector('tbody tr:last-child');
+    if (!row) return;
+    if (activeTable.rows.length <= 1) { showToast('⚠️ Cannot delete the only row'); return; }
+    row.remove();
+    resetAutoSave(); isDirty = true; showToast('✅ Row deleted');
+}
+
+function tblDelCol() {
+    if (!activeTable) return;
+    const focusedCell = activeTable.querySelector('td[contenteditable], th[contenteditable]');
+    const refRow = focusedCell ? focusedCell.closest('tr') : activeTable.querySelector('tr');
+    const colIdx = refRow && focusedCell ? Array.from(refRow.cells).indexOf(focusedCell) : (refRow ? refRow.cells.length - 1 : -1);
+    if (colIdx < 0) return;
+    if (refRow && refRow.cells.length <= 1) { showToast('⚠️ Cannot delete the only column'); return; }
+    activeTable.querySelectorAll('tr').forEach(row => { if (row.cells[colIdx]) row.cells[colIdx].remove(); });
+    resetAutoSave(); isDirty = true; showToast('✅ Column deleted');
+}
+
+function tblStyle(style) {
+    if (!activeTable) return;
+    activeTable.classList.remove('tp-minimal', 'tp-no-header');
+    if (style === 'minimal')   activeTable.classList.add('tp-minimal');
+    if (style === 'no-header') activeTable.classList.add('tp-no-header');
+    resetAutoSave(); isDirty = true;
+}
+
+function tblDelete() {
+    if (!activeTable || !confirm('Delete this table?')) return;
+    const wrap = activeTable.closest('.tp-table-wrap');
+    if (wrap) wrap.remove(); else activeTable.remove();
+    hideTableToolbar();
+    resetAutoSave(); isDirty = true; showToast('🗑 Table deleted');
+}
+
+// Hide toolbar when clicking outside editor
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.tp-table-wrap') && !e.target.closest('.tp-table-toolbar')) {
+        hideTableToolbar();
+    }
+});
 
 // ─────────────────────────────────────────────
 // KEYBOARD SHORTCUTS
