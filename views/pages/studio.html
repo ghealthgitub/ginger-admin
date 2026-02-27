@@ -1114,22 +1114,22 @@ async function replaceEditorImage(input) {
 function removeEditorImage() {
     if (!currentEditImg||!confirm('Remove this image?')) return;
     if (window._ck) {
-        // Remove via CKEditor model API - find the model element and delete it
-        const domImg = currentEditImg;
-        const viewEl = window._ck.editing.view.domConverter.domToView(domImg);
-        if (viewEl) {
-            const modelEl = window._ck.editing.mapper.toModelElement(viewEl) ||
-                            window._ck.editing.mapper.toModelElement(viewEl.parent);
+        try {
+            const domImg = currentEditImg;
+            const viewEl = window._ck.editing.view.domConverter.domToView(domImg);
+            const viewParent = viewEl ? viewEl.parent : null;
+            const modelEl = viewEl ? (window._ck.editing.mapper.toModelElement(viewEl) || (viewParent ? window._ck.editing.mapper.toModelElement(viewParent) : null)) : null;
             if (modelEl) {
                 window._ck.model.change(writer => { writer.remove(modelEl); });
             } else {
-                // Fallback: rebuild from clean getData snapshot minus this image
-                const src = domImg.src;
-                const clean = window._ck.getData().replace(
-                    new RegExp('<figure[^>]*class="image"[^>]*>\s*<img[^>]*src="' + src.replace(/[.*+?^${}()|[\]\]/g,'\$&') + '"[^>]*>.*?</figure>', 's'), ''
-                ).replace(new RegExp('<img[^>]*src="' + src.replace(/[.*+?^${}()|[\]\]/g,'\$&') + '"[^>]*/?>','s'), '');
-                window._ck.setData(clean);
+                // Fallback: remove figure/img from DOM, then re-serialise via getData
+                const fig = domImg.closest('figure');
+                if (fig) fig.remove(); else domImg.remove();
+                // getData() reads from model — force model sync first
+                window._ck.model.change(() => {});
             }
+        } catch(e) {
+            console.warn('removeEditorImage fallback:', e);
         }
     } else {
         currentEditImg.remove();
