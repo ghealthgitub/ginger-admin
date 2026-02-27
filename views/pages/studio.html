@@ -63,12 +63,26 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-wrap .ql-editor table.tp-no-header th{background:none;font-weight:normal}
 .editor-wrap .ql-editor table.tp-minimal td,.editor-wrap .ql-editor table.tp-minimal th{border-color:transparent;border-bottom:1px solid var(--gray-200)}
 .editor-wrap .ql-editor table.tp-minimal th{background:none;border-bottom:2px solid var(--navy)}
-/* Table placeholder in editor */
-.ql-editor .tbl-embed{display:block;margin:12px 0;padding:10px 16px;background:linear-gradient(135deg,#f0fdf4,#f0f9ff);border:2px solid var(--teal);border-radius:8px;cursor:pointer;user-select:none;font-size:.85rem;color:var(--navy);font-weight:600;display:flex;align-items:center;gap:10px}
-.ql-editor .tbl-embed:hover{background:linear-gradient(135deg,#dcfce7,#e0f2fe);border-color:var(--ginger)}
-.ql-editor .tbl-embed__icon{font-size:1.2rem;flex-shrink:0}
-.ql-editor .tbl-embed__info{flex:1}
-.ql-editor .tbl-embed__label{font-size:.7rem;color:var(--gray-400);font-weight:500;margin-top:1px}
+/* Table Tray — panel below the editor */
+.tbl-tray{border-top:2px solid var(--teal);background:var(--gray-50);flex-shrink:0;max-height:260px;overflow-y:auto;display:none}
+.tbl-tray.has-tables{display:block}
+.tbl-tray__head{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#fff;border-bottom:1px solid var(--gray-100);position:sticky;top:0;z-index:1}
+.tbl-tray__title{font-size:.78rem;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+.tbl-tray__hint{font-size:.72rem;color:var(--gray-400)}
+.tbl-tray__list{display:flex;flex-direction:column;gap:0}
+.tbl-tray__item{border-bottom:1px solid var(--gray-200);padding:10px 16px;display:flex;align-items:flex-start;gap:12px}
+.tbl-tray__item:last-child{border-bottom:none}
+.tbl-tray__preview{flex:1;overflow-x:auto;font-size:.8rem}
+.tbl-tray__preview table{border-collapse:collapse;min-width:200px}
+.tbl-tray__preview th{background:#dbeafe;color:var(--navy);font-weight:600;padding:5px 10px;border:1px solid #d1d5db;font-size:.78rem;white-space:nowrap}
+.tbl-tray__preview td{padding:5px 10px;border:1px solid #e5e7eb;font-size:.78rem;white-space:nowrap}
+.tbl-tray__preview tr:nth-child(even) td{background:#f9fafb}
+.tbl-tray__actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.tbl-tray__btn{padding:5px 10px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;border:1px solid;white-space:nowrap}
+.tbl-tray__btn--copy{background:var(--teal);color:#fff;border-color:var(--teal)}.tbl-tray__btn--copy:hover{background:#0c918c}
+.tbl-tray__btn--edit{background:var(--white);color:var(--navy);border-color:var(--gray-200)}.tbl-tray__btn--edit:hover{border-color:var(--navy)}
+.tbl-tray__btn--del{background:var(--white);color:#ef4444;border-color:#fca5a5}.tbl-tray__btn--del:hover{background:#fee2e2}
+.tbl-tray__copied{font-size:.7rem;color:var(--teal);font-weight:600;text-align:center;display:none}
 /* Table editor modal */
 .tbl-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:none;align-items:center;justify-content:center}
 .tbl-modal-overlay.active{display:flex}
@@ -304,6 +318,15 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     <div class="preview-pane" id="previewPane"></div>
 </div>
 
+<!-- TABLE TRAY — sits below editor, inside panel-editor -->
+<div class="tbl-tray" id="tblTray">
+  <div class="tbl-tray__head">
+    <div class="tbl-tray__title">📊 Table Tray <span id="tblTrayCount" style="background:var(--teal);color:#fff;border-radius:50px;padding:1px 8px;font-size:.7rem">0</span></div>
+    <div class="tbl-tray__hint">Click <strong>Copy HTML</strong> on a table, then paste it (Ctrl+V) anywhere in the article above</div>
+  </div>
+  <div class="tbl-tray__list" id="tblTrayList"></div>
+</div>
+</div><!-- end panel-editor -->
 <div class="panel-resizer" id="panelResizer"></div>
 <div class="panel-right" id="panelRight">
     <div class="sb-box publish-box"><div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')"><div class="sb-box__title">📋 Publish</div><span class="sb-box__toggle">▾</span></div>
@@ -864,7 +887,7 @@ function cleanWordHtml(html) {
 }
 
 // Inject non-table HTML at cursor (Word paste without tables).
-// Tables are handled separately via the Table Editor modal (tblInsertIntoEditor).
+// Tables are handled separately via the Table Tray (tblAddToTray).
 function injectHtmlAtCursor(html) {
     const range = quill.getSelection(true);
     const idx = range ? range.index : quill.getLength();
@@ -1542,57 +1565,96 @@ async function aiAction(type) {
 }
 
 // ─────────────────────────────────────────────
-// TABLE SYSTEM — modal-based, Quill-safe
-// Tables live in tableStore{}; editor shows lightweight placeholders.
-// On save, placeholders are replaced with full HTML.
+// TABLE SYSTEM — Tray-based, zero Quill API calls
+//
+// Tables are built/pasted in the modal → added to tableStore + rendered
+// in the Tray panel below the editor. User copies HTML from tray, pastes
+// into the article manually. Quill's own paste handler handles clean HTML.
+// On save: tray tables are serialised into long_description.
 // ─────────────────────────────────────────────
-let tableStore = {};   // { tbl_1: {html, style}, tbl_2: ... }
-let tblCounter = 0;
-let tblEditingId = null;   // id of placeholder being edited (null = new)
+let tableStore    = {};  // { tbl_1: {html, style, label} }
+let tblCounter    = 0;
+let tblEditingId  = null;
 let tblCurrentTab = 'paste';
-let tblParsedHtml = '';    // HTML parsed from paste/build, ready to insert
+let tblParsedHtml = '';
 
-let tblInsertAfterNode = null; // DOM node to insert after (saved before modal opens)
+// ── TRAY: render all tables ──
+function tblRenderTray() {
+    const tray  = document.getElementById('tblTray');
+    const list  = document.getElementById('tblTrayList');
+    const count = document.getElementById('tblTrayCount');
+    const ids   = Object.keys(tableStore);
+    count.textContent = ids.length;
+    tray.classList.toggle('has-tables', ids.length > 0);
+    if (!ids.length) { list.innerHTML = ''; return; }
+    list.innerHTML = ids.map(tid => {
+        const t = tableStore[tid];
+        const wrapClass = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
+        return `<div class="tbl-tray__item" id="tray_${tid}">
+            <div class="tbl-tray__preview">${t.html}</div>
+            <div class="tbl-tray__actions">
+                <button class="tbl-tray__btn tbl-tray__btn--copy" onclick="tblCopyHtml('${tid}')">📋 Copy HTML</button>
+                <div class="tbl-tray__copied" id="copied_${tid}">✅ Copied!</div>
+                <button class="tbl-tray__btn tbl-tray__btn--edit" onclick="openTableEditor('${tid}')">✏️ Edit</button>
+                <button class="tbl-tray__btn tbl-tray__btn--del"  onclick="tblDeleteFromTray('${tid}')">🗑</button>
+            </div>
+        </div>`;
+    }).join('');
+}
 
+function tblCopyHtml(tid) {
+    const t = tableStore[tid];
+    if (!t) return;
+    const wrapClass = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
+    const fullHtml  = '<div class="' + wrapClass + '">' + t.html + '</div>';
+    navigator.clipboard.writeText(fullHtml).then(() => {
+        const el = document.getElementById('copied_' + tid);
+        if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2000); }
+        showToast('📋 Table HTML copied — now paste (Ctrl+V) in the article');
+    }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = fullHtml;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+        showToast('📋 Copied! Paste in the article with Ctrl+V');
+    });
+}
+
+function tblDeleteFromTray(tid) {
+    if (!confirm('Remove this table from tray?')) return;
+    delete tableStore[tid];
+    tblRenderTray();
+    resetAutoSave(); isDirty = true;
+}
+
+// ── MODAL: open/close ──
 function openTableEditor(placeholderId) {
-    tblEditingId = placeholderId;
+    tblEditingId  = placeholderId;
     tblParsedHtml = '';
-    // Save the last child of quill.root as the insert anchor.
-    // We can't save a Range (modal steals focus), but we can save
-    // the last focused block-level child as a reference node.
-    // If nothing is focused, we'll append to end.
-    tblInsertAfterNode = null;
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && quill.root.contains(sel.getRangeAt(0).startContainer)) {
-        // Walk up to find the direct block child of quill.root
-        let node = sel.getRangeAt(0).startContainer;
-        while (node && node.parentNode !== quill.root) node = node.parentNode;
-        tblInsertAfterNode = node || null;
-    }
-    document.getElementById('tblModalTitle').textContent = placeholderId ? '📊 Edit Table' : '📊 Insert Table';
-    document.getElementById('tblInsertBtn').textContent  = placeholderId ? '💾 Update Table' : '📊 Insert Table';
-    document.getElementById('tblInsertBtn').disabled = true;
-    // If editing existing, populate with stored HTML
-    if (placeholderId && tableStore[placeholderId]) {
-        const stored = tableStore[placeholderId];
-        document.getElementById('tblStyleSelect').value = stored.style || '';
-        // Show HTML in paste area for re-editing
-        document.getElementById('tblPasteInput').value = stored.html;
-        tblParsePasteHtml(stored.html);
+    const isEdit  = placeholderId && tableStore[placeholderId];
+    document.getElementById('tblModalTitle').textContent    = isEdit ? '📊 Edit Table' : '📊 Build Table';
+    document.getElementById('tblInsertBtn').textContent     = isEdit ? '💾 Update Table' : '📊 Add to Tray';
+    document.getElementById('tblInsertBtn').disabled        = !isEdit;
+    document.getElementById('tblStyleSelect').value        = isEdit ? (tableStore[placeholderId].style || '') : '';
+    if (isEdit) {
+        document.getElementById('tblPasteInput').value = tableStore[placeholderId].html;
+        tblParsePasteHtml(tableStore[placeholderId].html);
         tblSwitchTab('paste');
     } else {
         document.getElementById('tblPasteInput').value = '';
         document.getElementById('tblPreview').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-300);font-size:.85rem">Paste a table above to preview it here</div>';
-        document.getElementById('tblStyleSelect').value = '';
         tblSwitchTab('paste');
         tblRebuildGrid();
     }
     document.getElementById('tblModalOverlay').classList.add('active');
-    setTimeout(() => document.getElementById('tblPasteInput').focus(), 100);
+    setTimeout(() => document.getElementById('tblPasteInput').focus(), 80);
 }
+
 function closeTblModal() {
     document.getElementById('tblModalOverlay').classList.remove('active');
-    tblEditingId = null;
+    tblEditingId  = null;
     tblParsedHtml = '';
 }
 
@@ -1600,12 +1662,12 @@ function tblSwitchTab(tab) {
     tblCurrentTab = tab;
     document.getElementById('tblTabPaste').classList.toggle('active', tab === 'paste');
     document.getElementById('tblTabBuild').classList.toggle('active', tab === 'build');
-    document.getElementById('tblPasteArea').style.display  = tab === 'paste' ? 'flex' : 'none';
+    document.getElementById('tblPasteArea').style.display   = tab === 'paste' ? 'flex' : 'none';
     document.getElementById('tblBuilderArea').style.display = tab === 'build' ? 'block' : 'none';
     if (tab === 'build') { tblRebuildGrid(); tblBuildRefreshInsertBtn(); }
 }
 
-// ── PASTE TAB: parse HTML or TSV from clipboard ──
+// ── PASTE TAB ──
 function tblParsePaste(raw) {
     if (!raw || !raw.trim()) {
         tblParsedHtml = '';
@@ -1613,24 +1675,21 @@ function tblParsePaste(raw) {
         document.getElementById('tblInsertBtn').disabled = true;
         return;
     }
-    // Detect HTML table
     if (/<table[\s>]/i.test(raw)) { tblParsePasteHtml(raw); return; }
-    // Detect TSV (Excel/Sheets paste) or CSV
-    const sep = raw.includes('\t') ? '\t' : ',';
-    const rows = raw.trim().split('\n').map(r => r.split(sep).map(c => c.trim().replace(/^"|"$/g,'')));
-    if (rows.length > 0 && rows[0].length > 0) { tblParseTsv(rows); return; }
+    const sep  = raw.includes('\t') ? '\t' : ',';
+    const rows = raw.trim().split('\n').map(r => r.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
+    if (rows.length && rows[0].length) { tblParseTsv(rows); return; }
     tblParsedHtml = '';
     document.getElementById('tblInsertBtn').disabled = true;
 }
 
 function tblParsePasteHtml(html) {
-    const tmp = document.createElement('div');
+    const tmp   = document.createElement('div');
     tmp.innerHTML = html;
     const table = tmp.querySelector('table');
     if (!table) { tblParsedHtml = ''; document.getElementById('tblInsertBtn').disabled = true; return; }
-    // Clean the table
-    table.removeAttribute('style'); table.removeAttribute('width'); table.removeAttribute('border');
-    table.removeAttribute('cellpadding'); table.removeAttribute('cellspacing');
+    table.removeAttribute('style'); table.removeAttribute('width');
+    table.removeAttribute('border'); table.removeAttribute('cellpadding'); table.removeAttribute('cellspacing');
     table.querySelectorAll('*').forEach(el => {
         el.removeAttribute('style'); el.removeAttribute('width'); el.removeAttribute('bgcolor');
         el.removeAttribute('valign'); el.removeAttribute('lang');
@@ -1642,12 +1701,12 @@ function tblParsePasteHtml(html) {
 
 function tblParseTsv(rows) {
     let html = '<table><thead><tr>';
-    rows[0].forEach(cell => { html += '<th>' + tblEsc(cell) + '</th>'; });
+    rows[0].forEach(c => { html += '<th>' + tblEsc(c) + '</th>'; });
     html += '</tr></thead><tbody>';
     for (let i = 1; i < rows.length; i++) {
-        if (rows[i].every(c => !c)) continue; // skip blank rows
+        if (rows[i].every(c => !c)) continue;
         html += '<tr>';
-        rows[i].forEach(cell => { html += '<td>' + tblEsc(cell) + '</td>'; });
+        rows[i].forEach(c => { html += '<td>' + tblEsc(c) + '</td>'; });
         html += '</tr>';
     }
     html += '</tbody></table>';
@@ -1655,9 +1714,9 @@ function tblParseTsv(rows) {
     document.getElementById('tblPreview').innerHTML = html;
     document.getElementById('tblInsertBtn').disabled = false;
 }
-function tblEsc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tblEsc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── BUILD TAB: manual grid ──
+// ── BUILD TAB ──
 function tblRebuildGrid() {
     const cols   = parseInt(document.getElementById('tblBuildCols').value) || 4;
     const rows   = parseInt(document.getElementById('tblBuildRows').value) || 4;
@@ -1686,38 +1745,22 @@ function tblBuildNavKeys(e) {
     const cols = parseInt(document.getElementById('tblBuildCols').value) || 4;
     const r = parseInt(e.target.dataset.r), c = parseInt(e.target.dataset.c);
     let nr = r, nc = c;
-    if (e.key === 'Tab' && !e.shiftKey)  { e.preventDefault(); nc = c+1 >= cols ? (nr=r+1, 0) : c+1; }
+    if (e.key === 'Tab' && !e.shiftKey)  { e.preventDefault(); nc = c+1 >= cols ? (nr=r+1, 0)     : c+1; }
     if (e.key === 'Tab' &&  e.shiftKey)  { e.preventDefault(); nc = c-1 < 0    ? (nr=r-1, cols-1) : c-1; }
     if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); nr = r+1; nc = c; }
     if (e.key === 'ArrowRight' && e.target.selectionStart === e.target.value.length) nc = c+1;
-    if (e.key === 'ArrowLeft'  && e.target.selectionStart === 0) nc = c-1;
-    if (nr !== r || nc !== c) {
-        const next = document.querySelector('[data-r="'+nr+'"][data-c="'+nc+'"]');
-        if (next) next.focus();
-    }
+    if (e.key === 'ArrowLeft'  && e.target.selectionStart === 0)                     nc = c-1;
+    if (nr !== r || nc !== c) { const nx = document.querySelector('[data-r="'+nr+'"][data-c="'+nc+'"]'); if (nx) nx.focus(); }
 }
 
-function tblAddBuildRow() {
-    const sel = document.getElementById('tblBuildRows');
-    sel.value = Math.min(20, parseInt(sel.value)+1); tblRebuildGrid();
-}
-function tblDelBuildRow() {
-    const sel = document.getElementById('tblBuildRows');
-    sel.value = Math.max(1, parseInt(sel.value)-1); tblRebuildGrid();
-}
-function tblAddBuildCol() {
-    const sel = document.getElementById('tblBuildCols');
-    sel.value = Math.min(12, parseInt(sel.value)+1); tblRebuildGrid();
-}
-function tblDelBuildCol() {
-    const sel = document.getElementById('tblBuildCols');
-    sel.value = Math.max(1, parseInt(sel.value)-1); tblRebuildGrid();
-}
+function tblAddBuildRow() { const s=document.getElementById('tblBuildRows'); s.value=Math.min(20,parseInt(s.value)+1); tblRebuildGrid(); }
+function tblDelBuildRow() { const s=document.getElementById('tblBuildRows'); s.value=Math.max(1, parseInt(s.value)-1); tblRebuildGrid(); }
+function tblAddBuildCol() { const s=document.getElementById('tblBuildCols'); s.value=Math.min(12,parseInt(s.value)+1); tblRebuildGrid(); }
+function tblDelBuildCol() { const s=document.getElementById('tblBuildCols'); s.value=Math.max(1, parseInt(s.value)-1); tblRebuildGrid(); }
 
 function tblBuildRefreshInsertBtn() {
-    // Enable insert if any cell has content
-    const hasContent = Array.from(document.querySelectorAll('.tbl-builder-cell input')).some(i => i.value.trim());
-    document.getElementById('tblInsertBtn').disabled = !hasContent;
+    const has = Array.from(document.querySelectorAll('.tbl-builder-cell input')).some(i => i.value.trim());
+    document.getElementById('tblInsertBtn').disabled = !has;
 }
 
 function tblBuildToHtml() {
@@ -1727,108 +1770,61 @@ function tblBuildToHtml() {
     let html = '<table>';
     for (let r = 0; r < rows; r++) {
         const tag = (r === 0 && hasHdr) ? 'th' : 'td';
-        if (r === 0 && hasHdr) html += '<thead><tr>';
-        else if (r === 1 && hasHdr) html += '<tbody><tr>';
+        if      (r === 0 && hasHdr)  html += '<thead><tr>';
+        else if (r === 1 && hasHdr)  html += '<tbody><tr>';
         else if (r === 0 && !hasHdr) html += '<tbody><tr>';
-        else html += '<tr>';
+        else                          html += '<tr>';
         for (let c = 0; c < cols; c++) {
             const inp = document.querySelector('[data-r="'+r+'"][data-c="'+c+'"]');
             html += '<' + tag + '>' + tblEsc(inp ? inp.value : '') + '</' + tag + '>';
         }
-        if (r === 0 && hasHdr) html += '</tr></thead>';
-        else html += '</tr>';
+        html += (r === 0 && hasHdr) ? '</tr></thead>' : '</tr>';
     }
     html += (hasHdr ? '</tbody>' : '') + '</table>';
     return html;
 }
 
-// ── INSERT / UPDATE into editor ──
-function tblInsertIntoEditor() {
-    let tableHtml = tblCurrentTab === 'build' ? tblBuildToHtml() : tblParsedHtml;
+// ── ADD / UPDATE in tray ──
+function tblAddToTray() {
+    const tableHtml = tblCurrentTab === 'build' ? tblBuildToHtml() : tblParsedHtml;
     if (!tableHtml) return;
     const style = document.getElementById('tblStyleSelect').value;
 
-    if (tblEditingId) {
-        // UPDATE existing placeholder
+    if (tblEditingId && tableStore[tblEditingId]) {
         tableStore[tblEditingId] = { html: tableHtml, style };
-        const ph = quill.root.querySelector('[data-tid="' + tblEditingId + '"]');
-        if (ph) {
-            const info = tblGetInfo(tableHtml);
-            ph.querySelector('.tbl-embed__info').innerHTML =
-                '<strong>' + info.label + '</strong>' +
-                '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>';
-        }
-        showToast('✅ Table updated');
+        showToast('✅ Table updated in tray');
     } else {
-        // NEW: insert placeholder at cursor
         tblCounter++;
         const tid = 'tbl_' + tblCounter;
         tableStore[tid] = { html: tableHtml, style };
-        const info = tblGetInfo(tableHtml);
-        const phHtml = '<div class="tbl-embed" data-tid="' + tid + '" contenteditable="false">' +
-            '<span class="tbl-embed__icon">📊</span>' +
-            '<div class="tbl-embed__info">' +
-                '<strong>' + info.label + '</strong>' +
-                '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>' +
-            '</div></div>';
-        // Pure DOM insertion — no Quill APIs (modal stole focus, Quill APIs crash)
-        const phNode = document.createElement('div');
-        phNode.className = 'tbl-embed';
-        phNode.dataset.tid = tid;
-        phNode.contentEditable = 'false';
-        phNode.innerHTML = '<span class="tbl-embed__icon">📊</span>' +
-            '<div class="tbl-embed__info">' +
-                '<strong>' + info.label + '</strong>' +
-                '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>' +
-            '</div>';
-        // Insert after saved anchor node, or append to end
-        if (tblInsertAfterNode && tblInsertAfterNode.parentNode === quill.root) {
-            tblInsertAfterNode.insertAdjacentElement('afterend', phNode);
-        } else {
-            quill.root.appendChild(phNode);
-        }
-        // Add an empty paragraph after so cursor has somewhere to go
-        const emptyP = document.createElement('p');
-        emptyP.innerHTML = '<br>';
-        phNode.insertAdjacentElement('afterend', emptyP);
-        showToast('✅ Table inserted');
+        showToast('✅ Table added to tray — copy & paste it into the article');
     }
     closeTblModal();
+    tblRenderTray();
     resetAutoSave(); isDirty = true;
+    // Scroll tray into view so user sees it
+    setTimeout(() => document.getElementById('tblTray').scrollIntoView({ behavior:'smooth', block:'nearest' }), 100);
 }
 
-function tblGetInfo(html) {
-    const tmp = document.createElement('div'); tmp.innerHTML = html;
-    const t = tmp.querySelector('table');
-    if (!t) return { label: 'Table', sub: '' };
-    const rows = t.querySelectorAll('tr').length;
-    const cols = t.querySelector('tr') ? t.querySelector('tr').children.length : 0;
-    return { label: 'Table ' + tblCounter, sub: cols + ' columns × ' + rows + ' rows' };
-}
-
-// ── Click placeholder → edit ──
-quill.root.addEventListener('click', function(e) {
-    const ph = e.target.closest('[data-tid]');
-    if (ph) { e.stopPropagation(); openTableEditor(ph.dataset.tid); }
-});
-
-// ── Serialise: replace placeholders with real table HTML for saving ──
+// ── Serialise for save: append all tray tables at end of content ──
 function tblSerialise(html) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
-    tmp.querySelectorAll('[data-tid]').forEach(ph => {
-        const stored = tableStore[ph.dataset.tid];
-        if (!stored) { ph.remove(); return; }
+    // Remove any existing serialised tables (prevent duplication on re-save)
+    tmp.querySelectorAll('.tp-table-wrap[data-tid]').forEach(el => el.remove());
+    // Append each table from tray
+    Object.entries(tableStore).forEach(([tid, t]) => {
+        if (!t.html) return;
         const wrap = document.createElement('div');
-        wrap.className = 'tp-table-wrap' + (stored.style ? ' ' + stored.style : '');
-        wrap.innerHTML = stored.html;
-        ph.replaceWith(wrap);
+        wrap.className = 'tp-table-wrap' + (t.style ? ' ' + t.style : '');
+        wrap.dataset.tid = tid;
+        wrap.innerHTML = t.html;
+        tmp.appendChild(wrap);
     });
     return tmp.innerHTML;
 }
 
-// ── Deserialise: when LOADING an item, find tp-table-wrap divs,
-//    extract them into tableStore, replace with placeholders ──
+// ── Deserialise on load: extract tp-table-wrap[data-tid] into tray ──
 function tblDeserialise(html) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
@@ -1836,62 +1832,41 @@ function tblDeserialise(html) {
         const table = wrap.querySelector('table');
         if (!table) { wrap.remove(); return; }
         tblCounter++;
-        const tid = 'tbl_' + tblCounter;
-        const style = (wrap.className.replace('tp-table-wrap','').trim());
+        const tid   = wrap.dataset.tid || ('tbl_' + tblCounter);
+        const style = wrap.className.replace('tp-table-wrap','').trim();
         tableStore[tid] = { html: table.outerHTML, style };
-        const info = tblGetInfo(table.outerHTML);
-        const phHtml = '<div class="tbl-embed" data-tid="' + tid + '" contenteditable="false">' +
-            '<span class="tbl-embed__icon">📊</span>' +
-            '<div class="tbl-embed__info">' +
-                '<strong>' + info.label + '</strong>' +
-                '<div class="tbl-embed__label">' + info.sub + ' — click to edit</div>' +
-            '</div></div>';
-        const phDiv = document.createElement('div'); phDiv.outerHTML; const phTmp = document.createElement('div'); phTmp.innerHTML = phHtml; wrap.replaceWith(phTmp.firstElementChild);
+        wrap.remove(); // remove from article — it lives in tray now
     });
+    tblRenderTray();
     return tmp.innerHTML;
 }
 
-// ── Patch saveItem: intercept long_description to serialise table placeholders ──
-// We override quill.root.innerHTML as a getter temporarily during save so the
-// existing saveItem code picks up serialised HTML without us mutating the DOM.
+// ── Patch saveItem ──
 const _origSaveItem = saveItem;
 window.saveItem = async function(status) {
-    const realHtml = quill.root.innerHTML;
+    const realHtml  = quill.root.innerHTML;
     const serialised = tblSerialise(realHtml);
-    // Only override if there are tables to serialise
-    let restored = false;
-    if (serialised !== realHtml) {
-        Object.defineProperty(quill.root, 'innerHTML', {
-            get() { return serialised; },
-            configurable: true
-        });
-        restored = false;
-    }
+    Object.defineProperty(quill.root, 'innerHTML', {
+        get() { return serialised; }, configurable: true
+    });
     try {
         await _origSaveItem(status);
     } finally {
-        // Restore real innerHTML getter
-        if (serialised !== realHtml) {
-            Object.defineProperty(quill.root, 'innerHTML', {
-                get() { return Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').get.call(this); },
-                set(v) { Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').set.call(this, v); },
-                configurable: true
-            });
-        }
+        Object.defineProperty(quill.root, 'innerHTML', {
+            get() { return Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').get.call(this); },
+            set(v) { Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerHTML').set.call(this, v); },
+            configurable: true
+        });
     }
 };
 
-// ── After loadItem, deserialise any tp-table-wrap divs into placeholders ──
+// ── Patch loadItem ──
 const _origLoadItem = loadItem;
 window.loadItem = async function() {
     await _origLoadItem();
     const current = quill.root.innerHTML;
     if (current.includes('tp-table-wrap')) {
-        const deserialised = tblDeserialise(current);
-        // Use dangerouslyPasteHTML(0, ...) to set content — placeholders have no tables
-        // so Quill's Delta converter handles them fine (div → paragraph fallback)
-        quill.setContents([]);
-        quill.clipboard.dangerouslyPasteHTML(0, deserialised);
+        quill.root.innerHTML = tblDeserialise(current);
     }
 };
 
@@ -2429,7 +2404,7 @@ document.addEventListener('change', function(e) {
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="closeTblModal()" style="padding:7px 16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--gray-600)">Cancel</button>
-      <button id="tblInsertBtn" onclick="tblInsertIntoEditor()" disabled style="padding:7px 20px;background:var(--teal);border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;color:#fff">📊 Insert Table</button>
+      <button id="tblInsertBtn" onclick="tblAddToTray()" disabled style="padding:7px 20px;background:var(--teal);border:none;border-radius:6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;color:#fff">📊 Add to Tray</button>
     </div>
   </div>
 </div>
