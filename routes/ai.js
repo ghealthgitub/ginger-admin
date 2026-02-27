@@ -36,6 +36,32 @@ app.get('/ai-assistant', authRequired, roleRequired('super_admin', 'editor'), (r
 // ============== DOCX IMPORT ==============
 const mammoth = require('mammoth');
 
+// Style map: Word heading levels → h2/h3 (H1 reserved for page title on public site)
+// Tables come through natively from mammoth — no entry needed here
+const MAMMOTH_STYLE_MAP = [
+    "p[style-name='Heading 1'] => h2:fresh",
+    "p[style-name='Heading 2'] => h2:fresh",
+    "p[style-name='Heading 3'] => h3:fresh",
+    "p[style-name='Heading 4'] => h3:fresh",
+    "p[style-name='Heading 5'] => h3:fresh",
+    "p[style-name='Heading 6'] => h3:fresh",
+    "p[style-name='heading 1'] => h2:fresh",
+    "p[style-name='heading 2'] => h2:fresh",
+    "p[style-name='heading 3'] => h3:fresh",
+].join('\n');
+
+// Post-process: add .ginger-table class + .table-wrap responsive div, clean empty paragraphs
+function postProcessHtml(html) {
+    html = html.replace(/<table>/g,   '<div class="table-wrap"><table class="ginger-table">');
+    html = html.replace(/<table /g,   '<div class="table-wrap"><table class="ginger-table" ');
+    html = html.replace(/<\/table>/g, '<\/table><\/div>');
+    html = html.replace(/<p><\/p>/g, '');
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    html = html.replace(/<p>&nbsp;<\/p>/gi, '');
+    html = html.replace(/(<br\s*\/?>\s*){3,}/gi, '<br>');
+    return html;
+}
+
 // POST /api/import/docx — Import .docx with images converted to uploaded files
 app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), docUpload.single('file'), async (req, res) => {
     try {
@@ -46,6 +72,7 @@ app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), doc
         const result = await mammoth.convertToHtml(
             { path: filePath },
             {
+                styleMap: MAMMOTH_STYLE_MAP,
                 convertImage: mammoth.images.imgElement(async function(image) {
                     try {
                         const imageBuffer = await image.read();
@@ -104,7 +131,8 @@ app.post('/api/import/docx', apiAuth, roleRequired('super_admin', 'editor'), doc
         // Clean up uploaded docx file
         try { require('fs').unlinkSync(filePath); } catch(e) {}
 
-        res.json({ html: result.value, imageCount, messages: result.messages });
+        const html = postProcessHtml(result.value);
+        res.json({ html, imageCount, messages: result.messages });
     } catch (err) {
         console.error('Docx import error:', err.message);
         res.status(500).json({ error: err.message });
