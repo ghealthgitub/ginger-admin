@@ -1,514 +1,995 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Template Studio | Ginger Admin</title>
-<link rel="stylesheet" href="/css/admin.css">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Testimonial Studio | Ginger Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif}
-.studio{display:flex;height:100vh;flex-direction:column}
-.studio-topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:48px;background:#0B2545;color:#fff;flex-shrink:0}
-.studio-topbar__left{display:flex;align-items:center;gap:12px}
-.studio-topbar__back{color:rgba(255,255,255,.7);text-decoration:none;font-size:.82rem;display:flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;transition:all .2s}
-.studio-topbar__back:hover{background:rgba(255,255,255,.1);color:#fff}
-.studio-topbar__title{font-weight:600;font-size:.95rem}
-.studio-topbar__right{display:flex;align-items:center;gap:8px}
-.s-btn{padding:7px 16px;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:5px}
-.s-btn--save{background:#0EA5A0;color:#fff}.s-btn--save:hover{background:#0c918c}
-.s-btn--view{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.15)}.s-btn--view:hover{background:rgba(255,255,255,.2)}
-.s-saved{color:#34D399;font-weight:600;font-size:.8rem;display:none;align-items:center;gap:3px}
-.studio-body{display:flex;flex:1;overflow:hidden}
+:root{--navy:#0B2545;--navy-light:#13315C;--ginger:#F26522;--ginger-dark:#D9531E;--teal:#0EA5A0;--white:#FFFFFF;--gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;--gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;--gray-600:#4B5563;--gray-700:#374151}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);height:100vh;overflow:hidden;font-size:14px;color:var(--gray-700)}
+a{text-decoration:none;color:inherit}
 
-/* LEFT PANEL */
-.panel-left{width:42%;display:flex;flex-direction:column;overflow:hidden;background:#1e1e2e;min-width:320px}
-.left-tabs{display:flex;background:#181825;border-bottom:1px solid #313244;flex-shrink:0}
-.left-tab{flex:1;padding:8px;font-size:.78rem;font-weight:600;color:#6c7086;cursor:pointer;text-align:center;border:none;background:none;transition:all .2s}
-.left-tab.active{color:#cdd6f4;background:#1e1e2e;border-bottom:2px solid #0EA5A0}
-.left-tab:hover:not(.active){color:#a6adc8}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;background:var(--white);border-bottom:1px solid var(--gray-200);z-index:10;height:48px}
+.topbar__back{color:var(--white);font-size:.82rem;padding:6px 12px;border:none;border-radius:6px;font-weight:600;display:flex;align-items:center;gap:4px;background:var(--teal);cursor:pointer;font-family:inherit;transition:background .2s}
+.topbar__back:hover{background:#0c918c}
+.topbar__title{flex:1;color:var(--navy);font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar__status{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:50px;text-transform:uppercase}
+.topbar__status--draft{background:#FEF3C7;color:#D97706;border:1px solid #FCD34D}
+.topbar__status--published{background:#D1FAE5;color:#059669;border:1px solid #6EE7B7}
+.topbar__saved{color:var(--teal);font-size:.78rem;font-weight:600;display:none}
+.topbar__actions{display:flex;gap:6px}
+.topbar__btn{padding:6px 14px;border-radius:6px;font-weight:600;font-size:.8rem;cursor:pointer;border:none;font-family:inherit;transition:all .2s}
+.topbar__btn--save{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+.topbar__btn--save:hover{background:var(--gray-200);color:var(--navy)}
+.topbar__btn--publish{background:var(--teal);color:#fff}
+.topbar__btn--publish:hover{background:#0c918c}
+.topbar__btn--preview{background:var(--gray-50);color:var(--teal);border:1px solid var(--gray-200)}
+.topbar__btn--preview:hover{background:rgba(14,165,160,.1);border-color:var(--teal)}
+.topbar__btn--delete{background:#FEE2E2;color:#DC2626;border:1px solid #FECACA}
+.topbar__btn--delete:hover{background:#DC2626;color:#fff}
 
-/* Mini toolbar */
-.mini-toolbar{display:flex;align-items:center;gap:2px;padding:4px 12px;background:#11111b;border-bottom:1px solid #313244;flex-shrink:0;flex-wrap:wrap}
-.mt-btn{padding:3px 7px;font-size:.72rem;background:none;border:1px solid transparent;border-radius:4px;color:#6c7086;cursor:pointer;transition:all .12s;font-family:inherit}
-.mt-btn:hover{background:#313244;color:#cdd6f4;border-color:#45475a}
-.mt-btn b{font-weight:800}
-.mt-sep{width:1px;height:16px;background:#313244;margin:0 2px}
-.mt-btn--img{color:#0EA5A0}
+/* STUDIO LAYOUT */
+.studio{display:flex;height:calc(100vh - 48px)}
 
-/* Code section */
-.code-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.vars-bar{padding:5px 12px;background:#11111b;border-bottom:1px solid #313244;display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex-shrink:0;overflow-x:auto}
-.vars-bar::-webkit-scrollbar{height:2px}.vars-bar::-webkit-scrollbar-thumb{background:#313244}
-.vars-bar__label{font-size:.68rem;color:#585b70;font-weight:600;margin-right:2px;white-space:nowrap}
-.vt{display:inline-block;padding:2px 6px;font-size:.68rem;font-family:'Fira Code',monospace;background:#313244;color:#a6adc8;border-radius:3px;cursor:pointer;transition:all .12s;white-space:nowrap}
-.vt:hover{background:#0EA5A0;color:#fff}
-.code-wrap{flex:1;overflow:hidden;min-height:0}
-.code-wrap textarea{width:100%;height:100%;background:#1e1e2e;color:#cdd6f4;font-family:'Fira Code','Consolas',monospace;font-size:.8rem;line-height:1.65;padding:12px 16px;border:none;outline:none;resize:none;tab-size:4}
-.code-wrap textarea::selection{background:rgba(14,165,160,.3)}
+/* LEFT: Form */
+.panel-form{flex:1;overflow-y:auto;padding:24px;background:var(--white);border-right:1px solid var(--gray-200)}
+.panel-form::-webkit-scrollbar{width:4px}.panel-form::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px}
 
-/* Prompt section */
-.prompt-area{display:flex;flex-direction:column;border-top:1px solid #313244;flex-shrink:0;background:#181825;min-height:220px;max-height:300px}
-.prompt-header{padding:6px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #313244}
-.prompt-header span{font-size:.78rem;font-weight:600;color:#a6adc8}
-.prompt-header select{background:#313244;color:#cdd6f4;border:none;padding:3px 8px;border-radius:4px;font-size:.72rem;font-family:inherit}
-.prompt-body{flex:1;display:flex;flex-direction:column;padding:8px 12px;gap:6px;overflow:hidden}
-.prompt-input{flex:1;background:rgba(255,255,255,.04);border:1px solid #313244;border-radius:8px;padding:10px 12px;color:#cdd6f4;font-size:.82rem;font-family:inherit;resize:none;outline:none;line-height:1.5;min-height:80px}
-.prompt-input:focus{border-color:#0EA5A0}
-.prompt-input::placeholder{color:#45475a}
-.prompt-bottom{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
-.prompt-btn{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
-.prompt-btn--send{background:#0EA5A0;color:#fff}.prompt-btn--send:hover{background:#0c918c}
-.prompt-btn--quick{background:#313244;color:#a6adc8;font-size:.72rem}.prompt-btn--quick:hover{background:#45475a;color:#cdd6f4}
-.prompt-loading{color:#0EA5A0;font-size:.78rem;display:none;align-items:center;gap:6px}
-.prompt-loading .spinner{width:14px;height:14px;border:2px solid #313244;border-top-color:#0EA5A0;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* RIGHT: Preview */
+.panel-preview{width:420px;min-width:340px;overflow-y:auto;padding:24px;background:var(--gray-50)}
+.panel-preview::-webkit-scrollbar{width:4px}.panel-preview::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:4px}
 
-/* File upload row */
-.upload-row{display:flex;align-items:center;gap:6px;padding:0 0 4px;flex-shrink:0}
-.upload-btn{display:flex;align-items:center;gap:4px;padding:5px 10px;background:#313244;border:1px dashed #45475a;border-radius:6px;color:#a6adc8;font-size:.72rem;cursor:pointer;transition:all .15s}
-.upload-btn:hover{background:#45475a;border-color:#6c7086;color:#cdd6f4}
-.upload-btn input{display:none}
-.upload-status{font-size:.72rem;color:#585b70;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.upload-url{font-size:.68rem;color:#0EA5A0;background:#11111b;padding:3px 8px;border-radius:4px;cursor:pointer;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none}
-.upload-url:hover{background:#0EA5A0;color:#fff}
+/* FORM ELEMENTS */
+.form-section{margin-bottom:28px}
+.form-section__title{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--gray-100);display:flex;align-items:center;gap:6px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row--3{grid-template-columns:1fr 1fr 1fr}
+.form-group{margin-bottom:14px}
+.form-label{font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:4px;display:block}
+.form-label small{font-weight:400;color:var(--gray-400)}
+.form-input,.form-select,.form-textarea{width:100%;padding:9px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:.85rem;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--teal);outline:none}
+.form-textarea{resize:vertical;min-height:100px;line-height:1.6}
+.form-hint{font-size:.72rem;color:var(--gray-400);margin-top:3px}
 
-/* DRAG HANDLE */
-.drag-handle{width:5px;background:#1e1e2e;cursor:col-resize;flex-shrink:0;transition:background .2s;position:relative}
-.drag-handle:hover,.drag-handle.dragging{background:#0EA5A0}
-.drag-handle::after{content:'\u22EE';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#585b70;font-size:10px}
+/* STAR RATING PICKER */
+.star-picker{display:flex;gap:4px;margin-top:4px}
+.star-picker__star{font-size:1.6rem;cursor:pointer;color:var(--gray-200);transition:color .15s}
+.star-picker__star--active{color:#F59E0B}
+.star-picker__star:hover{color:#F59E0B}
 
-/* RIGHT PANEL */
-.panel-right{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#e5e7eb;min-width:300px}
-.preview-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-.preview-bar__title{font-size:.8rem;font-weight:600;color:#0B2545;display:flex;align-items:center;gap:5px}
-.preview-bar__devices{display:flex;gap:4px}
-.pv-dev{padding:3px 8px;border:1px solid #e5e7eb;border-radius:5px;font-size:.72rem;cursor:pointer;background:#fff;color:#6b7280;transition:all .12s}
-.pv-dev.active{background:#0B2545;color:#fff;border-color:#0B2545}
-.preview-wrap{flex:1;overflow:auto;display:flex;justify-content:center;padding:0;background:#e5e7eb}
-.preview-wrap iframe{background:#fff;border:none;width:100%;height:100%}
+/* IMAGE UPLOAD */
+.img-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.img-thumb{width:80px;height:80px;border-radius:10px;overflow:hidden;position:relative;border:1.5px solid var(--gray-200)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb__del{position:absolute;top:3px;right:3px;width:20px;height:20px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.img-thumb:hover .img-thumb__del{opacity:1}
+.img-add{width:80px;height:80px;border-radius:10px;border:2px dashed var(--gray-300);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--gray-400);font-size:1.4rem;transition:all .2s}
+.img-add:hover{border-color:var(--teal);color:var(--teal);background:rgba(14,165,160,.04)}
+
+/* ENTITY DROPDOWNS */
+.entity-group{position:relative}
+.entity-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:50px;font-size:.72rem;font-weight:600;background:rgba(14,165,160,.06);border:1px solid rgba(14,165,160,.15);color:var(--teal);margin-top:4px}
+.entity-badge button{background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:.8rem;margin-left:2px}.entity-badge button:hover{color:#DC2626}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.toggle{position:relative;width:40px;height:22px;background:var(--gray-200);border-radius:11px;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--teal)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.toggle.on::after{transform:translateX(18px)}
+.toggle-label{font-size:.85rem;font-weight:600;color:var(--navy)}
+
+/* AVATAR COLOR */
+.color-row{display:flex;gap:6px;margin-top:6px}
+.color-swatch{width:32px;height:32px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-swatch:hover,.color-swatch--active{border-color:var(--navy);transform:scale(1.1)}
+
+/* PREVIEW CARD */
+.prev-card{background:var(--white);border:1.5px solid var(--gray-200);border-radius:16px;padding:24px;transition:all .3s}
+.prev-card--featured{border-color:var(--ginger)}
+.prev-source{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.03em;margin-bottom:10px}
+.prev-source--google{background:#E8F5E9;color:#1B5E20}.prev-source--doctor{background:#E3F2FD;color:#1565C0}
+.prev-source--direct{background:#FFF3E0;color:#E65100}.prev-source--website{background:#F3E5F5;color:#6A1B9A}.prev-source--partner{background:#E0F2F1;color:#00695C}
+.prev-stars{display:flex;gap:2px;margin-bottom:12px}
+.prev-star{color:#F59E0B;font-size:1rem}.prev-star--empty{color:var(--gray-200)}
+.prev-quote{font-size:.92rem;line-height:1.7;color:var(--gray-600);margin-bottom:16px;padding-left:16px;border-left:3px solid var(--ginger);font-style:italic}
+.prev-images{display:flex;gap:6px;margin-bottom:14px}.prev-images img{width:64px;height:64px;border-radius:8px;object-fit:cover;border:1px solid var(--gray-200)}
+.prev-patient{display:flex;align-items:center;gap:12px;padding-top:14px;border-top:1px solid var(--gray-100)}
+.prev-avatar{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0}
+.prev-name{font-weight:700;font-size:.88rem;color:var(--navy)}
+.prev-country{font-size:.78rem;color:var(--gray-400)}
+.prev-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+.prev-tag{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:50px;font-size:.68rem;font-weight:600;border:1px solid var(--gray-200);color:var(--gray-500);background:var(--gray-50)}
+.prev-tag--spec{color:var(--teal);border-color:rgba(14,165,160,.2);background:rgba(14,165,160,.04)}
+.prev-tag--dest{color:var(--navy);border-color:rgba(11,37,69,.15)}
+.prev-tag--treat{color:var(--ginger);border-color:rgba(242,101,34,.15)}
+.prev-tag--hosp{color:#6366f1;border-color:rgba(99,102,241,.15)}
+.prev-tag--doc{color:#0d9488;border-color:rgba(13,148,136,.15)}
+.prev-title{font-size:.82rem;font-weight:700;color:var(--navy);margin-bottom:6px;font-family:'Playfair Display',serif}
+.prev-section{margin-top:24px}.prev-section h3{font-size:.78rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;display:flex;align-items:center;gap:8px}
+.toast--show{opacity:1;transform:translateY(0)}
+.toast--success{background:#059669}.toast--error{background:#DC2626}
+
+/* MEDIA PICKER MODAL */
+.media-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center}
+.media-overlay.open{display:flex}
+.media-modal{background:#fff;border-radius:12px;width:90%;max-width:800px;max-height:80vh;display:flex;flex-direction:column}
+.media-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
+.media-header h3{font-family:'Playfair Display',serif;color:var(--navy);font-size:1rem}
+.media-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px 8px;border-radius:6px}
+.media-close:hover{background:var(--gray-100)}
+.media-body{padding:16px 20px;overflow-y:auto;flex:1}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.media-item{aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:all .2s;position:relative}
+.media-item:hover{border-color:var(--teal)}.media-item--selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(14,165,160,.3)}
+.media-item img{width:100%;height:100%;object-fit:cover}
+.media-footer{padding:12px 20px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px}
+.media-footer .btn{padding:8px 18px;border-radius:6px;font-weight:600;font-size:.82rem;cursor:pointer;border:none;font-family:inherit}
+.media-footer .btn--primary{background:var(--teal);color:#fff}.media-footer .btn--ghost{background:var(--gray-50);color:var(--gray-600);border:1px solid var(--gray-200)}
+
+@media(max-width:900px){.studio{flex-direction:column}.panel-preview{width:100%;max-height:40vh}}
 </style>
-</head><body>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <a href="/testimonials" class="topbar__back">← Back</a>
+    <div class="topbar__title" id="pageTitle">New Testimonial</div>
+    <span class="topbar__status topbar__status--draft" id="statusBadge">Draft</span>
+    <span class="topbar__saved" id="savedIndicator">✓ Saved</span>
+    <div class="topbar__actions">
+        <button class="topbar__btn topbar__btn--preview" id="viewPageBtn" onclick="viewOnSite()">👁 View Page</button>
+        <button class="topbar__btn topbar__btn--save" onclick="saveTestimonial('draft')">💾 Save Draft</button>
+        <button class="topbar__btn topbar__btn--publish" onclick="saveTestimonial('published')">✅ Publish</button>
+        <button class="topbar__btn topbar__btn--delete" id="deleteBtn" style="display:none" onclick="deleteTestimonial()">🗑 Delete</button>
+    </div>
+</div>
+
+<!-- STUDIO -->
 <div class="studio">
-    <div class="studio-topbar">
-        <div class="studio-topbar__left">
-            <a href="/theme-templates" class="studio-topbar__back">&larr; Back</a>
-            <span id="tplIcon"></span>
-            <span class="studio-topbar__title" id="tplTitle">Template Studio</span>
+
+<!-- LEFT: FORM -->
+<div class="panel-form">
+
+    <!-- Patient Info -->
+    <div class="form-section">
+        <div class="form-section__title">👤 Patient Information</div>
+        <div class="form-group">
+            <label class="form-label">Patient Name *</label>
+            <input class="form-input" id="patientName" placeholder="e.g. John Peterson" oninput="updatePreview();autoSlug()">
         </div>
-        <div class="studio-topbar__right">
-            <span class="s-saved" id="savedMsg">&#x2705; Saved!</span>
-            <button class="s-btn s-btn--view" onclick="toggleView()">&#x1F441; <span id="viewLabel">Split</span></button>
-            <button class="s-btn s-btn--save" onclick="saveTemplate()">&#x1F4BE; Save</button>
+        <div class="form-group" id="slugGroup" style="display:none">
+            <label class="form-label">URL Slug <small>(auto-generated, editable)</small></label>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-size:.78rem;color:var(--gray-400);white-space:nowrap">ginger.healthcare/testimonials/</span>
+                <input class="form-input" id="slugInput" style="flex:1" placeholder="john-peterson-hair-transplant-turkey" oninput="slugEdited=true">
+                <button type="button" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;background:var(--gray-50);cursor:pointer;font-size:.72rem;font-weight:600;color:var(--gray-500);white-space:nowrap" onclick="slugEdited=false;autoSlug()">↻ Reset</button>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group" style="flex:2">
+                <label class="form-label">Country *</label>
+                <select class="form-input" id="patientCountry" onchange="onCountryChange()">
+                    <option value="">— Select country —</option>
+                    <option value="Afghanistan">🇦🇫 Afghanistan</option>
+                    <option value="Albania">🇦🇱 Albania</option>
+                    <option value="Algeria">🇩🇿 Algeria</option>
+                    <option value="Angola">🇦🇴 Angola</option>
+                    <option value="Argentina">🇦🇷 Argentina</option>
+                    <option value="Armenia">🇦🇲 Armenia</option>
+                    <option value="Australia">🇦🇺 Australia</option>
+                    <option value="Austria">🇦🇹 Austria</option>
+                    <option value="Azerbaijan">🇦🇿 Azerbaijan</option>
+                    <option value="Bahrain">🇧🇭 Bahrain</option>
+                    <option value="Bangladesh">🇧🇩 Bangladesh</option>
+                    <option value="Belarus">🇧🇾 Belarus</option>
+                    <option value="Belgium">🇧🇪 Belgium</option>
+                    <option value="Bolivia">🇧🇴 Bolivia</option>
+                    <option value="Bosnia and Herzegovina">🇧🇦 Bosnia and Herzegovina</option>
+                    <option value="Brazil">🇧🇷 Brazil</option>
+                    <option value="Bulgaria">🇧🇬 Bulgaria</option>
+                    <option value="Cambodia">🇰🇭 Cambodia</option>
+                    <option value="Cameroon">🇨🇲 Cameroon</option>
+                    <option value="Canada">🇨🇦 Canada</option>
+                    <option value="Chile">🇨🇱 Chile</option>
+                    <option value="China">🇨🇳 China</option>
+                    <option value="Colombia">🇨🇴 Colombia</option>
+                    <option value="Congo">🇨🇬 Congo</option>
+                    <option value="Croatia">🇭🇷 Croatia</option>
+                    <option value="Cuba">🇨🇺 Cuba</option>
+                    <option value="Czech Republic">🇨🇿 Czech Republic</option>
+                    <option value="Denmark">🇩🇰 Denmark</option>
+                    <option value="Ecuador">🇪🇨 Ecuador</option>
+                    <option value="Egypt">🇪🇬 Egypt</option>
+                    <option value="Ethiopia">🇪🇹 Ethiopia</option>
+                    <option value="Finland">🇫🇮 Finland</option>
+                    <option value="France">🇫🇷 France</option>
+                    <option value="Georgia">🇬🇪 Georgia</option>
+                    <option value="Germany">🇩🇪 Germany</option>
+                    <option value="Ghana">🇬🇭 Ghana</option>
+                    <option value="Greece">🇬🇷 Greece</option>
+                    <option value="Guatemala">🇬🇹 Guatemala</option>
+                    <option value="Hungary">🇭🇺 Hungary</option>
+                    <option value="India">🇮🇳 India</option>
+                    <option value="Indonesia">🇮🇩 Indonesia</option>
+                    <option value="Iran">🇮🇷 Iran</option>
+                    <option value="Iraq">🇮🇶 Iraq</option>
+                    <option value="Ireland">🇮🇪 Ireland</option>
+                    <option value="Israel">🇮🇱 Israel</option>
+                    <option value="Italy">🇮🇹 Italy</option>
+                    <option value="Jamaica">🇯🇲 Jamaica</option>
+                    <option value="Japan">🇯🇵 Japan</option>
+                    <option value="Jordan">🇯🇴 Jordan</option>
+                    <option value="Kazakhstan">🇰🇿 Kazakhstan</option>
+                    <option value="Kenya">🇰🇪 Kenya</option>
+                    <option value="Kosovo">🇽🇰 Kosovo</option>
+                    <option value="Kuwait">🇰🇼 Kuwait</option>
+                    <option value="Kyrgyzstan">🇰🇬 Kyrgyzstan</option>
+                    <option value="Lebanon">🇱🇧 Lebanon</option>
+                    <option value="Libya">🇱🇾 Libya</option>
+                    <option value="Lithuania">🇱🇹 Lithuania</option>
+                    <option value="Malaysia">🇲🇾 Malaysia</option>
+                    <option value="Maldives">🇲🇻 Maldives</option>
+                    <option value="Mexico">🇲🇽 Mexico</option>
+                    <option value="Moldova">🇲🇩 Moldova</option>
+                    <option value="Morocco">🇲🇦 Morocco</option>
+                    <option value="Mozambique">🇲🇿 Mozambique</option>
+                    <option value="Myanmar">🇲🇲 Myanmar</option>
+                    <option value="Nepal">🇳🇵 Nepal</option>
+                    <option value="Netherlands">🇳🇱 Netherlands</option>
+                    <option value="New Zealand">🇳🇿 New Zealand</option>
+                    <option value="Nigeria">🇳🇬 Nigeria</option>
+                    <option value="Norway">🇳🇴 Norway</option>
+                    <option value="Oman">🇴🇲 Oman</option>
+                    <option value="Pakistan">🇵🇰 Pakistan</option>
+                    <option value="Palestine">🇵🇸 Palestine</option>
+                    <option value="Peru">🇵🇪 Peru</option>
+                    <option value="Philippines">🇵🇭 Philippines</option>
+                    <option value="Poland">🇵🇱 Poland</option>
+                    <option value="Portugal">🇵🇹 Portugal</option>
+                    <option value="Qatar">🇶🇦 Qatar</option>
+                    <option value="Romania">🇷🇴 Romania</option>
+                    <option value="Russia">🇷🇺 Russia</option>
+                    <option value="Rwanda">🇷🇼 Rwanda</option>
+                    <option value="Saudi Arabia">🇸🇦 Saudi Arabia</option>
+                    <option value="Senegal">🇸🇳 Senegal</option>
+                    <option value="Serbia">🇷🇸 Serbia</option>
+                    <option value="Singapore">🇸🇬 Singapore</option>
+                    <option value="Slovakia">🇸🇰 Slovakia</option>
+                    <option value="Somalia">🇸🇴 Somalia</option>
+                    <option value="South Africa">🇿🇦 South Africa</option>
+                    <option value="South Korea">🇰🇷 South Korea</option>
+                    <option value="Spain">🇪🇸 Spain</option>
+                    <option value="Sri Lanka">🇱🇰 Sri Lanka</option>
+                    <option value="Sudan">🇸🇩 Sudan</option>
+                    <option value="Sweden">🇸🇪 Sweden</option>
+                    <option value="Switzerland">🇨🇭 Switzerland</option>
+                    <option value="Syria">🇸🇾 Syria</option>
+                    <option value="Taiwan">🇹🇼 Taiwan</option>
+                    <option value="Tajikistan">🇹🇯 Tajikistan</option>
+                    <option value="Tanzania">🇹🇿 Tanzania</option>
+                    <option value="Thailand">🇹🇭 Thailand</option>
+                    <option value="Tunisia">🇹🇳 Tunisia</option>
+                    <option value="Turkey">🇹🇷 Turkey</option>
+                    <option value="Turkmenistan">🇹🇲 Turkmenistan</option>
+                    <option value="Uganda">🇺🇬 Uganda</option>
+                    <option value="Ukraine">🇺🇦 Ukraine</option>
+                    <option value="United Arab Emirates">🇦🇪 United Arab Emirates</option>
+                    <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                    <option value="United States">🇺🇸 United States</option>
+                    <option value="Uzbekistan">🇺🇿 Uzbekistan</option>
+                    <option value="Venezuela">🇻🇪 Venezuela</option>
+                    <option value="Vietnam">🇻🇳 Vietnam</option>
+                    <option value="Yemen">🇾🇪 Yemen</option>
+                    <option value="Zambia">🇿🇲 Zambia</option>
+                    <option value="Zimbabwe">🇿🇼 Zimbabwe</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1">
+                <label class="form-label">Country Flag</label>
+                <input class="form-input" id="patientFlag" placeholder="🇦🇺" maxlength="10" oninput="updatePreview()" style="font-size:1.3rem;text-align:center">
+                <div class="form-hint">Auto-filled · editable</div>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Patient Photo <small>(round avatar)</small></label>
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div id="patientPhotoPreview" style="width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid var(--gray-200);display:flex;align-items:center;justify-content:center;background:var(--gray-50);flex-shrink:0">
+                        <span style="color:var(--gray-300);font-size:1.2rem">👤</span>
+                    </div>
+                    <div style="flex:1">
+                        <button type="button" class="form-input" style="cursor:pointer;text-align:left;color:var(--teal);font-weight:600" onclick="openPatientPhotoPicker()">📷 Choose from Media</button>
+                        <div class="form-hint">Optional — shows round photo instead of initials</div>
+                    </div>
+                    <button type="button" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:4px;background:none;cursor:pointer;font-size:.7rem;color:var(--gray-400)" onclick="clearPatientPhoto()">✕</button>
+                </div>
+                <input type="hidden" id="patientImage">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Avatar Color</label>
+                <div class="color-row" id="colorRow"></div>
+                <div class="form-hint">Used when no photo is set</div>
+            </div>
         </div>
     </div>
-    <div class="studio-body">
-        <div class="panel-left" id="panelLeft">
-            <div class="left-tabs">
-                <button class="left-tab active" onclick="switchLeft('html',this)">HTML / EJS</button>
-                <button class="left-tab" onclick="switchLeft('css',this)">Custom CSS</button>
-            </div>
 
-            <!-- MINI TOOLBAR for quick HTML inserts -->
-            <div class="mini-toolbar" id="miniToolbar">
-                <button class="mt-btn" onclick="wrapTag('strong')" title="Bold"><b>B</b></button>
-                <button class="mt-btn" onclick="wrapTag('em')" title="Italic"><i>I</i></button>
-                <button class="mt-btn" onclick="wrapTag('u')" title="Underline"><u>U</u></button>
-                <span class="mt-sep"></span>
-                <button class="mt-btn" onclick="insertTag('h2','Section Heading')" title="H2">H2</button>
-                <button class="mt-btn" onclick="insertTag('h3','Sub Heading')" title="H3">H3</button>
-                <button class="mt-btn" onclick="insertTag('p','Paragraph text here')" title="Paragraph">P</button>
-                <span class="mt-sep"></span>
-                <button class="mt-btn" onclick="insertLink()" title="Insert Link">&#x1F517;</button>
-                <button class="mt-btn mt-btn--img" onclick="insertImage()" title="Insert Image">&#x1F5BC; Img</button>
-                <button class="mt-btn" onclick="insertDiv('grid-3')" title="3-Column Grid">&#x25A6; Grid</button>
-                <button class="mt-btn" onclick="insertDiv('info-card')" title="Info Card">&#x1F4CB; Card</button>
-                <span class="mt-sep"></span>
-                <button class="mt-btn" onclick="insertSnippet('hero')" title="Hero Section">&#x1F3A8; Hero</button>
-                <button class="mt-btn" onclick="insertSnippet('cta')" title="CTA Section">&#x1F4E3; CTA</button>
-            </div>
+    <!-- Review Content -->
+    <div class="form-section">
+        <div class="form-section__title">⭐ Review</div>
+        <div class="form-group">
+            <label class="form-label">Title <small>(optional headline)</small></label>
+            <input class="form-input" id="title" placeholder="e.g. Life-changing experience at Medanta" oninput="updatePreview()">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Rating *</label>
+            <div class="star-picker" id="starPicker"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Quote / Review *</label>
+            <textarea class="form-textarea" id="quote" rows="5" placeholder="The patient's testimonial text..." oninput="updatePreview()"></textarea>
+        </div>
+    </div>
 
-            <div class="code-area">
-                <div class="vars-bar" id="varsBar"><span class="vars-bar__label">VARS:</span></div>
-                <div class="code-wrap" id="codeWrap1"><textarea id="htmlEditor" spellcheck="false"></textarea></div>
-                <div class="code-wrap" id="codeWrap2" style="display:none"><textarea id="cssEditor" placeholder="/* Custom CSS */" spellcheck="false"></textarea></div>
+    <!-- Source -->
+    <div class="form-section">
+        <div class="form-section__title">📋 Source</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Source</label>
+                <select class="form-select" id="source" onchange="toggleGoogleFields();updatePreview()">
+                    <option value="patient_direct">💬 Patient Direct</option>
+                    <option value="google_reviews">🔍 Google Review</option>
+                    <option value="doctor_shared">👨‍⚕️ Doctor Shared</option>
+                    <option value="website">🌐 Website Submission</option>
+                    <option value="partner">🏥 Hospital Partner</option>
+                </select>
             </div>
-
-            <!-- AI PROMPT + UPLOAD -->
-            <div class="prompt-area">
-                <div class="prompt-header">
-                    <span>&#x1F916; AI Design Assistant</span>
-                    <select id="aiTone">
-                        <option value="designer">Designer</option>
-                        <option value="medical">Medical Pro</option>
-                        <option value="modern">Modern</option>
-                    </select>
+            <div class="form-group">
+                <label class="form-label">Treatment Date <small>(optional)</small></label>
+                <input class="form-input" id="treatmentDate" type="date">
+            </div>
+        </div>
+        <div id="googleFields" style="display:none">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Google Review URL</label>
+                    <input class="form-input" id="googleReviewUrl" placeholder="https://maps.google.com/...">
                 </div>
-                <div class="prompt-body">
-                    <div class="upload-row">
-                        <label class="upload-btn" id="uploadLabel">
-                            &#x1F4CE; Upload Image
-                            <input type="file" id="fileInput" accept="image/*" onchange="uploadFile(this)">
-                        </label>
-                        <span class="upload-status" id="uploadStatus">Upload an image to get its URL for the template</span>
-                        <span class="upload-url" id="uploadUrl" onclick="copyUploadUrl()" title="Click to copy URL"></span>
-                    </div>
-                    <textarea class="prompt-input" id="promptInput" placeholder="Describe design changes... e.g.&#10;&#10;'Add a featured image banner below the hero with rounded corners'&#10;'Make headings bigger and add orange accent borders'&#10;'Create a 2-column layout with content on left and sidebar on right'"></textarea>
-                    <div class="prompt-bottom">
-                        <button class="prompt-btn prompt-btn--quick" onclick="quickPrompt('beautify')">&#x2728; Beautify</button>
-                        <button class="prompt-btn prompt-btn--quick" onclick="quickPrompt('spacing')">&#x1F4D0; Spacing</button>
-                        <button class="prompt-btn prompt-btn--quick" onclick="quickPrompt('modern')">&#x1F3A8; Modern</button>
-                        <button class="prompt-btn prompt-btn--quick" onclick="quickPrompt('cta')">&#x1F4E3; CTA</button>
-                        <button class="prompt-btn prompt-btn--quick" onclick="quickPrompt('image')">&#x1F5BC; Add Image</button>
-                        <div style="flex:1"></div>
-                        <button class="prompt-btn prompt-btn--send" onclick="sendPrompt()" id="btnSend">&#x1F680; Apply</button>
-                        <div class="prompt-loading" id="promptLoading"><div class="spinner"></div> Designing...</div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Google Review Date</label>
+                    <input class="form-input" id="googleReviewDate" type="date">
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="drag-handle" id="dragHandle"></div>
-
-        <div class="panel-right" id="panelRight">
-            <div class="preview-bar">
-                <div class="preview-bar__title">&#x1F441; Live Preview</div>
-                <div class="preview-bar__devices">
-                    <button class="pv-dev active" data-w="100%" onclick="setDev(this)">&#x1F5A5; Desktop</button>
-                    <button class="pv-dev" data-w="768px" onclick="setDev(this)">&#x1F4F1; Tablet</button>
-                    <button class="pv-dev" data-w="375px" onclick="setDev(this)">&#x1F4F1; Mobile</button>
-                    <button class="pv-dev" onclick="renderPreview()">&#x1F504;</button>
-                </div>
+    <!-- Entity Linking -->
+    <div class="form-section">
+        <div class="form-section__title">🔗 Link to Entities</div>
+        <div class="form-row">
+            <div class="form-group entity-group">
+                <label class="form-label">Specialty</label>
+                <select class="form-select" id="specialtyId" onchange="updateTextFromSelect('specialtyId','specialtyText');updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+                <input type="hidden" id="specialtyText">
             </div>
-            <div class="preview-wrap"><iframe id="previewFrame"></iframe></div>
+            <div class="form-group entity-group">
+                <label class="form-label">Treatment</label>
+                <select class="form-select" id="treatmentId" onchange="updateTextFromSelect('treatmentId','treatmentText');updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+                <input type="hidden" id="treatmentText">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group entity-group">
+                <label class="form-label">Destination</label>
+                <select class="form-select" id="destinationSelect" onchange="updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+            </div>
+            <div class="form-group entity-group">
+                <label class="form-label">Hospital</label>
+                <select class="form-select" id="hospitalId" onchange="updatePreview()">
+                    <option value="">— Select —</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group entity-group">
+            <label class="form-label">Doctor</label>
+            <select class="form-select" id="doctorId" onchange="updatePreview()">
+                <option value="">— Select —</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Images -->
+    <div class="form-section">
+        <div class="form-section__title">📷 Patient Images</div>
+        <div class="form-hint" style="margin-bottom:8px">Add photos shared by the patient — treatment results, hospital visit, etc.</div>
+        <div class="img-grid" id="imgGrid">
+            <div class="img-add" onclick="openMediaPicker()">+</div>
+        </div>
+    </div>
+
+    <!-- Options -->
+    <div class="form-section">
+        <div class="form-section__title">⚙️ Options</div>
+        <div class="toggle-row">
+            <div class="toggle" id="featuredToggle" onclick="this.classList.toggle('on');updatePreview()"></div>
+            <span class="toggle-label">Featured Testimonial</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- RIGHT: PREVIEW -->
+<div class="panel-preview">
+    <div class="prev-section">
+        <h3>Live Preview</h3>
+    </div>
+    <div class="prev-card" id="prevCard">
+        <div id="prevSource"></div>
+        <div class="prev-stars" id="prevStars"></div>
+        <div id="prevTitle"></div>
+        <div class="prev-quote" id="prevQuote">Patient testimonial will appear here...</div>
+        <div class="prev-images" id="prevImages"></div>
+        <div class="prev-patient">
+            <div class="prev-avatar" id="prevAvatar" style="background:linear-gradient(135deg,#0EA5A0,#0c8f8a)">?</div>
+            <div>
+                <div class="prev-name" id="prevName">Patient Name</div>
+                <div class="prev-country" id="prevCountry">Country</div>
+            </div>
+        </div>
+        <div class="prev-tags" id="prevTags"></div>
+    </div>
+</div>
+
+</div>
+
+<!-- MEDIA PICKER MODAL -->
+<div class="media-overlay" id="mediaOverlay">
+    <div class="media-modal">
+        <div class="media-header">
+            <h3>📷 Select Images</h3>
+            <div style="display:flex;gap:8px;align-items:center">
+                <label class="btn btn--primary" style="cursor:pointer;font-size:.82rem;display:flex;align-items:center;gap:4px">
+                    📤 Upload New
+                    <input type="file" accept="image/*" multiple style="display:none" onchange="uploadMediaFiles(this.files)">
+                </label>
+                <button class="media-close" onclick="closeMediaPicker()">✕</button>
+            </div>
+        </div>
+        <div class="media-body">
+            <div class="media-grid" id="mediaGrid"></div>
+        </div>
+        <div class="media-footer">
+            <button class="btn btn--ghost" onclick="closeMediaPicker()">Cancel</button>
+            <button class="btn btn--primary" onclick="confirmMediaSelection()">Add Selected</button>
         </div>
     </div>
 </div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-var tplKey = window.location.pathname.split('/').pop();
-var tplData = null, pvData = null, siteCSS = '', pvTimer = null, viewMode = 0, curTab = 'html';
-var lastUploadUrl = '';
+// State
+let testimonialId = null;
+let currentRating = 5;
+let selectedImages = [];
+let mediaSelections = [];
+let allMedia = [];
+let allSpecialties = [], allTreatments = [], allDestinations = [], allHospitals = [], allDoctors = [];
 
-var TMETA = {
-'blog-detail':{label:'Blog Post',icon:'\uD83D\uDCDD',cat:'detail',vars:'post.title,post.content,post.excerpt,post.author_name,post.read_time,post.category,post.cover_image,post.published_at'},
-'destination-detail':{label:'Destination',icon:'\uD83C\uDF0D',cat:'detail',vars:'destination.name,destination.flag,destination.tagline,destination.description,destination.hospital_count,destination.doctor_count,destination.avg_savings,hospitals[],doctors[]'},
-'specialty-detail':{label:'Specialty',icon:'\uD83C\uDFF7\uFE0F',cat:'detail',vars:'specialty.name,specialty.icon,specialty.description,specialty.long_description,treatments[]'},
-'treatment-detail':{label:'Treatment',icon:'\uD83D\uDC8A',cat:'detail',vars:'treatment.name,treatment.description,treatment.long_description,treatment.cost_range_usd,treatment.duration,treatment.recovery_time,treatment.specialty_icon,costs[]'},
-'hospital-detail':{label:'Hospital',icon:'\uD83C\uDFE5',cat:'detail',vars:'hospital.name,hospital.description,hospital.city,hospital.country,hospital.beds,hospital.established,hospital.rating,hospital.accreditations,doctors[]'},
-'doctor-detail':{label:'Doctor',icon:'\uD83D\uDC68\u200D\u2695\uFE0F',cat:'detail',vars:'doctor.name,doctor.title,doctor.specialty,doctor.experience_years,doctor.description,doctor.qualifications,doctor.hospital_name,doctor.hospital_slug'},
-'blog-list':{label:'Blog Listing',icon:'\uD83D\uDCDD',cat:'listing',vars:'posts[].title,posts[].slug,posts[].excerpt,posts[].category,posts[].read_time'},
-'destinations-list':{label:'Destinations Listing',icon:'\uD83C\uDF0D',cat:'listing',vars:'destinations[].name,destinations[].slug,destinations[].flag'},
-'specialties-list':{label:'Specialties Listing',icon:'\uD83C\uDFF7\uFE0F',cat:'listing',vars:'specialties[].name,specialties[].slug,specialties[].icon'},
-'results':{label:'Testimonials',icon:'\u2B50',cat:'listing',vars:'testimonials[].patient_name,testimonials[].quote,testimonials[].rating,testimonials[].specialty,testimonials[].destination'},
-'get-quote':{label:'Get Quote',icon:'\uD83D\uDCCB',cat:'page',vars:''},
-'cost-calculator':{label:'Cost Calculator',icon:'\uD83E\uDDEE',cat:'page',vars:''},
-'contact':{label:'Contact',icon:'\uD83D\uDCDE',cat:'page',vars:''}
-};
+const COLORS = [
+    'linear-gradient(135deg,#0EA5A0,#0c8f8a)',
+    'linear-gradient(135deg,#2563EB,#1E40AF)',
+    'linear-gradient(135deg,#7C3AED,#5B21B6)',
+    'linear-gradient(135deg,#DC2626,#B91C1C)',
+    'linear-gradient(135deg,#D97706,#B45309)',
+    'linear-gradient(135deg,#059669,#047857)',
+    'linear-gradient(135deg,#EC4899,#BE185D)',
+    'linear-gradient(135deg,#6366F1,#4338CA)'
+];
+let selectedColor = COLORS[0];
 
-var SITE_HEADER = '<div class="topbar"><div class="topbar__inner"><div class="topbar__contact"><a>\u2709 info@ginger.healthcare</a><a>\uD83D\uDCAC WhatsApp Us</a></div><div>\uD83C\uDF10 English</div></div></div><nav id="mainNav"><div class="nav__inner"><a href="/" class="logo"><div class="logo__icon">G</div><div class="logo__text"><span>Ginger</span> <span>Healthcare</span></div></a><div class="nav__links"><a class="nav__link">Destinations</a><a class="nav__link">Specialties</a><a class="nav__link">How It Works</a><a class="nav__link">Cost Calculator</a><a class="nav__link">Results</a><a class="nav__link nav__link--active">Blog</a></div><div class="nav__cta"><a class="btn btn--ghost" style="padding:10px 20px;font-size:.88rem">\uD83D\uDCDE Free Consult</a><a class="btn btn--primary">Get Free Quote</a></div></div></nav>';
+// Init
+document.addEventListener('DOMContentLoaded', async () => {
+    // Parse ID from URL
+    const params = new URLSearchParams(window.location.search);
+    testimonialId = params.get('id');
 
-var SITE_FOOTER = '<div class="section" style="padding-bottom:48px"><div class="final-cta"><div class="final-cta__bg"></div><div class="final-cta__orb1"></div><div class="final-cta__orb2"></div><div class="final-cta__inner"><h2>Your Health Deserves the <em>Best \u2014 Not the Most Expensive</em></h2><p>Join 5,000+ patients from 60+ countries who chose world-class care at a fraction of the cost.</p><div class="final-cta__btns"><a class="btn btn--primary btn--large">\uD83D\uDCCB Request an Estimate</a><a class="btn btn--white btn--large">\uD83D\uDCDE Speak to a Counselor</a></div><div class="final-cta__trust"><span>\uD83D\uDD12 100% Free</span><span>\uD83C\uDFE5 JCI Accredited</span><span>\uD83D\uDCDE 24/7 Support</span><span>\uD83E\uDD1D No Obligation</span></div></div></div></div><footer class="footer"><div class="footer__inner"><div class="footer__grid"><div class="footer__brand"><a class="logo"><div class="logo__icon">G</div><div class="logo__text"><span>Ginger</span> <span>Healthcare</span></div></a><p>Making world-class healthcare accessible to everyone.</p><div class="footer__social"><a>\uD83D\uDCD8</a><a>\uD83D\uDCF8</a><a>\uD83D\uDC26</a><a>\uD83D\uDCBC</a></div></div><div><div class="footer__col-title">Destinations</div><ul class="footer__links"><li><a>\uD83C\uDDEE\uD83C\uDDF3 India</a></li><li><a>\uD83C\uDDF9\uD83C\uDDF7 Turkey</a></li><li><a>\uD83C\uDDF9\uD83C\uDDED Thailand</a></li><li><a>\uD83C\uDDE6\uD83C\uDDEA UAE</a></li><li><a>\uD83C\uDDF8\uD83C\uDDEC Singapore</a></li></ul></div><div><div class="footer__col-title">Resources</div><ul class="footer__links"><li><a>How It Works</a></li><li><a>Cost Calculator</a></li><li><a>Blog</a></li><li><a>FAQ</a></li></ul></div><div><div class="footer__col-title">Company</div><ul class="footer__links"><li><a>About Us</a></li><li><a>Contact Us</a></li><li><a>Privacy Policy</a></li></ul></div></div><div class="footer__bottom"><span>\u00A9 2026 Ginger Healthcare. All rights reserved.</span></div></div></footer>';
+    buildStarPicker();
+    buildColorPicker();
+    await loadEntities();
 
-// ===== INIT =====
-async function init() {
-    var meta = TMETA[tplKey];
-    if (!meta) { document.body.innerHTML = '<h2 style="padding:40px">Unknown template: '+tplKey+'</h2>'; return; }
-    document.getElementById('tplTitle').textContent = meta.label + ' Template';
-    document.getElementById('tplIcon').textContent = meta.icon;
-    document.title = meta.label + ' | Template Studio';
-
-    if (meta.vars) {
-        var vb = document.getElementById('varsBar');
-        meta.vars.split(',').forEach(function(v) {
-            var sp = document.createElement('span'); sp.className = 'vt';
-            sp.textContent = '<%= ' + v.trim() + ' %>';
-            sp.onclick = function() {
-                var ta = document.getElementById('htmlEditor');
-                var s = ta.selectionStart, tag = '<%= ' + v.trim() + ' %>';
-                ta.value = ta.value.substring(0,s) + tag + ta.value.substring(ta.selectionEnd);
-                ta.focus(); ta.selectionStart = ta.selectionEnd = s + tag.length;
-                debouncePreview();
-                sp.style.background = '#0EA5A0'; sp.style.color = '#fff';
-                setTimeout(function(){sp.style.background='';sp.style.color=''},500);
-            };
-            vb.appendChild(sp);
-        });
+    if (testimonialId) {
+        await loadTestimonial(testimonialId);
+        document.getElementById('deleteBtn').style.display = '';
     }
-
-    try { var r = await fetch('/api/theme-templates/'+tplKey); if (r.ok) { tplData = await r.json(); document.getElementById('htmlEditor').value = tplData.html_template||''; document.getElementById('cssEditor').value = tplData.css||''; }} catch(e){}
-
-    if (!document.getElementById('htmlEditor').value) {
-        try { var r2 = await fetch('/theme-templates'); if (r2.ok) { var h = await r2.text(); var m = h.match(/id="tpl-defaults"[^>]*>([\s\S]*?)<\/script>/); if (m) { var d = JSON.parse(m[1]); if(d[tplKey]) document.getElementById('htmlEditor').value = d[tplKey]; }}} catch(e){}
-    }
-
-    try { var r3 = await fetch('/api/theme-templates/preview-data/'+tplKey); if (r3.ok) pvData = await r3.json(); } catch(e){}
-
-    try { var r4 = await fetch('/css/site-preview.css'); if (r4.ok) siteCSS = await r4.text(); } catch(e){}
-    if (!siteCSS) { try { var r5 = await fetch('https://ginger.healthcare/css/style.css'); if (r5.ok) siteCSS = await r5.text(); } catch(e) { siteCSS = ':root{--navy:#0B2545;--ginger:#F26522;--teal:#0EA5A0;--font-display:"Playfair Display",serif;--font-body:"DM Sans",sans-serif}'; }}
-
-    renderPreview();
-    document.getElementById('htmlEditor').addEventListener('input', debouncePreview);
-    document.getElementById('cssEditor').addEventListener('input', debouncePreview);
-}
-
-function debouncePreview() { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, 500); }
-
-// ===== MINI TOOLBAR =====
-function getEditor() { return document.getElementById('htmlEditor'); }
-
-function wrapTag(tag) {
-    var ta = getEditor(), s = ta.selectionStart, e = ta.selectionEnd;
-    var sel = ta.value.substring(s, e) || 'text';
-    var wrapped = '<' + tag + '>' + sel + '</' + tag + '>';
-    ta.value = ta.value.substring(0,s) + wrapped + ta.value.substring(e);
-    ta.focus(); ta.selectionStart = s; ta.selectionEnd = s + wrapped.length;
-    debouncePreview();
-}
-
-function insertTag(tag, placeholder) {
-    var ta = getEditor(), s = ta.selectionStart;
-    var sel = ta.value.substring(ta.selectionStart, ta.selectionEnd) || placeholder;
-    var html = '\n<' + tag + '>' + sel + '</' + tag + '>\n';
-    ta.value = ta.value.substring(0,s) + html + ta.value.substring(ta.selectionEnd);
-    ta.focus(); ta.selectionStart = s + 1 + tag.length + 2; ta.selectionEnd = ta.selectionStart + sel.length;
-    debouncePreview();
-}
-
-function insertLink() {
-    var url = prompt('Enter URL:', 'https://');
-    if (!url) return;
-    var text = prompt('Link text:', 'Click here');
-    var ta = getEditor(), s = ta.selectionStart;
-    var html = '<a href="' + url + '" class="btn btn--primary">' + (text || 'Click here') + '</a>';
-    ta.value = ta.value.substring(0,s) + html + ta.value.substring(ta.selectionEnd);
-    ta.focus(); debouncePreview();
-}
-
-function insertImage() {
-    var url = lastUploadUrl || prompt('Image URL:', 'https://');
-    if (!url) return;
-    var alt = prompt('Alt text:', 'Image');
-    var ta = getEditor(), s = ta.selectionStart;
-    var html = '\n<img src="' + url + '" alt="' + (alt||'Image') + '" style="width:100%;border-radius:12px;margin:16px 0;box-shadow:0 4px 16px rgba(0,0,0,.1)">\n';
-    ta.value = ta.value.substring(0,s) + html + ta.value.substring(ta.selectionEnd);
-    ta.focus(); debouncePreview();
-}
-
-function insertDiv(cls) {
-    var ta = getEditor(), s = ta.selectionStart;
-    var html = '';
-    if (cls === 'grid-3') {
-        html = '\n<div class="grid-3">\n    <div class="info-card"><div class="info-card__icon">\uD83C\uDFE5</div><div class="info-card__title">Title</div><div class="info-card__text">Description</div></div>\n    <div class="info-card"><div class="info-card__icon">\uD83D\uDC68\u200D\u2695\uFE0F</div><div class="info-card__title">Title</div><div class="info-card__text">Description</div></div>\n    <div class="info-card"><div class="info-card__icon">\u2B50</div><div class="info-card__title">Title</div><div class="info-card__text">Description</div></div>\n</div>\n';
-    } else if (cls === 'info-card') {
-        html = '\n<div class="info-card" style="text-align:center">\n    <div class="info-card__icon">\uD83C\uDFE5</div>\n    <div class="info-card__title">Card Title</div>\n    <div class="info-card__text">Card description text here</div>\n</div>\n';
-    }
-    ta.value = ta.value.substring(0,s) + html + ta.value.substring(ta.selectionEnd);
-    ta.focus(); debouncePreview();
-}
-
-function insertSnippet(type) {
-    var ta = getEditor(), s = ta.selectionStart, html = '';
-    if (type === 'hero') {
-        html = '\n<div class="page-hero">\n    <div class="page-hero__inner">\n        <div class="page-hero__breadcrumb"><a href="/">Home</a> \u2192 Page Title</div>\n        <h1><em>Page Title</em></h1>\n        <p>Page description goes here</p>\n    </div>\n</div>\n';
-    } else if (type === 'cta') {
-        html = '\n<div style="text-align:center;padding:40px 32px">\n    <h2 style="font-family:var(--font-display);color:var(--navy);margin-bottom:12px">Ready to Get Started?</h2>\n    <p style="color:var(--gray-500);margin-bottom:20px;max-width:500px;margin-left:auto;margin-right:auto">Take the first step towards affordable, world-class healthcare.</p>\n    <a href="/get-quote/" class="btn btn--primary btn--large">\uD83D\uDCCB Get Free Quote</a>\n</div>\n';
-    }
-    ta.value = ta.value.substring(0,s) + html + ta.value.substring(ta.selectionEnd);
-    ta.focus(); debouncePreview();
-}
-
-// ===== FILE UPLOAD =====
-async function uploadFile(input) {
-    var file = input.files[0];
-    if (!file) return;
-    var status = document.getElementById('uploadStatus');
-    var urlSpan = document.getElementById('uploadUrl');
-    status.textContent = 'Uploading ' + file.name + '...';
-    urlSpan.style.display = 'none';
-
-    var fd = new FormData();
-    fd.append('file', file);
-    try {
-        var r = await fetch('/api/media/upload', { method: 'POST', body: fd });
-        if (r.ok) {
-            var data = await r.json();
-            lastUploadUrl = data.url;
-            status.textContent = '\u2705 Uploaded! ';
-            urlSpan.textContent = data.url;
-            urlSpan.style.display = 'inline-block';
-            // Also insert into prompt context
-            document.getElementById('promptInput').value += (document.getElementById('promptInput').value ? '\n' : '') + 'Use this uploaded image: ' + data.url;
-        } else {
-            status.textContent = '\u274C Upload failed';
-        }
-    } catch(e) {
-        status.textContent = '\u274C Error: ' + e.message;
-    }
-    input.value = '';
-}
-
-function copyUploadUrl() {
-    navigator.clipboard.writeText(lastUploadUrl);
-    var el = document.getElementById('uploadUrl');
-    el.textContent = '\u2705 Copied!';
-    setTimeout(function(){ el.textContent = lastUploadUrl; }, 1000);
-}
-
-// ===== PREVIEW =====
-function renderPreview() {
-    var ejs = document.getElementById('htmlEditor').value;
-    var css = document.getElementById('cssEditor').value;
-    var frame = document.getElementById('previewFrame');
-    var body = processEJS(ejs);
-    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    html += '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">';
-    html += '<style>'+siteCSS+'</style>';
-    if (css) html += '<style>'+css+'</style>';
-    html += '</head><body>';
-    html += SITE_HEADER + body + SITE_FOOTER;
-    html += '</body></html>';
-    frame.srcdoc = html;
-}
-
-function processEJS(ejs) {
-    if (!pvData) return ejs.replace(/<%[\s\S]*?%>/g, '');
-    var html = ejs;
-    html = html.replace(/<%\s*(\w+)\.forEach\(\s*(?:\(?\s*(\w+)(?:\s*,\s*\w+)?\s*\)?\s*=>|function\s*\(\s*(\w+)\s*\))\s*\{?\s*%>([\s\S]*?)<%\s*\}?\);?\s*%>/g, function(m,arr,v1,v2,body){
-        var v = v1||v2; var a = rv(pvData,arr);
-        if (!Array.isArray(a)||!a.length) return '';
-        return a.map(function(item){
-            return body.replace(/<%[-=]\s*(\w+)\.([\w.]+)(?:\s*\|\|\s*([^%]*?))?\s*%>/g, function(mm,vn,prop,fb){
-                if(vn===v) { var val=item[prop]; return val!==undefined&&val!==null?String(val):(fb?fb.trim().replace(/^['"]|['"]$/g,''):''); }
-                return mm;
-            });
-        }).join('');
-    });
-    html = html.replace(/<%\s*if\s*\(([^)]+)\)\s*\{\s*%>([\s\S]*?)<%\s*\}\s*%>/g, function(m,cond,body){
-        try {
-            var c = cond.replace(/([\w]+(?:\.[\w]+)+)/g, function(p) {
-                var v = rv(pvData,p); if(v===undefined) return 'undefined';
-                if(typeof v==='string') return '"'+v.replace(/"/g,'\\"')+'"';
-                if(Array.isArray(v)) return v.length; return String(v);
-            });
-            if (eval(c)) return body; return '';
-        } catch(e) { return body; }
-    });
-    html = html.replace(/<%-\s*([\w.\[\]]+(?:\s*\|\|\s*[^%]*?)?)\s*%>/g, function(m,expr){
-        var parts = expr.split('||'); var val = rv(pvData,parts[0].trim());
-        if(val===undefined||val===null||val==='') val = parts[1]?parts[1].trim().replace(/^['"]|['"]$/g,''):'';
-        return String(val);
-    });
-    html = html.replace(/<%=\s*([\w.\[\]]+(?:\s*\|\|\s*[^%]*?)?)\s*%>/g, function(m,expr){
-        var parts = expr.split('||'); var val = rv(pvData,parts[0].trim());
-        if(val===undefined||val===null||val==='') val = parts[1]?parts[1].trim().replace(/^['"]|['"]$/g,''):'';
-        if(Array.isArray(val)) val = val.join(', ');
-        return escH(String(val));
-    });
-    html = html.replace(/<%[\s\S]*?%>/g, '');
-    return html;
-}
-
-function rv(obj,path) { var p=path.replace(/\[(\w+)\]/g,'.$1').split('.'),v=obj; for(var i=0;i<p.length;i++){if(v==null)return undefined;v=v[p[i]];} return v; }
-function escH(s) { var d=document.createElement('div');d.textContent=s;return d.innerHTML; }
-
-// ===== LEFT TABS =====
-function switchLeft(tab, el) {
-    curTab = tab;
-    document.querySelectorAll('.left-tab').forEach(function(t){t.classList.remove('active')}); el.classList.add('active');
-    document.getElementById('codeWrap1').style.display = tab==='html'?'':'none';
-    document.getElementById('codeWrap2').style.display = tab==='css'?'':'none';
-    document.getElementById('varsBar').style.display = tab==='html'?'':'none';
-    document.getElementById('miniToolbar').style.display = tab==='html'?'':'none';
-}
-
-// ===== VIEW TOGGLE =====
-function toggleView() {
-    viewMode = (viewMode+1)%3;
-    var pl=document.getElementById('panelLeft'),pr=document.getElementById('panelRight'),dh=document.getElementById('dragHandle'),lb=document.getElementById('viewLabel');
-    pl.style.display=''; pr.style.display=''; dh.style.display=''; pl.style.width='42%';
-    if(viewMode===1){pr.style.display='none';dh.style.display='none';pl.style.width='100%';lb.textContent='Preview'}
-    else if(viewMode===2){pl.style.display='none';dh.style.display='none';lb.textContent='Code'}
-    else{lb.textContent='Split'}
-    if(viewMode!==1) renderPreview();
-}
-
-function setDev(el) {
-    document.querySelectorAll('.pv-dev').forEach(function(d){d.classList.remove('active')}); el.classList.add('active');
-    var w = el.getAttribute('data-w'); if(!w)return;
-    var f = document.getElementById('previewFrame');
-    f.style.width = w; f.style.maxWidth = '100%';
-    if(w==='100%'){f.style.boxShadow='none';f.style.borderRadius='0';}
-    else{f.style.boxShadow='0 4px 20px rgba(0,0,0,.15)';f.style.borderRadius='12px';f.style.margin='16px auto';f.style.height='calc(100% - 32px)';}
-}
-
-// ===== SAVE =====
-async function saveTemplate() {
-    var meta = TMETA[tplKey];
-    try {
-        var r = await fetch('/api/theme-templates/'+tplKey, { method:'PUT', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ label:meta.label, category:meta.cat||'detail', description:'', html_template:document.getElementById('htmlEditor').value, css:document.getElementById('cssEditor').value, is_active:true })
-        });
-        if(r.ok){ tplData=await r.json(); var m=document.getElementById('savedMsg');m.style.display='flex';setTimeout(function(){m.style.display='none'},3000); }
-        else alert('Save failed');
-    } catch(e){alert('Error: '+e.message);}
-}
-
-// ===== AI PROMPT =====
-function quickPrompt(type) {
-    var prompts = {
-        beautify: 'Make this template more visually attractive with better typography, colors, spacing, and modern design elements. Keep the same structure but make it look professional and polished.',
-        spacing: 'Fix the spacing in this template. Reduce excessive gaps between elements, tighten paragraph spacing, and ensure consistent padding throughout.',
-        modern: 'Modernize this template with contemporary design patterns - subtle gradients, rounded corners, card-based layouts, and clean typography.',
-        cta: 'Add a compelling call-to-action section at the bottom with a button to get a free quote.',
-        image: 'Add a featured image section to this template. If there is a cover_image variable, show it as a full-width banner with rounded corners and shadow. If no image, show a gradient placeholder.'
-    };
-    document.getElementById('promptInput').value = prompts[type] || '';
-    sendPrompt();
-}
-
-async function sendPrompt() {
-    var prompt = document.getElementById('promptInput').value.trim();
-    if (!prompt) return;
-    var currentHTML = document.getElementById('htmlEditor').value;
-    var meta = TMETA[tplKey];
-    var btn = document.getElementById('btnSend');
-    var loading = document.getElementById('promptLoading');
-    btn.style.display = 'none'; loading.style.display = 'flex';
-
-    try {
-        var r = await fetch('/api/ai/generate', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-                prompt: 'You are a web designer editing an EJS template for Ginger Healthcare (medical tourism). Template: ' + meta.label + ' pages.\n\nCurrent template:\n```\n' + currentHTML + '\n```\n\nAvailable EJS variables: ' + meta.vars + '\n\nUser request: ' + prompt + '\n\nRULES:\n1. Return ONLY the modified HTML/EJS code. No explanation, no markdown fences.\n2. Keep all EJS tags intact: <%= %>, <%- %>, <% if() {} %>, <% forEach() %>\n3. CSS classes: page-hero, page-hero__inner, page-hero__breadcrumb, section, grid-2/3/4, info-card, info-card__icon/title/text, content-section, blog-article, blog-cover, blog-meta, blog-author-card, btn, btn--primary, btn--large, btn--ghost\n4. CSS vars: var(--navy), var(--ginger), var(--teal), var(--gray-500), var(--font-display), var(--font-body), var(--cream)\n5. Make it visually impressive and professional',
-                type: 'general'
-            })
-        });
-        if (r.ok) {
-            var data = await r.json();
-            var result = (data.response || data.content || '').trim();
-            result = result.replace(/^```(?:html|ejs)?\n?/,'').replace(/\n?```$/,'');
-            if (result) { document.getElementById('htmlEditor').value = result; renderPreview(); }
-        }
-    } catch(e) { alert('AI error: ' + e.message); }
-    btn.style.display = ''; loading.style.display = 'none';
-    document.getElementById('promptInput').value = '';
-}
-
-// ===== DRAG HANDLE =====
-(function(){
-    var h=document.getElementById('dragHandle'),pl=document.getElementById('panelLeft'),d=false;
-    h.addEventListener('mousedown',function(e){d=true;h.classList.add('dragging');e.preventDefault()});
-    document.addEventListener('mousemove',function(e){if(!d)return;var p=(e.clientX/window.innerWidth)*100;p=Math.max(25,Math.min(70,p));pl.style.width=p+'%'});
-    document.addEventListener('mouseup',function(){d=false;h.classList.remove('dragging')});
-})();
-
-// ===== TAB KEY =====
-['htmlEditor','cssEditor'].forEach(function(id){
-    document.getElementById(id).addEventListener('keydown',function(e){
-        if(e.key==='Tab'){e.preventDefault();var s=this.selectionStart;this.value=this.value.substring(0,s)+'    '+this.value.substring(this.selectionEnd);this.selectionStart=this.selectionEnd=s+4;}
-    });
+    updatePreview();
 });
 
-document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveTemplate();}});
+// Load entity dropdowns
+async function loadEntities() {
+    try {
+        const [specRes, treatRes, destRes, hospRes, docRes, mediaRes] = await Promise.all([
+            fetch('/api/specialties', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/treatments', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/destinations', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/hospitals', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/doctors', {credentials:'include'}).then(r=>r.json()),
+            fetch('/api/media', {credentials:'include'}).then(r=>r.json())
+        ]);
+        allSpecialties = specRes || [];
+        allTreatments = treatRes || [];
+        allDestinations = destRes || [];
+        allHospitals = hospRes || [];
+        allDoctors = docRes || [];
+        allMedia = (mediaRes || []).filter(m => m.mime_type && m.mime_type.startsWith('image/'));
 
-init();
+        populateSelect('specialtyId', allSpecialties);
+        populateSelect('treatmentId', allTreatments);
+        populateSelect('destinationSelect', allDestinations);
+        populateSelect('hospitalId', allHospitals);
+        populateSelect('doctorId', allDoctors);
+    } catch(e) { console.error('Load entities error:', e); }
+}
+
+function populateSelect(id, items) {
+    const sel = document.getElementById(id);
+    items.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = i.name || i.title || i.patient_name || '';
+        sel.appendChild(opt);
+    });
+}
+
+// Load existing testimonial
+async function loadTestimonial(id) {
+    try {
+        const res = await fetch('/api/testimonials', {credentials:'include'});
+        const all = await res.json();
+        const t = all.find(x => x.id == id);
+        if (!t) return toast('Testimonial not found', 'error');
+
+        document.getElementById('patientName').value = t.patient_name || '';
+        // Set country dropdown — if value not in list, it stays on blank (graceful)
+        document.getElementById('patientCountry').value = t.patient_country || '';
+        document.getElementById('patientFlag').value = t.patient_flag || '';
+        document.getElementById('title').value = t.title || '';
+        document.getElementById('quote').value = t.quote || '';
+        document.getElementById('source').value = t.source || 'patient_direct';
+        document.getElementById('treatmentDate').value = t.treatment_date ? t.treatment_date.split('T')[0] : '';
+        document.getElementById('googleReviewUrl').value = t.google_review_url || '';
+        document.getElementById('googleReviewDate').value = t.google_review_date ? t.google_review_date.split('T')[0] : '';
+
+        if (t.specialty_id) document.getElementById('specialtyId').value = t.specialty_id;
+        if (t.treatment_id) document.getElementById('treatmentId').value = t.treatment_id;
+        if (t.hospital_id) document.getElementById('hospitalId').value = t.hospital_id;
+        if (t.doctor_id) document.getElementById('doctorId').value = t.doctor_id;
+
+        // Destination — match by name
+        if (t.destination) {
+            const dest = allDestinations.find(d => d.name.toLowerCase() === t.destination.toLowerCase());
+            if (dest) document.getElementById('destinationSelect').value = dest.id;
+        }
+
+        currentRating = t.rating || 5;
+        buildStarPicker();
+
+        if (t.avatar_color) { selectedColor = t.avatar_color; buildColorPicker(); }
+        if (t.is_featured) document.getElementById('featuredToggle').classList.add('on');
+        if (t.images && t.images.length) { selectedImages = [...t.images]; renderImages(); }
+
+        const status = t.status || 'draft';
+        document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
+        document.getElementById('statusBadge').textContent = status;
+        document.getElementById('pageTitle').textContent = t.patient_name || 'Edit Testimonial';
+        currentSlug = t.slug || null;
+        if (t.slug) {
+            document.getElementById('slugInput').value = t.slug;
+            document.getElementById('slugGroup').style.display = '';
+            slugEdited = true; // Don't auto-overwrite existing slug
+        }
+        if (t.patient_image) setPatientPhoto(t.patient_image);
+
+        toggleGoogleFields();
+        updatePreview();
+    } catch(e) { console.error('Load error:', e); toast('Failed to load', 'error'); }
+}
+
+// Star picker
+function buildStarPicker() {
+    const el = document.getElementById('starPicker');
+    el.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElement('span');
+        star.className = 'star-picker__star' + (i <= currentRating ? ' star-picker__star--active' : '');
+        star.textContent = '★';
+        star.onclick = () => { currentRating = i; buildStarPicker(); updatePreview(); };
+        el.appendChild(star);
+    }
+}
+
+// Country dropdown → auto-fill flag emoji
+const COUNTRY_FLAGS = {
+    'Afghanistan':'🇦🇫','Albania':'🇦🇱','Algeria':'🇩🇿','Angola':'🇦🇴','Argentina':'🇦🇷',
+    'Armenia':'🇦🇲','Australia':'🇦🇺','Austria':'🇦🇹','Azerbaijan':'🇦🇿','Bahrain':'🇧🇭',
+    'Bangladesh':'🇧🇩','Belarus':'🇧🇾','Belgium':'🇧🇪','Bolivia':'🇧🇴','Bosnia and Herzegovina':'🇧🇦',
+    'Brazil':'🇧🇷','Bulgaria':'🇧🇬','Cambodia':'🇰🇭','Cameroon':'🇨🇲','Canada':'🇨🇦',
+    'Chile':'🇨🇱','China':'🇨🇳','Colombia':'🇨🇴','Congo':'🇨🇬','Croatia':'🇭🇷',
+    'Cuba':'🇨🇺','Czech Republic':'🇨🇿','Denmark':'🇩🇰','Ecuador':'🇪🇨','Egypt':'🇪🇬',
+    'Ethiopia':'🇪🇹','Finland':'🇫🇮','France':'🇫🇷','Georgia':'🇬🇪','Germany':'🇩🇪',
+    'Ghana':'🇬🇭','Greece':'🇬🇷','Guatemala':'🇬🇹','Hungary':'🇭🇺','India':'🇮🇳',
+    'Indonesia':'🇮🇩','Iran':'🇮🇷','Iraq':'🇮🇶','Ireland':'🇮🇪','Israel':'🇮🇱',
+    'Italy':'🇮🇹','Jamaica':'🇯🇲','Japan':'🇯🇵','Jordan':'🇯🇴','Kazakhstan':'🇰🇿',
+    'Kenya':'🇰🇪','Kosovo':'🇽🇰','Kuwait':'🇰🇼','Kyrgyzstan':'🇰🇬','Lebanon':'🇱🇧',
+    'Libya':'🇱🇾','Lithuania':'🇱🇹','Malaysia':'🇲🇾','Maldives':'🇲🇻','Mexico':'🇲🇽',
+    'Moldova':'🇲🇩','Morocco':'🇲🇦','Mozambique':'🇲🇿','Myanmar':'🇲🇲','Nepal':'🇳🇵',
+    'Netherlands':'🇳🇱','New Zealand':'🇳🇿','Nigeria':'🇳🇬','Norway':'🇳🇴','Oman':'🇴🇲',
+    'Pakistan':'🇵🇰','Palestine':'🇵🇸','Peru':'🇵🇪','Philippines':'🇵🇭','Poland':'🇵🇱',
+    'Portugal':'🇵🇹','Qatar':'🇶🇦','Romania':'🇷🇴','Russia':'🇷🇺','Rwanda':'🇷🇼',
+    'Saudi Arabia':'🇸🇦','Senegal':'🇸🇳','Serbia':'🇷🇸','Singapore':'🇸🇬','Slovakia':'🇸🇰',
+    'Somalia':'🇸🇴','South Africa':'🇿🇦','South Korea':'🇰🇷','Spain':'🇪🇸','Sri Lanka':'🇱🇰',
+    'Sudan':'🇸🇩','Sweden':'🇸🇪','Switzerland':'🇨🇭','Syria':'🇸🇾','Taiwan':'🇹🇼',
+    'Tajikistan':'🇹🇯','Tanzania':'🇹🇿','Thailand':'🇹🇭','Tunisia':'🇹🇳','Turkey':'🇹🇷',
+    'Turkmenistan':'🇹🇲','Uganda':'🇺🇬','Ukraine':'🇺🇦','United Arab Emirates':'🇦🇪',
+    'United Kingdom':'🇬🇧','United States':'🇺🇸','Uzbekistan':'🇺🇿','Venezuela':'🇻🇪',
+    'Vietnam':'🇻🇳','Yemen':'🇾🇪','Zambia':'🇿🇲','Zimbabwe':'🇿🇼'
+};
+function onCountryChange() {
+    const country = document.getElementById('patientCountry').value;
+    const flagInput = document.getElementById('patientFlag');
+    if (country && COUNTRY_FLAGS[country]) {
+        flagInput.value = COUNTRY_FLAGS[country];
+    }
+    updatePreview();
+}
+
+
+// Color picker
+function buildColorPicker() {
+    const el = document.getElementById('colorRow');
+    el.innerHTML = '';
+    COLORS.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch' + (c === selectedColor ? ' color-swatch--active' : '');
+        sw.style.background = c;
+        sw.onclick = () => { selectedColor = c; buildColorPicker(); updatePreview(); };
+        el.appendChild(sw);
+    });
+}
+
+// Google fields toggle
+function toggleGoogleFields() {
+    document.getElementById('googleFields').style.display = document.getElementById('source').value === 'google_reviews' ? '' : 'none';
+}
+
+// Update text from FK select
+function updateTextFromSelect(selectId, hiddenId) {
+    const sel = document.getElementById(selectId);
+    document.getElementById(hiddenId).value = sel.options[sel.selectedIndex]?.text || '';
+}
+
+// Images
+function renderImages() {
+    const grid = document.getElementById('imgGrid');
+    grid.innerHTML = '';
+    selectedImages.forEach((url, i) => {
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const thumb = document.createElement('div');
+        thumb.className = 'img-thumb';
+        thumb.innerHTML = `<img src="${adminUrl}" alt=""><button class="img-thumb__del" onclick="removeImage(${i})">✕</button>`;
+        grid.appendChild(thumb);
+    });
+    const addBtn = document.createElement('div');
+    addBtn.className = 'img-add';
+    addBtn.textContent = '+';
+    addBtn.onclick = openMediaPicker;
+    grid.appendChild(addBtn);
+    updatePreview();
+}
+
+function removeImage(idx) {
+    selectedImages.splice(idx, 1);
+    renderImages();
+}
+
+// Media picker
+function openMediaPicker() {
+    mediaSelections = [];
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    
+    if (!allMedia.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:40px">No images in media library. Upload images first via <a href="/media" style="color:var(--teal);font-weight:600">Media Library</a>.</p>';
+    }
+    
+    allMedia.forEach(m => {
+        const url = m.url || '';
+        if (!url) return;
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.dataset.url = url;
+        item.innerHTML = `<img src="${adminUrl}" alt="${m.alt_text || m.original_name || ''}">`;
+        item.onclick = () => {
+            item.classList.toggle('media-item--selected');
+            if (item.classList.contains('media-item--selected')) {
+                mediaSelections.push(url);
+            } else {
+                mediaSelections = mediaSelections.filter(u => u !== url);
+            }
+        };
+        grid.appendChild(item);
+    });
+    document.getElementById('mediaOverlay').classList.add('open');
+}
+
+function closeMediaPicker() {
+    document.getElementById('mediaOverlay').classList.remove('open');
+}
+
+async function uploadMediaFiles(files) {
+    for (const file of files) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch('/api/media/upload', {method:'POST', credentials:'include', body: formData});
+            if (!res.ok) throw new Error('Upload failed');
+            const saved = await res.json();
+            allMedia.unshift(saved);
+            toast('Uploaded: ' + file.name, 'success');
+        } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
+    }
+    // Refresh picker
+    openMediaPicker();
+}
+
+function confirmMediaSelection() {
+    const mode = document.getElementById('mediaOverlay').dataset.mode;
+    if (mode === 'patient_photo') {
+        if (mediaSelections.length) setPatientPhoto(mediaSelections[0]);
+        document.getElementById('mediaOverlay').dataset.mode = '';
+    } else {
+        selectedImages = [...selectedImages, ...mediaSelections];
+        renderImages();
+    }
+    closeMediaPicker();
+}
+
+// Live preview
+function updatePreview() {
+    const name = document.getElementById('patientName').value || 'Patient Name';
+    const country = document.getElementById('patientCountry').value;
+    const flag = document.getElementById('patientFlag').value;
+    const quote = document.getElementById('quote').value || 'Patient testimonial will appear here...';
+    const titleVal = document.getElementById('title').value;
+    const source = document.getElementById('source').value;
+    const featured = document.getElementById('featuredToggle').classList.contains('on');
+
+    // Card class
+    const card = document.getElementById('prevCard');
+    card.className = 'prev-card' + (featured ? ' prev-card--featured' : '');
+
+    // Source badge
+    const googleIcon = '<svg width="12" height="12" viewBox="0 0 48 48" style="vertical-align:middle"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.9 33.1 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.2-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.3 15.6 18.8 13 24 13c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.4 0-9.9-3.5-11.5-8.3l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.2-2.6-.4-3.9z"/></svg>';
+    const srcMap = {google_reviews:['Google Review','google',googleIcon],doctor_shared:['Doctor Shared','doctor','👨‍⚕️'],patient_direct:['Patient Direct','direct','💬'],website:['Via Website','website','🌐'],partner:['Hospital Partner','partner','🏥']};
+    const [srcLabel, srcClass, srcIcon] = srcMap[source] || srcMap.patient_direct;
+    document.getElementById('prevSource').innerHTML = `<span class="prev-source prev-source--${srcClass}">${srcIcon} ${srcLabel}</span>`;
+
+    // Stars
+    let starsHtml = '';
+    for (let i = 1; i <= 5; i++) starsHtml += `<span class="prev-star${i > currentRating ? ' prev-star--empty' : ''}">★</span>`;
+    document.getElementById('prevStars').innerHTML = starsHtml;
+
+    // Title
+    document.getElementById('prevTitle').innerHTML = titleVal ? `<div class="prev-title">${titleVal}</div>` : '';
+
+    // Quote
+    document.getElementById('prevQuote').textContent = quote;
+
+    // Images
+    let imgHtml = '';
+    selectedImages.forEach(url => {
+        const full = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        imgHtml += `<img src="${full}" alt="">`;
+    });
+    document.getElementById('prevImages').innerHTML = imgHtml;
+
+    // Patient
+    const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const piUrl = document.getElementById('patientImage').value;
+    if (piUrl) {
+        const adminPi = piUrl.startsWith('http') ? piUrl : 'https://enter.ginger.healthcare' + piUrl;
+        document.getElementById('prevAvatar').style.background = 'none';
+        document.getElementById('prevAvatar').innerHTML = `<img src="${adminPi}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`;
+    } else {
+        document.getElementById('prevAvatar').style.background = selectedColor;
+        document.getElementById('prevAvatar').textContent = initials;
+    }
+    document.getElementById('prevName').textContent = name;
+    document.getElementById('prevCountry').textContent = `${flag} ${country}`.trim() || 'Country';
+
+    // Tags
+    let tags = '';
+    const specSel = document.getElementById('specialtyId');
+    const treatSel = document.getElementById('treatmentId');
+    const destSel = document.getElementById('destinationSelect');
+    const hospSel = document.getElementById('hospitalId');
+    const docSel = document.getElementById('doctorId');
+    if (specSel.value) tags += `<span class="prev-tag prev-tag--spec">🏥 ${specSel.options[specSel.selectedIndex].text}</span>`;
+    if (destSel.value) tags += `<span class="prev-tag prev-tag--dest">🌍 ${destSel.options[destSel.selectedIndex].text}</span>`;
+    if (treatSel.value) tags += `<span class="prev-tag prev-tag--treat">💊 ${treatSel.options[treatSel.selectedIndex].text}</span>`;
+    if (hospSel.value) tags += `<span class="prev-tag prev-tag--hosp">🏨 ${hospSel.options[hospSel.selectedIndex].text}</span>`;
+    if (docSel.value) tags += `<span class="prev-tag prev-tag--doc">👨‍⚕️ ${docSel.options[docSel.selectedIndex].text}</span>`;
+    document.getElementById('prevTags').innerHTML = tags;
+}
+
+// Save
+async function saveTestimonial(status) {
+    const data = {
+        patient_name: document.getElementById('patientName').value,
+        patient_country: document.getElementById('patientCountry').value,
+        patient_flag: document.getElementById('patientFlag').value,
+        title: document.getElementById('title').value,
+        quote: document.getElementById('quote').value,
+        rating: currentRating,
+        source: document.getElementById('source').value,
+        avatar_color: selectedColor,
+        is_featured: document.getElementById('featuredToggle').classList.contains('on'),
+        status: status,
+        images: selectedImages,
+        treatment_date: document.getElementById('treatmentDate').value || null,
+        google_review_url: document.getElementById('googleReviewUrl').value || null,
+        google_review_date: document.getElementById('googleReviewDate').value || null,
+        slug: document.getElementById('slugInput').value || null,
+        patient_image: document.getElementById('patientImage').value || null,
+        // Entity FKs
+        specialty_id: document.getElementById('specialtyId').value || null,
+        treatment_id: document.getElementById('treatmentId').value || null,
+        hospital_id: document.getElementById('hospitalId').value || null,
+        doctor_id: document.getElementById('doctorId').value || null,
+        // Text fields (auto from FK selection for backward compat — only if actually selected)
+        specialty: document.getElementById('specialtyId').value ? document.getElementById('specialtyId').options[document.getElementById('specialtyId').selectedIndex]?.text : '',
+        treatment: document.getElementById('treatmentId').value ? document.getElementById('treatmentId').options[document.getElementById('treatmentId').selectedIndex]?.text : '',
+        destination: document.getElementById('destinationSelect').value ? document.getElementById('destinationSelect').options[document.getElementById('destinationSelect').selectedIndex]?.text : ''
+    };
+
+    if (!data.patient_name || !data.quote) return toast('Name and quote are required', 'error');
+
+    try {
+        const url = testimonialId ? `/api/testimonials/${testimonialId}` : '/api/testimonials';
+        const method = testimonialId ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method, credentials: 'include',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const saved = await res.json();
+        testimonialId = saved.id;
+        currentSlug = saved.slug || null;
+        if (saved.slug) {
+            document.getElementById('slugInput').value = saved.slug;
+            document.getElementById('slugGroup').style.display = '';
+            slugEdited = true;
+        }
+
+        document.getElementById('statusBadge').className = 'topbar__status topbar__status--' + status;
+        document.getElementById('statusBadge').textContent = status;
+        document.getElementById('pageTitle').textContent = data.patient_name;
+        document.getElementById('deleteBtn').style.display = '';
+
+        // Update URL without reload
+        if (!window.location.search.includes('id=')) {
+            history.replaceState(null, '', '?id=' + saved.id);
+        }
+
+        const indicator = document.getElementById('savedIndicator');
+        indicator.style.display = 'inline';
+        setTimeout(() => indicator.style.display = 'none', 2000);
+        toast(status === 'published' ? 'Published!' : 'Saved as draft', 'success');
+    } catch(e) {
+        console.error('Save error:', e);
+        toast('Save failed: ' + e.message, 'error');
+    }
+}
+
+// Delete
+async function deleteTestimonial() {
+    if (!testimonialId || !confirm('Delete this testimonial?')) return;
+    try {
+        await fetch(`/api/testimonials/${testimonialId}`, {method:'DELETE', credentials:'include'});
+        toast('Deleted', 'success');
+        setTimeout(() => window.location.href = '/testimonials', 500);
+    } catch(e) { toast('Delete failed', 'error'); }
+}
+
+// Slug management
+let slugEdited = false;
+
+function autoSlug() {
+    if (slugEdited) return;
+    const name = document.getElementById('patientName').value;
+    const treat = document.getElementById('treatmentId');
+    const treatText = treat.value ? treat.options[treat.selectedIndex]?.text : '';
+    const dest = document.getElementById('destinationSelect');
+    const destText = dest.value ? dest.options[dest.selectedIndex]?.text : '';
+    const parts = [name, treatText, destText].filter(Boolean);
+    const slug = parts.join(' ').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    document.getElementById('slugInput').value = slug;
+}
+
+// Patient photo
+let patientImageUrl = '';
+
+function openPatientPhotoPicker() {
+    // Reuse media picker but for single selection
+    mediaSelections = [];
+    const grid = document.getElementById('mediaGrid');
+    grid.innerHTML = '';
+    if (!allMedia.length) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:40px">No images. Upload via <a href="/media" style="color:var(--teal)">Media Library</a>.</p>';
+    }
+    allMedia.forEach(m => {
+        const url = m.url || '';
+        if (!url) return;
+        const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+        const item = document.createElement('div');
+        item.className = 'media-item';
+        item.dataset.url = url;
+        item.innerHTML = `<img src="${adminUrl}" alt="">`;
+        item.onclick = () => {
+            grid.querySelectorAll('.media-item--selected').forEach(i => i.classList.remove('media-item--selected'));
+            item.classList.add('media-item--selected');
+            mediaSelections = [url];
+        };
+        grid.appendChild(item);
+    });
+    // Override confirm to set patient photo
+    document.getElementById('mediaOverlay').classList.add('open');
+    document.getElementById('mediaOverlay').dataset.mode = 'patient_photo';
+}
+
+function clearPatientPhoto() {
+    patientImageUrl = '';
+    document.getElementById('patientImage').value = '';
+    document.getElementById('patientPhotoPreview').innerHTML = '<span style="color:var(--gray-300);font-size:1.2rem">👤</span>';
+    updatePreview();
+}
+
+function setPatientPhoto(url) {
+    patientImageUrl = url;
+    document.getElementById('patientImage').value = url;
+    const adminUrl = url.startsWith('http') ? url : 'https://enter.ginger.healthcare' + url;
+    document.getElementById('patientPhotoPreview').innerHTML = `<img src="${adminUrl}" style="width:100%;height:100%;object-fit:cover">`;
+    updatePreview();
+}
+
+// View on site
+function viewOnSite() {
+    // Try to get slug from loaded data
+    const slug = currentSlug || testimonialId;
+    if (slug) window.open('https://ginger.healthcare/testimonials/' + slug + '/', '_blank');
+    else window.open('https://ginger.healthcare/testimonials/', '_blank');
+}
+let currentSlug = null;
+
+// Toast
+function toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = 'toast toast--show toast--' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+}
 </script>
 </body></html>
