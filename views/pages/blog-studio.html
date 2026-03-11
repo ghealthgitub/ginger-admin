@@ -325,24 +325,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="ai-msg ai-msg--system">✨ AI Ready</div>
         <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize your post. What would you like to do?</div>
     </div>
-    <div class="ai-quick">
-        <button class="ai-qbtn" onclick="aiCmd('Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion')">✨ Write full post</button>
-        <button class="ai-qbtn" onclick="aiCmd('Generate meta title, meta description, excerpt, and focus keywords based on the content')">🏷 Auto SEO</button>
-        <button class="ai-qbtn" onclick="aiCmd('Improve the current content - make it more engaging with better structure')">🎯 Improve</button>
-        <button class="ai-qbtn" onclick="aiCmd('Fix grammar and improve readability')">✏ Fix grammar</button>
-        <button class="ai-qbtn" onclick="aiCmd('Add a compelling introduction paragraph')">📝 Add intro</button>
-        <button class="ai-qbtn" onclick="aiCmd('Add a conclusion with a call-to-action')">🎬 Conclusion</button>
-        <button class="ai-qbtn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
-        <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
-    </div>
     <div class="ai-shortcuts">
         <div class="ai-shortcuts__label">✨ Quick Actions</div>
         <div class="ai-helpers">
+            <button class="ai-btn" onclick="aiCmd('Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion')">✨ Write full post</button>
             <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
             <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
             <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
             <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
             <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
+            <button class="ai-btn" onclick="aiCmd('Add a compelling introduction paragraph')">📝 Add intro</button>
+            <button class="ai-btn" onclick="aiCmd('Add a conclusion with a call-to-action')">🎬 Conclusion</button>
+            <button class="ai-btn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
+            <button class="ai-btn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
         </div>
     </div>
     <div class="ai-input">
