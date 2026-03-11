@@ -375,11 +375,11 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="ai-shortcuts__label">✨ Quick Actions <span style="font-weight:400;color:var(--gray-400);font-size:.65rem;text-transform:none;letter-spacing:0">(right-click to edit prompt)</span></div>
         <div class="ai-helpers">
             <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion">✨ Write full post</button>
-            <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="ai" data-ai-type="seo" data-prompt="Generate meta title (max 60 chars), meta description (max 160 chars), excerpt (max 200 chars), and focus keywords for this blog post" onclick="aiAction('seo')">🏷 Auto SEO</button>
             <button class="ai-btn" onclick="aiAutoTag()">🤖 Auto Tag</button>
             <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Improve the current content - make it more engaging with better structure">🎯 Optimize</button>
-            <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
-            <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="ai" data-ai-type="grammar" data-prompt="Fix grammar and improve readability in this blog content. Return ONLY clean HTML, no explanation, no markdown fences." onclick="aiAction('grammar')">✏ Grammar</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="ai" data-ai-type="headings" data-prompt="Improve the heading structure of this blog content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY clean HTML." onclick="aiAction('headings')">📑 Headings</button>
             <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
             <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Add a compelling introduction paragraph">📝 Add intro</button>
             <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Add a conclusion with a call-to-action">🎬 Conclusion</button>
@@ -519,8 +519,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <!-- Tags (free-form) -->
-    <div class="sb-box">
+    <!-- Tags (hidden — entity linking handles structured tags) -->
+    <div class="sb-box" id="freeTagsBox" style="display:none">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
             <div class="sb-box__title">🏷 Tags</div>
             <span class="sb-box__toggle">▾</span>
@@ -1254,8 +1254,10 @@ async function loadPost() {
     } catch(e) { console.error('Load failed', e); }
 }
 
+let _saving = false;
 async function savePost(statusOverride) {
     const isAuto = statusOverride === 'auto';
+    if (_saving && !isAuto) return; // prevent double-click
     const data = {
         title: document.getElementById('title').value,
         slug: document.getElementById('slug').value,
@@ -1278,6 +1280,12 @@ async function savePost(statusOverride) {
         return;
     }
     if (!data.slug) data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    _saving = true;
+    // Disable save buttons + show saving state
+    var saveBtns = document.querySelectorAll('.topbar__btn--save,.topbar__btn--publish,.btn-publish,.btn-save,.publish-btns button');
+    if (!isAuto) saveBtns.forEach(function(b) { b.disabled = true; b.style.opacity = '.5'; });
+    var savedEl = document.getElementById('savedIndicator');
+    if (!isAuto && savedEl) { savedEl.innerHTML = '⏳ Saving...'; savedEl.style.display = 'inline'; }
     try {
         const url = editId ? '/api/blog/' + editId : '/api/blog';
         const method = editId ? 'PUT' : 'POST';
@@ -1314,6 +1322,8 @@ async function savePost(statusOverride) {
             if (!isAuto) alert('Error: ' + (e.error || 'Save failed'));
         }
     } catch(e) { if (!isAuto) alert('Save failed'); }
+    _saving = false;
+    saveBtns.forEach(function(b) { b.disabled = false; b.style.opacity = ''; });
 }
 
 // AI Assistant
@@ -1463,11 +1473,23 @@ async function aiAction(type) {
     aiShowProgress(type);
     const itemName = document.getElementById('title').value || 'this blog post';
     const content = quill.getText().trim();
+
+    // Check if button has a custom edited prompt
+    var customBtn = document.querySelector('.ai-btn[data-ai-type="' + type + '"]');
+    var customPrompt = customBtn && customBtn.getAttribute('data-default-prompt') ? customBtn.getAttribute('data-prompt') : null;
+
     let prompt = '';
-    if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), excerpt (max 200 chars), and focus keywords (comma-separated) for the blog post "' + itemName + '". Current content summary: ' + content.substring(0, 500) + '\n\nReturn as plain text lines:\nMeta Title: ...\nMeta Description: ...\nExcerpt: ...\nFocus Keywords: ...';
-    else if (type === 'optimize') prompt = 'Improve and expand the following blog content about medical tourism. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation.\n\n' + quill.root.innerHTML;
-    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this blog content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
-    else if (type === 'headings') prompt = 'Improve the heading structure of the following blog content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
+    if (type === 'seo') {
+        prompt = customPrompt
+            ? customPrompt + '\n\nBlog title: "' + itemName + '"\nContent summary: ' + content.substring(0, 500) + '\n\nReturn as plain text lines:\nMeta Title: ...\nMeta Description: ...\nExcerpt: ...\nFocus Keywords: ...'
+            : 'Generate meta title (max 60 chars), meta description (max 160 chars), excerpt (max 200 chars), and focus keywords (comma-separated) for the blog post "' + itemName + '". Current content summary: ' + content.substring(0, 500) + '\n\nReturn as plain text lines:\nMeta Title: ...\nMeta Description: ...\nExcerpt: ...\nFocus Keywords: ...';
+    } else if (type === 'grammar') {
+        prompt = (customPrompt || 'Fix grammar and improve readability in this blog content. Return ONLY clean HTML, no explanation, no markdown fences.') + '\n\n' + quill.root.innerHTML;
+    } else if (type === 'headings') {
+        prompt = (customPrompt || 'Improve the heading structure of the following blog content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.') + '\n\n' + quill.root.innerHTML;
+    } else if (type === 'optimize') {
+        prompt = (customPrompt || 'Improve and expand the following blog content about medical tourism. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation.') + '\n\n' + quill.root.innerHTML;
+    }
 
     try {
         const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: 'blog', context: 'Blog post: ' + itemName }) });
