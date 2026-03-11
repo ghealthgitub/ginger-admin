@@ -248,6 +248,18 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .prompt-edit-footer .btn-save{background:var(--teal);color:#fff}
 .prompt-edit-footer .btn-save:hover{background:#0c918c}
 
+/* Category Editor Items */
+.cat-edit-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;margin-bottom:6px;background:var(--white);transition:all .15s}
+.cat-edit-item:hover{border-color:var(--teal);background:var(--gray-50)}
+.cat-edit-item .cat-drag{cursor:grab;color:var(--gray-300);font-size:.85rem;flex-shrink:0}
+.cat-edit-item .cat-name{flex:1;font-size:.85rem;font-weight:500;color:var(--navy);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-edit-item .cat-count{font-size:.68rem;font-weight:700;color:var(--gray-400);background:var(--gray-100);padding:1px 7px;border-radius:50px;flex-shrink:0}
+.cat-edit-item .cat-rename{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;font-size:.72rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-500);font-family:inherit;flex-shrink:0}
+.cat-edit-item .cat-rename:hover{border-color:var(--teal);color:var(--teal)}
+.cat-edit-item .cat-del{padding:3px 8px;border:1px solid var(--gray-200);border-radius:4px;font-size:.72rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--gray-400);font-family:inherit;flex-shrink:0}
+.cat-edit-item .cat-del:hover{border-color:#EF4444;color:#EF4444;background:#FEE2E2}
+.cat-edit-item .cat-del:disabled{opacity:.3;cursor:not-allowed;background:var(--white);border-color:var(--gray-200);color:var(--gray-300)}
+
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
@@ -471,20 +483,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <select class="sb-select" id="category" onchange="resetAutoSave()" style="margin-bottom:0">
-                <option value="">Select category</option>
-                <option>Medical Tourism</option>
-                <option>Fertility & IVF</option>
-                <option>Cosmetic Surgery</option>
-                <option>Cardiac Care</option>
-                <option>Orthopedics</option>
-                <option>Dental</option>
-                <option>Eye Care</option>
-                <option>Patient Stories</option>
-                <option>Travel & Recovery</option>
-                <option>Insurance & Costs</option>
-                <option>Health Tips</option>
-            </select>
+            <div style="display:flex;gap:6px;align-items:center">
+                <select class="sb-select" id="category" onchange="resetAutoSave()" style="margin-bottom:0;flex:1">
+                    <option value="">Select category</option>
+                </select>
+                <button onclick="openCategoryEditor()" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;background:var(--white);font-size:.78rem;cursor:pointer;color:var(--gray-500);flex-shrink:0;font-family:inherit" title="Edit categories">✏</button>
+            </div>
         </div>
     </div>
 
@@ -596,6 +600,24 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     </div>
 </div>
 
+</div>
+
+<!-- Category Editor Modal -->
+<div class="prompt-edit-overlay" id="catEditorOverlay" onclick="if(event.target===this)closeCategoryEditor()">
+<div class="prompt-edit-modal" style="max-width:420px">
+    <div class="prompt-edit-header"><h3>📁 Edit Categories</h3><button onclick="closeCategoryEditor()">&times;</button></div>
+    <div class="prompt-edit-body" style="padding-bottom:8px">
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+            <input type="text" id="catNewInput" placeholder="New category name..." style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:.85rem;font-family:inherit" onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory()}">
+            <button onclick="addCategory()" style="padding:8px 16px;background:var(--teal);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">+ Add</button>
+        </div>
+        <div id="catList" style="max-height:300px;overflow-y:auto"></div>
+        <div class="hint" style="margin-top:8px">Drag to reorder. Categories used in published posts cannot be deleted.</div>
+    </div>
+    <div class="prompt-edit-footer">
+        <button class="btn-cancel" onclick="closeCategoryEditor()">Close</button>
+    </div>
+</div>
 </div>
 
 <!-- Prompt Edit Modal -->
@@ -990,6 +1012,118 @@ function addEntityTag(type, sel) {
     renderTags();
     resetAutoSave();
 }
+
+// === CATEGORY MANAGEMENT ===
+var DEFAULT_CATEGORIES = ['Medical Tourism','Fertility & IVF','Cosmetic Surgery','Cardiac Care','Orthopedics','Dental','Eye Care','Patient Stories','Travel & Recovery','Insurance & Costs','Health Tips'];
+var _catCounts = {}; // category → post count from DB
+
+function getStoredCategories() {
+    try { var s = localStorage.getItem('ginger_blog_categories'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+function saveStoredCategories(cats) {
+    try { localStorage.setItem('ginger_blog_categories', JSON.stringify(cats)); } catch(e) {}
+}
+function getAllCategories() {
+    var stored = getStoredCategories();
+    if (stored) return stored;
+    return DEFAULT_CATEGORIES.slice();
+}
+async function loadCategories() {
+    // Fetch actual categories used in published posts
+    try {
+        var r = await fetch('/api/blog');
+        if (r.ok) {
+            var posts = await r.json();
+            _catCounts = {};
+            posts.forEach(function(p) {
+                if (p.category) _catCounts[p.category] = (_catCounts[p.category] || 0) + 1;
+            });
+            // Merge any DB categories not in our list
+            var cats = getAllCategories();
+            Object.keys(_catCounts).forEach(function(c) {
+                if (cats.indexOf(c) === -1) cats.push(c);
+            });
+            saveStoredCategories(cats);
+        }
+    } catch(e) {}
+    renderCategoryDropdown();
+}
+function renderCategoryDropdown() {
+    var sel = document.getElementById('category');
+    var currentVal = sel.value;
+    var cats = getAllCategories();
+    sel.innerHTML = '<option value="">Select category</option>' + cats.map(function(c) {
+        return '<option' + (c === currentVal ? ' selected' : '') + '>' + c + '</option>';
+    }).join('');
+}
+function openCategoryEditor() {
+    document.getElementById('catEditorOverlay').classList.add('active');
+    renderCategoryList();
+}
+function closeCategoryEditor() {
+    document.getElementById('catEditorOverlay').classList.remove('active');
+    renderCategoryDropdown();
+}
+function renderCategoryList() {
+    var cats = getAllCategories();
+    var html = cats.map(function(c, i) {
+        var count = _catCounts[c] || 0;
+        var countBadge = count > 0 ? '<span class="cat-count">' + count + ' post' + (count !== 1 ? 's' : '') + '</span>' : '';
+        return '<div class="cat-edit-item" data-idx="' + i + '">' +
+            '<span class="cat-drag">⋮⋮</span>' +
+            '<span class="cat-name">' + c + '</span>' +
+            countBadge +
+            '<button class="cat-rename" onclick="renameCategory(' + i + ')">Rename</button>' +
+            '<button class="cat-del" onclick="deleteCategory(' + i + ')"' + (count > 0 ? ' disabled title="Used in ' + count + ' post(s)"' : '') + '>✕</button>' +
+            '</div>';
+    }).join('');
+    document.getElementById('catList').innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--gray-400)">No categories yet</div>';
+}
+function addCategory() {
+    var input = document.getElementById('catNewInput');
+    var name = input.value.trim();
+    if (!name) return;
+    var cats = getAllCategories();
+    // Check for duplicate (case-insensitive)
+    if (cats.some(function(c) { return c.toLowerCase() === name.toLowerCase(); })) {
+        input.style.borderColor = '#EF4444';
+        setTimeout(function() { input.style.borderColor = ''; }, 1500);
+        return;
+    }
+    cats.push(name);
+    saveStoredCategories(cats);
+    input.value = '';
+    renderCategoryList();
+}
+function renameCategory(idx) {
+    var cats = getAllCategories();
+    var oldName = cats[idx];
+    var newName = prompt('Rename category:', oldName);
+    if (!newName || newName.trim() === oldName) return;
+    newName = newName.trim();
+    // Check duplicate
+    if (cats.some(function(c, i) { return i !== idx && c.toLowerCase() === newName.toLowerCase(); })) {
+        alert('A category with that name already exists.');
+        return;
+    }
+    cats[idx] = newName;
+    saveStoredCategories(cats);
+    // If current post uses old category, update it
+    if (document.getElementById('category').value === oldName) {
+        document.getElementById('category').value = newName;
+    }
+    renderCategoryList();
+}
+function deleteCategory(idx) {
+    var cats = getAllCategories();
+    var name = cats[idx];
+    if ((_catCounts[name] || 0) > 0) return; // safety check
+    if (!confirm('Delete category "' + name + '"?')) return;
+    cats.splice(idx, 1);
+    saveStoredCategories(cats);
+    renderCategoryList();
+}
+
 async function loadEntityDropdowns() {
     try {
         var results = await Promise.all([
@@ -1015,44 +1149,36 @@ function filterEntityDropdowns() {
     if (!window._entities) return;
     var ent = window._entities;
 
-    // Get all selected specialty IDs from tags
+    // Get all selected specialty IDs from tags (coerce to Number for safe comparison)
     var specSlugs = tags.filter(function(t) { return t.startsWith('specialty:'); }).map(function(t) { return t.substring(10); });
     var specIds = [];
     if (specSlugs.length) {
         specSlugs.forEach(function(slug) {
             var s = ent.specialties.find(function(sp) { return sp.slug === slug; });
-            if (s) specIds.push(s.id);
+            if (s) specIds.push(Number(s.id));
         });
     }
 
     var hasFilter = specIds.length > 0;
     var filterLabel = hasFilter ? '(filtered)' : '';
 
-    // Update filter labels
-    var lblT = document.getElementById('filterLabelTreatment');
-    var lblD = document.getElementById('filterLabelDoctor');
-    var lblH = document.getElementById('filterLabelHospital');
-    if (lblT) lblT.textContent = filterLabel;
-    if (lblD) lblD.textContent = filterLabel;
-    if (lblH) lblH.textContent = filterLabel;
-
-    // Filter treatments
+    // Filter treatments — compare with Number() to avoid type mismatch
     var filteredTreatments = hasFilter
-        ? ent.treatments.filter(function(t) { return specIds.indexOf(t.specialty_id) !== -1; })
+        ? ent.treatments.filter(function(t) { return specIds.indexOf(Number(t.specialty_id)) !== -1; })
         : ent.treatments;
     document.getElementById('linkTreatment').innerHTML = '<option value="">+ Add treatment...</option>' + filteredTreatments.map(function(t) {
         return '<option value="' + t.slug + '">' + t.name + '</option>';
     }).join('');
 
-    // Filter doctors
+    // Filter doctors — compare with Number()
     var filteredDoctors = hasFilter
-        ? ent.doctors.filter(function(d) { return specIds.indexOf(d.specialty_id) !== -1; })
+        ? ent.doctors.filter(function(d) { return specIds.indexOf(Number(d.specialty_id)) !== -1; })
         : ent.doctors;
     document.getElementById('linkDoctor').innerHTML = '<option value="">+ Add doctor...</option>' + filteredDoctors.map(function(d) {
         return '<option value="' + d.slug + '">' + d.name + '</option>';
     }).join('');
 
-    // Filter hospitals — always show full list (independent of specialty)
+    // Hospitals — always show full list (independent of specialty)
     document.getElementById('linkHospital').innerHTML = '<option value="">+ Add hospital...</option>' + ent.hospitals.map(function(h) {
         return '<option value="' + h.slug + '">' + h.name + (h.city ? ' — ' + h.city : '') + '</option>';
     }).join('');
@@ -1626,6 +1752,7 @@ async function restoreRevision(revId) {
 // Init
 loadPost().then(() => loadRevisions());
 loadEntityDropdowns();
+loadCategories();
 updateStats();
 
 // ===== IMAGE PASTE HANDLER =====
