@@ -226,6 +226,28 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .entity-chip--treatment{background:rgba(139,92,246,.1);color:#7C3AED;border:1px solid rgba(139,92,246,.2)}
 @keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 
+/* Prompt Edit Modal */
+.prompt-edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:none;align-items:center;justify-content:center;padding:20px}
+.prompt-edit-overlay.active{display:flex}
+.prompt-edit-modal{background:#fff;border-radius:12px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.prompt-edit-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--gray-200)}
+.prompt-edit-header h3{font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);margin:0}
+.prompt-edit-header button{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);padding:4px}
+.prompt-edit-header button:hover{color:var(--navy)}
+.prompt-edit-body{padding:20px}
+.prompt-edit-body label{font-size:.78rem;font-weight:600;color:var(--gray-500);display:block;margin-bottom:6px}
+.prompt-edit-body textarea{width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;font-family:inherit;font-size:.85rem;resize:vertical;min-height:120px;line-height:1.6;color:var(--navy)}
+.prompt-edit-body textarea:focus{outline:none;border-color:var(--teal)}
+.prompt-edit-body .hint{font-size:.72rem;color:var(--gray-400);margin-top:6px}
+.prompt-edit-footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--gray-200);background:var(--gray-50)}
+.prompt-edit-footer button{padding:8px 18px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;border:none}
+.prompt-edit-footer .btn-cancel{background:var(--white);color:var(--gray-600);border:1px solid var(--gray-200)}
+.prompt-edit-footer .btn-cancel:hover{background:var(--gray-100)}
+.prompt-edit-footer .btn-reset{background:var(--white);color:var(--gray-500);border:1px solid var(--gray-200);margin-right:auto}
+.prompt-edit-footer .btn-reset:hover{color:#D97706;border-color:#FCD34D}
+.prompt-edit-footer .btn-save{background:var(--teal);color:#fff}
+.prompt-edit-footer .btn-save:hover{background:#0c918c}
+
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
@@ -338,18 +360,19 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <div class="ai-msg ai-msg--bot">Hi! I'll help you write and optimize your post. What would you like to do?</div>
     </div>
     <div class="ai-shortcuts">
-        <div class="ai-shortcuts__label">✨ Quick Actions</div>
+        <div class="ai-shortcuts__label">✨ Quick Actions <span style="font-weight:400;color:var(--gray-400);font-size:.65rem;text-transform:none;letter-spacing:0">(right-click to edit prompt)</span></div>
         <div class="ai-helpers">
-            <button class="ai-btn" onclick="aiCmd('Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion')">✨ Write full post</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Write a comprehensive blog post about the title topic with proper H2/H3 headings, introduction, and conclusion">✨ Write full post</button>
             <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
-            <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
+            <button class="ai-btn" onclick="aiAutoTag()">🤖 Auto Tag</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Improve the current content - make it more engaging with better structure">🎯 Optimize</button>
             <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
             <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
             <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
-            <button class="ai-btn" onclick="aiCmd('Add a compelling introduction paragraph')">📝 Add intro</button>
-            <button class="ai-btn" onclick="aiCmd('Add a conclusion with a call-to-action')">🎬 Conclusion</button>
-            <button class="ai-btn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
-            <button class="ai-btn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Add a compelling introduction paragraph">📝 Add intro</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Add a conclusion with a call-to-action">🎬 Conclusion</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Suggest relevant internal links and CTAs based on the content and our medical tourism website">🔗 Add CTAs</button>
+            <button class="ai-btn" oncontextmenu="editPrompt(event,this)" data-action="cmd" data-prompt="Make the content shorter and more concise">✂ Shorten</button>
         </div>
     </div>
     <div class="ai-input">
@@ -472,21 +495,21 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <div class="sb-label">👨‍⚕️ Doctors</div>
+            <div class="sb-label">🎯 Specialty</div>
+            <select class="sb-select" id="linkSpecialty" onchange="addEntityTag('specialty',this); filterEntityDropdowns()"><option value="">+ Add specialty...</option></select>
+            <div class="entity-chips" id="chipsSpecialty"></div>
+
+            <div class="sb-label">💊 Treatment <span id="filterLabelTreatment" style="font-weight:400;color:var(--gray-400);font-size:.68rem"></span></div>
+            <select class="sb-select" id="linkTreatment" onchange="addEntityTag('treatment',this)"><option value="">+ Add treatment...</option></select>
+            <div class="entity-chips" id="chipsTreatment"></div>
+
+            <div class="sb-label">👨‍⚕️ Doctor <span id="filterLabelDoctor" style="font-weight:400;color:var(--gray-400);font-size:.68rem"></span></div>
             <select class="sb-select" id="linkDoctor" onchange="addEntityTag('doctor',this)"><option value="">+ Add doctor...</option></select>
             <div class="entity-chips" id="chipsDoctor"></div>
 
-            <div class="sb-label">🏥 Hospitals</div>
+            <div class="sb-label">🏥 Hospital <span id="filterLabelHospital" style="font-weight:400;color:var(--gray-400);font-size:.68rem"></span></div>
             <select class="sb-select" id="linkHospital" onchange="addEntityTag('hospital',this)"><option value="">+ Add hospital...</option></select>
             <div class="entity-chips" id="chipsHospital"></div>
-
-            <div class="sb-label">🎯 Specialties</div>
-            <select class="sb-select" id="linkSpecialty" onchange="addEntityTag('specialty',this)"><option value="">+ Add specialty...</option></select>
-            <div class="entity-chips" id="chipsSpecialty"></div>
-
-            <div class="sb-label">💊 Treatments</div>
-            <select class="sb-select" id="linkTreatment" onchange="addEntityTag('treatment',this)"><option value="">+ Add treatment...</option></select>
-            <div class="entity-chips" id="chipsTreatment"></div>
 
             <div class="sb-hint" style="margin-top:6px">Select multiple from each dropdown. Tags are saved automatically.</div>
         </div>
@@ -573,6 +596,23 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
     </div>
 </div>
 
+</div>
+
+<!-- Prompt Edit Modal -->
+<div class="prompt-edit-overlay" id="promptEditOverlay" onclick="if(event.target===this)closePromptEdit()">
+<div class="prompt-edit-modal">
+    <div class="prompt-edit-header"><h3>✏ Edit Prompt</h3><button onclick="closePromptEdit()">&times;</button></div>
+    <div class="prompt-edit-body">
+        <label>Prompt Text</label>
+        <textarea id="promptEditText"></textarea>
+        <div class="hint">Customize what AI does when you click this button. Changes are saved to this browser.</div>
+    </div>
+    <div class="prompt-edit-footer">
+        <button class="btn-reset" onclick="resetPromptEdit()">↩ Reset to default</button>
+        <button class="btn-cancel" onclick="closePromptEdit()">Cancel</button>
+        <button class="btn-save" onclick="savePromptEdit()">Save</button>
+    </div>
+</div>
 </div>
 
 <div class="autosave-toast" id="autosaveToast">💾 Auto-saved</div>
@@ -929,8 +969,10 @@ function renderEntityChips() {
     });
 }
 function removeTag(i) {
+    var wasSpecialty = tags[i] && tags[i].startsWith('specialty:');
     tags.splice(i, 1);
     renderTags();
+    if (wasSpecialty) filterEntityDropdowns();
     resetAutoSave();
 }
 function syncEntityDropdowns() {
@@ -956,6 +998,8 @@ async function loadEntityDropdowns() {
             fetch('/api/specialties').then(function(r){return r.json()}),
             fetch('/api/treatments').then(function(r){return r.json()})
         ]);
+        // Store globally for auto-tag AI
+        window._entities = { doctors: results[0], hospitals: results[1], specialties: results[2], treatments: results[3] };
         var doctors = results[0], hospitals = results[1], specialties = results[2], treatments = results[3];
         document.getElementById('linkDoctor').innerHTML = '<option value="">+ Add doctor...</option>' + doctors.map(function(d){return '<option value="'+d.slug+'">'+d.name+'</option>'}).join('');
         document.getElementById('linkHospital').innerHTML = '<option value="">+ Add hospital...</option>' + hospitals.map(function(h){return '<option value="'+h.slug+'">'+h.name+(h.city?' — '+h.city:'')+'</option>'}).join('');
@@ -964,6 +1008,62 @@ async function loadEntityDropdowns() {
         // Re-render entity chips now that dropdown options are loaded (resolves names)
         if (tags.length) renderEntityChips();
     } catch(e) { console.error('Entity dropdown load failed', e); }
+}
+
+// === CASCADE FILTER: Specialty → Treatment, Doctor, Hospital ===
+function filterEntityDropdowns() {
+    if (!window._entities) return;
+    var ent = window._entities;
+
+    // Get all selected specialty IDs from tags
+    var specSlugs = tags.filter(function(t) { return t.startsWith('specialty:'); }).map(function(t) { return t.substring(10); });
+    var specIds = [];
+    if (specSlugs.length) {
+        specSlugs.forEach(function(slug) {
+            var s = ent.specialties.find(function(sp) { return sp.slug === slug; });
+            if (s) specIds.push(s.id);
+        });
+    }
+
+    var hasFilter = specIds.length > 0;
+    var filterLabel = hasFilter ? '(filtered)' : '';
+
+    // Update filter labels
+    var lblT = document.getElementById('filterLabelTreatment');
+    var lblD = document.getElementById('filterLabelDoctor');
+    var lblH = document.getElementById('filterLabelHospital');
+    if (lblT) lblT.textContent = filterLabel;
+    if (lblD) lblD.textContent = filterLabel;
+    if (lblH) lblH.textContent = filterLabel;
+
+    // Filter treatments
+    var filteredTreatments = hasFilter
+        ? ent.treatments.filter(function(t) { return specIds.indexOf(t.specialty_id) !== -1; })
+        : ent.treatments;
+    document.getElementById('linkTreatment').innerHTML = '<option value="">+ Add treatment...</option>' + filteredTreatments.map(function(t) {
+        return '<option value="' + t.slug + '">' + t.name + '</option>';
+    }).join('');
+
+    // Filter doctors
+    var filteredDoctors = hasFilter
+        ? ent.doctors.filter(function(d) { return specIds.indexOf(d.specialty_id) !== -1; })
+        : ent.doctors;
+    document.getElementById('linkDoctor').innerHTML = '<option value="">+ Add doctor...</option>' + filteredDoctors.map(function(d) {
+        return '<option value="' + d.slug + '">' + d.name + '</option>';
+    }).join('');
+
+    // Filter hospitals — always show full list (independent of specialty)
+    document.getElementById('linkHospital').innerHTML = '<option value="">+ Add hospital...</option>' + ent.hospitals.map(function(h) {
+        return '<option value="' + h.slug + '">' + h.name + (h.city ? ' — ' + h.city : '') + '</option>';
+    }).join('');
+
+    // Update filter labels
+    var lblT = document.getElementById('filterLabelTreatment');
+    var lblD = document.getElementById('filterLabelDoctor');
+    var lblH = document.getElementById('filterLabelHospital');
+    if (lblT) lblT.textContent = filterLabel;
+    if (lblD) lblD.textContent = filterLabel;
+    if (lblH) lblH.textContent = '';
 }
 
 function showTab(tab) {
@@ -997,7 +1097,7 @@ async function loadPost() {
         document.getElementById('focusKeywords').value = postData.focus_keywords || '';
         document.getElementById('status').value = postData.status || 'draft';
         if (postData.content) quill.root.innerHTML = postData.content;
-        if (postData.tags && postData.tags.length) { tags = postData.tags; renderTags(); }
+        if (postData.tags && postData.tags.length) { tags = postData.tags; renderTags(); filterEntityDropdowns(); }
         if (postData.cover_image) {
             document.getElementById('coverImage').value = postData.cover_image;
             document.getElementById('featImgPreview').src = postData.cover_image;
@@ -1124,7 +1224,7 @@ Request: ${msg}
 
 IMPORTANT RULES:
 - If the request is about the URL, permalink, or slug, respond ONLY in JSON: {"slug":"suggested-slug","explanation":"why this slug is good"}
-- If the request is about SEO/meta fields (title, meta, description, excerpt), respond ONLY in JSON: {"meta_title":"...","meta_description":"...","excerpt":"...","focus_keywords":"...","suggested_tags":["..."]}
+- If the request is about SEO/meta fields (title, meta, description, excerpt), respond ONLY in JSON: {"meta_title":"...","meta_description":"...","excerpt":"...","focus_keywords":"..."}
 - If the request is about content (writing, editing, improving), respond with HTML using h2,h3,p,ul,li,strong,em tags. No markdown, no code fences.
 - Add relevant CTAs (links to /get-quote/, /destinations/, /specialties/) where appropriate in the content.
 - NEVER respond with plain text suggestions about URLs or slugs - always use JSON format for those.`;
@@ -1146,7 +1246,6 @@ IMPORTANT RULES:
                     if (seoData.meta_description) document.getElementById('metaDesc').value = seoData.meta_description;
                     if (seoData.excerpt) document.getElementById('excerpt').value = seoData.excerpt;
                     if (seoData.focus_keywords) document.getElementById('focusKeywords').value = seoData.focus_keywords;
-                    if (seoData.suggested_tags) { tags = [...new Set([...tags, ...seoData.suggested_tags])]; renderTags(); }
                     updateCharCount('metaTitle','metaTitleCount',60);
                     updateCharCount('metaDesc','metaDescCount',160);
                     analyzeSEO();
@@ -1276,6 +1375,125 @@ async function aiAction(type) {
     aiHideProgress();
     btns.forEach(b => b.disabled = false);
 }
+
+// === AUTO TAG — AI picks matching entities from available list ===
+async function aiAutoTag() {
+    if (!window._entities) { showToast('⚠️ Entity data not loaded yet'); return; }
+    const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled = true);
+    aiShowProgress('autotag');
+    AI_LABELS.autotag = { label: '🤖 Auto-tagging...', sub: 'Matching content to doctors, hospitals, specialties & treatments' };
+    aiShowProgress('autotag');
+
+    const title = document.getElementById('title').value || '';
+    const content = quill.getText().trim().substring(0, 2000);
+    const ent = window._entities;
+
+    // Build compact entity lists for the prompt
+    const doctorList = ent.doctors.slice(0, 200).map(d => d.slug + '|' + d.name).join('\n');
+    const hospitalList = ent.hospitals.slice(0, 200).map(h => h.slug + '|' + h.name + (h.city ? ' — ' + h.city : '')).join('\n');
+    const specialtyList = ent.specialties.slice(0, 100).map(s => s.slug + '|' + s.name).join('\n');
+    const treatmentList = ent.treatments.slice(0, 300).map(t => t.slug + '|' + t.name).join('\n');
+
+    const prompt = `Analyze this blog post and identify which entities from the lists below are relevant to the content. Only pick entities that are DIRECTLY mentioned or closely related to the topic.
+
+BLOG TITLE: ${title}
+BLOG CONTENT (excerpt): ${content}
+
+AVAILABLE SPECIALTIES (slug|name):
+${specialtyList}
+
+AVAILABLE TREATMENTS (slug|name):
+${treatmentList}
+
+AVAILABLE HOSPITALS (slug|name):
+${hospitalList}
+
+AVAILABLE DOCTORS (slug|name):
+${doctorList}
+
+Respond ONLY in JSON format, no explanation:
+{"specialties":["slug1","slug2"],"treatments":["slug1"],"hospitals":["slug1"],"doctors":["slug1"]}
+
+RULES:
+- Only use slugs that appear EXACTLY in the lists above
+- Only tag entities that are truly relevant — don't over-tag
+- If no match for a category, use empty array []
+- Return valid JSON only`;
+
+    try {
+        const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: 'blog', context: 'Auto-tag: ' + title }) });
+        if (!r.ok) throw new Error('AI request failed');
+        const data = await r.json();
+        let result = (data.content || '').replace(/```json?\s*/g, '').replace(/```\s*/g, '').trim();
+        // Parse JSON
+        const parsed = JSON.parse(result);
+        let added = 0;
+        const validSlugs = {};
+        validSlugs.specialty = new Set(ent.specialties.map(s => s.slug));
+        validSlugs.treatment = new Set(ent.treatments.map(t => t.slug));
+        validSlugs.hospital = new Set(ent.hospitals.map(h => h.slug));
+        validSlugs.doctor = new Set(ent.doctors.map(d => d.slug));
+
+        ['specialties','treatments','hospitals','doctors'].forEach(plural => {
+            const singular = plural.replace(/ies$/, 'y').replace(/s$/, '');
+            const type = singular === 'specialty' ? 'specialty' : singular;
+            if (parsed[plural] && Array.isArray(parsed[plural])) {
+                parsed[plural].forEach(slug => {
+                    if (validSlugs[type] && validSlugs[type].has(slug)) {
+                        const tag = type + ':' + slug;
+                        if (!tags.includes(tag)) { tags.push(tag); added++; }
+                    }
+                });
+            }
+        });
+        renderTags();
+        if (added > 0) {
+            showToast('✅ Auto-tagged: ' + added + ' entit' + (added === 1 ? 'y' : 'ies') + ' linked');
+            resetAutoSave();
+        } else {
+            showToast('ℹ️ No matching entities found in content');
+        }
+    } catch(e) { showToast('❌ Auto-tag error: ' + e.message); console.error(e); }
+    aiHideProgress();
+    btns.forEach(b => b.disabled = false);
+}
+
+// === PROMPT EDIT SYSTEM ===
+let _promptEditBtn = null;
+function editPrompt(e, btn) {
+    e.preventDefault();
+    _promptEditBtn = btn;
+    const defaultPrompt = btn.getAttribute('data-default-prompt') || btn.getAttribute('data-prompt') || '';
+    // Store original default if not already stored
+    if (!btn.getAttribute('data-default-prompt')) btn.setAttribute('data-default-prompt', btn.getAttribute('data-prompt'));
+    document.getElementById('promptEditText').value = btn.getAttribute('data-prompt') || '';
+    document.getElementById('promptEditOverlay').classList.add('active');
+}
+function closePromptEdit() {
+    document.getElementById('promptEditOverlay').classList.remove('active');
+    _promptEditBtn = null;
+}
+function savePromptEdit() {
+    if (!_promptEditBtn) return;
+    const newPrompt = document.getElementById('promptEditText').value.trim();
+    if (newPrompt) _promptEditBtn.setAttribute('data-prompt', newPrompt);
+    closePromptEdit();
+    showToast('✅ Prompt updated');
+}
+function resetPromptEdit() {
+    if (!_promptEditBtn) return;
+    const defaultPrompt = _promptEditBtn.getAttribute('data-default-prompt') || '';
+    document.getElementById('promptEditText').value = defaultPrompt;
+}
+
+// === WIRE UP data-prompt BUTTONS ===
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.ai-btn[data-action="cmd"]');
+    if (btn && !e.defaultPrevented) {
+        const prompt = btn.getAttribute('data-prompt');
+        if (prompt) aiCmd(prompt);
+    }
+});
 
 // Drag handles
 function setupDrag(handleId, panel, dir) {
