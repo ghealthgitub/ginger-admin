@@ -1015,21 +1015,20 @@ function addEntityTag(type, sel) {
 
 // === CATEGORY MANAGEMENT ===
 var DEFAULT_CATEGORIES = ['Medical Tourism','Fertility & IVF','Cosmetic Surgery','Cardiac Care','Orthopedics','Dental','Eye Care','Patient Stories','Travel & Recovery','Insurance & Costs','Health Tips'];
+var _customCategories = []; // additional categories added by user this session
 var _catCounts = {}; // category → post count from DB
+var _categoriesLoaded = false;
 
-function getStoredCategories() {
-    try { var s = localStorage.getItem('ginger_blog_categories'); return s ? JSON.parse(s) : null; } catch(e) { return null; }
-}
-function saveStoredCategories(cats) {
-    try { localStorage.setItem('ginger_blog_categories', JSON.stringify(cats)); } catch(e) {}
-}
 function getAllCategories() {
-    var stored = getStoredCategories();
-    if (stored) return stored;
-    return DEFAULT_CATEGORIES.slice();
+    var all = DEFAULT_CATEGORIES.slice();
+    // Add custom categories
+    _customCategories.forEach(function(c) { if (all.indexOf(c) === -1) all.push(c); });
+    // Add any from DB not in defaults
+    Object.keys(_catCounts).forEach(function(c) { if (all.indexOf(c) === -1) all.push(c); });
+    return all;
 }
 async function loadCategories() {
-    // Fetch actual categories used in published posts
+    // Fetch actual categories used in posts to get counts + discover new ones
     try {
         var r = await fetch('/api/blog');
         if (r.ok) {
@@ -1038,22 +1037,19 @@ async function loadCategories() {
             posts.forEach(function(p) {
                 if (p.category) _catCounts[p.category] = (_catCounts[p.category] || 0) + 1;
             });
-            // Merge any DB categories not in our list
-            var cats = getAllCategories();
-            Object.keys(_catCounts).forEach(function(c) {
-                if (cats.indexOf(c) === -1) cats.push(c);
-            });
-            saveStoredCategories(cats);
         }
-    } catch(e) {}
+    } catch(e) { console.error('Category load error:', e); }
+    _categoriesLoaded = true;
     renderCategoryDropdown();
 }
-function renderCategoryDropdown() {
+function renderCategoryDropdown(preserveValue) {
     var sel = document.getElementById('category');
-    var currentVal = sel.value;
+    var currentVal = preserveValue || sel.value;
     var cats = getAllCategories();
+    // If currentVal exists but isn't in list, add it temporarily
+    if (currentVal && cats.indexOf(currentVal) === -1) cats.push(currentVal);
     sel.innerHTML = '<option value="">Select category</option>' + cats.map(function(c) {
-        return '<option' + (c === currentVal ? ' selected' : '') + '>' + c + '</option>';
+        return '<option value="' + c + '"' + (c === currentVal ? ' selected' : '') + '>' + c + '</option>';
     }).join('');
 }
 function openCategoryEditor() {
@@ -1084,14 +1080,12 @@ function addCategory() {
     var name = input.value.trim();
     if (!name) return;
     var cats = getAllCategories();
-    // Check for duplicate (case-insensitive)
     if (cats.some(function(c) { return c.toLowerCase() === name.toLowerCase(); })) {
         input.style.borderColor = '#EF4444';
         setTimeout(function() { input.style.borderColor = ''; }, 1500);
         return;
     }
-    cats.push(name);
-    saveStoredCategories(cats);
+    _customCategories.push(name);
     input.value = '';
     renderCategoryList();
 }
@@ -1101,14 +1095,18 @@ function renameCategory(idx) {
     var newName = prompt('Rename category:', oldName);
     if (!newName || newName.trim() === oldName) return;
     newName = newName.trim();
-    // Check duplicate
     if (cats.some(function(c, i) { return i !== idx && c.toLowerCase() === newName.toLowerCase(); })) {
         alert('A category with that name already exists.');
         return;
     }
-    cats[idx] = newName;
-    saveStoredCategories(cats);
-    // If current post uses old category, update it
+    // Update in the right source
+    var defIdx = DEFAULT_CATEGORIES.indexOf(oldName);
+    if (defIdx !== -1) { DEFAULT_CATEGORIES[defIdx] = newName; }
+    var custIdx = _customCategories.indexOf(oldName);
+    if (custIdx !== -1) { _customCategories[custIdx] = newName; }
+    // Update count key
+    if (_catCounts[oldName]) { _catCounts[newName] = _catCounts[oldName]; delete _catCounts[oldName]; }
+    // Update current post if using old name
     if (document.getElementById('category').value === oldName) {
         document.getElementById('category').value = newName;
     }
@@ -1117,10 +1115,12 @@ function renameCategory(idx) {
 function deleteCategory(idx) {
     var cats = getAllCategories();
     var name = cats[idx];
-    if ((_catCounts[name] || 0) > 0) return; // safety check
+    if ((_catCounts[name] || 0) > 0) return;
     if (!confirm('Delete category "' + name + '"?')) return;
-    cats.splice(idx, 1);
-    saveStoredCategories(cats);
+    var defIdx = DEFAULT_CATEGORIES.indexOf(name);
+    if (defIdx !== -1) DEFAULT_CATEGORIES.splice(defIdx, 1);
+    var custIdx = _customCategories.indexOf(name);
+    if (custIdx !== -1) _customCategories.splice(custIdx, 1);
     renderCategoryList();
 }
 
@@ -1220,6 +1220,7 @@ async function loadPost() {
         document.getElementById('metaDesc').value = postData.meta_description || '';
         document.getElementById('excerpt').value = postData.excerpt || '';
         document.getElementById('category').value = postData.category || '';
+        if (postData.category) renderCategoryDropdown(postData.category);
         document.getElementById('focusKeywords').value = postData.focus_keywords || '';
         document.getElementById('status').value = postData.status || 'draft';
         if (postData.content) quill.root.innerHTML = postData.content;
@@ -1750,9 +1751,10 @@ async function restoreRevision(revId) {
 }
 
 // Init
+renderCategoryDropdown(); // render defaults immediately
 loadPost().then(() => loadRevisions());
 loadEntityDropdowns();
-loadCategories();
+loadCategories(); // async — will re-render with DB categories + counts
 updateStats();
 
 // ===== IMAGE PASTE HANDLER =====
