@@ -213,6 +213,22 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
+/* AI helper buttons */
+.ai-helpers{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ai-btn{padding:6px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;color:var(--gray-500);font-family:inherit;transition:all .15s;text-align:center}
+.ai-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}.ai-btn:disabled{opacity:.4;cursor:not-allowed}
+.ai-helpers .ai-btn:last-child:nth-child(odd){grid-column:1/-1}
+
+/* AI Progress Overlay */
+.ai-progress{position:absolute;inset:0;background:rgba(255,255,255,.93);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-radius:4px}
+.ai-progress.active{display:flex}
+.ai-progress__label{font-size:.95rem;font-weight:700;color:var(--navy)}
+.ai-progress__bar-wrap{width:280px;height:7px;background:var(--gray-200);border-radius:50px;overflow:hidden}
+.ai-progress__bar{height:100%;width:0%;background:linear-gradient(90deg,var(--teal),var(--ginger));border-radius:50px;transition:width .4s ease}
+@keyframes ai-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.ai-progress__bar{animation:ai-pulse 1.8s ease-in-out infinite}
+.ai-progress__sub{font-size:.78rem;color:var(--gray-400)}
+
 /* Revisions */
 .rev-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:.78rem;cursor:pointer;transition:background .1s;margin:0 -14px;padding-left:14px;padding-right:14px}
 .rev-item:hover{background:var(--gray-50)}
@@ -362,7 +378,12 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <span id="readTime">0 min read</span>
         </div>
     </div>
-    <div class="editor-wrap" id="editorWrap">
+    <div class="editor-wrap" id="editorWrap" style="position:relative">
+        <div class="ai-progress" id="aiProgress">
+            <div class="ai-progress__label" id="aiProgressLabel">✨ AI is working...</div>
+            <div class="ai-progress__bar-wrap"><div class="ai-progress__bar" id="aiProgressBar"></div></div>
+            <div class="ai-progress__sub" id="aiProgressSub">This usually takes 10–20 seconds</div>
+        </div>
         <div id="editor"></div>
     </div>
     <div class="preview-pane" id="previewPane">
@@ -497,6 +518,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description (auto-generated)" oninput="updateCharCount('metaDesc','metaDescCount',160);resetAutoSave()"></textarea>
             <div class="sb-label">Excerpt</div>
             <textarea class="sb-textarea" id="excerpt" placeholder="Brief summary (auto-generated)" oninput="resetAutoSave()"></textarea>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
+                <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
+                <div class="ai-helpers">
+                    <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
+                    <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
+                    <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
+                    <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
+                    <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1091,6 +1122,114 @@ IMPORTANT RULES:
 }
 function insertAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML = html; updateStats(); analyzeSEO(); } }
 function appendAI(contentId) { saveUndoSnapshot(); const html = window[contentId]; if (html) { quill.root.innerHTML += html; updateStats(); analyzeSEO(); } }
+
+// === TOAST HELPER ===
+function showToast(msg) {
+    const toast = document.getElementById('autosaveToast');
+    toast.textContent = msg; toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2500);
+}
+
+// === CLEAN SPACING (pure DOM — instant, no AI) ===
+function cleanSpacing() {
+    const html = quill.root.innerHTML;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.querySelectorAll('p').forEach(p => {
+        const inner = p.innerHTML.trim();
+        if (inner === '<br>' || inner === '' || inner === '&nbsp;') p.remove();
+    });
+    tmp.querySelectorAll('h1,h2,h3,h4,li,blockquote,div').forEach(el => {
+        if (!el.textContent.trim() && !el.querySelector('img')) el.remove();
+    });
+    tmp.querySelectorAll('*').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(/(<br\s*\/?>\s*){2,}/gi, '<br>');
+    });
+    (function trimNodes(node) {
+        node.childNodes.forEach(child => {
+            if (child.nodeType === 3) child.textContent = child.textContent.replace(/^[\s\u00a0]+|[\s\u00a0]+$/g, ' ');
+            else trimNodes(child);
+        });
+    })(tmp);
+    const result = tmp.innerHTML;
+    if (result === html) { showToast('✨ Already clean!'); return; }
+    saveUndoSnapshot();
+    quill.root.innerHTML = result;
+    updateStats(); analyzeSEO();
+    showToast('✅ Spacing cleaned');
+}
+
+// === AI SIDEBAR HELPERS (Auto SEO, Optimize, Grammar, Headings) ===
+const AI_LABELS = {
+    seo:      { label: '🏷 Generating SEO tags...',       sub: 'Analysing title, description & keywords' },
+    optimize: { label: '🎯 Optimising content...',         sub: 'Expanding and improving your content'    },
+    grammar:  { label: '✏ Fixing grammar...',             sub: 'Checking readability and flow'           },
+    headings: { label: '📑 Restructuring headings...',    sub: 'Adding H2 sections and H3 sub-headings'  }
+};
+function aiShowProgress(type) {
+    const info = AI_LABELS[type] || { label: '✨ AI is working...', sub: 'This usually takes 10–20 seconds' };
+    document.getElementById('aiProgressLabel').textContent = info.label;
+    document.getElementById('aiProgressSub').textContent = info.sub;
+    const bar = document.getElementById('aiProgressBar');
+    bar.style.width = '0%';
+    document.getElementById('aiProgress').classList.add('active');
+    setTimeout(() => bar.style.transition = 'width 15s cubic-bezier(.1,0,.2,1)', 50);
+    setTimeout(() => bar.style.width = '85%', 100);
+}
+function aiHideProgress() {
+    const bar = document.getElementById('aiProgressBar');
+    bar.style.transition = 'width .3s ease';
+    bar.style.width = '100%';
+    setTimeout(() => {
+        document.getElementById('aiProgress').classList.remove('active');
+        bar.style.width = '0%';
+        bar.style.transition = '';
+    }, 350);
+}
+async function aiAction(type) {
+    const btns = document.querySelectorAll('.ai-btn'); btns.forEach(b => b.disabled = true);
+    aiShowProgress(type);
+    const itemName = document.getElementById('title').value || 'this blog post';
+    const content = quill.getText().trim();
+    let prompt = '';
+    if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), excerpt (max 200 chars), and focus keywords (comma-separated) for the blog post "' + itemName + '". Current content summary: ' + content.substring(0, 500) + '\n\nReturn as plain text lines:\nMeta Title: ...\nMeta Description: ...\nExcerpt: ...\nFocus Keywords: ...';
+    else if (type === 'optimize') prompt = 'Improve and expand the following blog content about medical tourism. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol). Return ONLY the HTML, no explanation.\n\n' + quill.root.innerHTML;
+    else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this blog content. Return ONLY clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
+    else if (type === 'headings') prompt = 'Improve the heading structure of the following blog content. Ensure clear H2 section headings and H3 sub-headings. Keep all existing content. Return ONLY the complete clean HTML, no explanation, no markdown fences.\n\n' + quill.root.innerHTML;
+
+    try {
+        const r = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, type: 'blog', context: 'Blog post: ' + itemName }) });
+        if (!r.ok) throw new Error('AI request failed');
+        const data = await r.json(); let result = data.content || '';
+        if (data.truncated) {
+            showToast('⚠️ Response was cut short — article too long. Try splitting into sections.');
+            aiHideProgress(); btns.forEach(b => b.disabled = false); return;
+        }
+        // Strip markdown fences and preamble
+        const htmlMatch = result.match(/```html?\n?([\s\S]*?)```/);
+        if (htmlMatch) result = htmlMatch[1].trim();
+        else {
+            const firstTag = result.indexOf('<');
+            if (firstTag > 0) result = result.substring(firstTag);
+        }
+        if (type === 'seo') {
+            result.split('\n').forEach(line => {
+                if (line.toLowerCase().includes('meta title')) { const v = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim(); if (v) document.getElementById('metaTitle').value = v; }
+                if (line.toLowerCase().includes('meta description')) { const v = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim(); if (v) document.getElementById('metaDesc').value = v; }
+                if (line.toLowerCase().includes('excerpt')) { const v = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim(); if (v && v.length < 250) document.getElementById('excerpt').value = v; }
+                if (line.toLowerCase().includes('focus keywords')) { const v = line.replace(/.*?[:]\s*/i, '').replace(/^["']|["']$/g, '').trim(); if (v) document.getElementById('focusKeywords').value = v; }
+            });
+            updateCharCount('metaTitle','metaTitleCount',60);
+            updateCharCount('metaDesc','metaDescCount',160);
+            analyzeSEO(); showToast('✅ SEO tags generated');
+        } else {
+            saveUndoSnapshot();
+            quill.root.innerHTML = result; updateStats(); analyzeSEO(); showToast('✅ Content updated');
+        }
+    } catch(e) { showToast('❌ AI error: ' + e.message); }
+    aiHideProgress();
+    btns.forEach(b => b.disabled = false);
+}
 
 // Drag handles
 function setupDrag(handleId, panel, dir) {
