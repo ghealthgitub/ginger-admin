@@ -214,6 +214,18 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .tag-chip--treatment{background:rgba(139,92,246,.1);color:#7C3AED}
 .tag-input{border:none;outline:none;font-family:inherit;font-size:.82rem;flex:1;min-width:60px;padding:2px}
 
+/* Entity Chips (inline below each dropdown) */
+.entity-chips{display:flex;flex-wrap:wrap;gap:4px;margin:-6px 0 10px;min-height:0}
+.entity-chips:empty{display:none}
+.entity-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:.73rem;font-weight:600;animation:chipIn .2s ease}
+.entity-chip button{background:none;border:none;cursor:pointer;font-size:.8rem;padding:0 1px;line-height:1;opacity:.6;transition:opacity .15s}
+.entity-chip button:hover{opacity:1;color:#EF4444}
+.entity-chip--doctor{background:rgba(59,130,246,.1);color:#2563EB;border:1px solid rgba(59,130,246,.2)}
+.entity-chip--hospital{background:rgba(16,185,129,.1);color:#059669;border:1px solid rgba(16,185,129,.2)}
+.entity-chip--specialty{background:rgba(242,101,34,.1);color:#D9531E;border:1px solid rgba(242,101,34,.2)}
+.entity-chip--treatment{background:rgba(139,92,246,.1);color:#7C3AED;border:1px solid rgba(139,92,246,.2)}
+@keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
 /* Content Analysis */
 .analysis-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--gray-500);margin-bottom:4px}
 
@@ -453,26 +465,34 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         </div>
     </div>
 
-    <!-- Link to Entities -->
+    <!-- Link to Entities (Multi-select with inline chips) -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
             <div class="sb-box__title">🔗 Link to Entities</div>
             <span class="sb-box__toggle">▾</span>
         </div>
         <div class="sb-box__body">
-            <div class="sb-label">Doctor</div>
-            <select class="sb-select" id="linkDoctor" onchange="addEntityTag('doctor',this)"><option value="">Select doctor...</option></select>
-            <div class="sb-label">Hospital</div>
-            <select class="sb-select" id="linkHospital" onchange="addEntityTag('hospital',this)"><option value="">Select hospital...</option></select>
-            <div class="sb-label">Specialty</div>
-            <select class="sb-select" id="linkSpecialty" onchange="addEntityTag('specialty',this)"><option value="">Select specialty...</option></select>
-            <div class="sb-label">Treatment</div>
-            <select class="sb-select" id="linkTreatment" onchange="addEntityTag('treatment',this)"><option value="">Select treatment...</option></select>
-            <div class="sb-hint">Selected entities appear as tags below</div>
+            <div class="sb-label">👨‍⚕️ Doctors</div>
+            <select class="sb-select" id="linkDoctor" onchange="addEntityTag('doctor',this)"><option value="">+ Add doctor...</option></select>
+            <div class="entity-chips" id="chipsDoctor"></div>
+
+            <div class="sb-label">🏥 Hospitals</div>
+            <select class="sb-select" id="linkHospital" onchange="addEntityTag('hospital',this)"><option value="">+ Add hospital...</option></select>
+            <div class="entity-chips" id="chipsHospital"></div>
+
+            <div class="sb-label">🎯 Specialties</div>
+            <select class="sb-select" id="linkSpecialty" onchange="addEntityTag('specialty',this)"><option value="">+ Add specialty...</option></select>
+            <div class="entity-chips" id="chipsSpecialty"></div>
+
+            <div class="sb-label">💊 Treatments</div>
+            <select class="sb-select" id="linkTreatment" onchange="addEntityTag('treatment',this)"><option value="">+ Add treatment...</option></select>
+            <div class="entity-chips" id="chipsTreatment"></div>
+
+            <div class="sb-hint" style="margin-top:6px">Select multiple from each dropdown. Tags are saved automatically.</div>
         </div>
     </div>
 
-    <!-- Tags -->
+    <!-- Tags (free-form) -->
     <div class="sb-box">
         <div class="sb-box__head" onclick="this.parentElement.classList.toggle('collapsed')">
             <div class="sb-box__title">🏷 Tags</div>
@@ -482,7 +502,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div class="tags-wrap" id="tagsWrap" onclick="document.getElementById('tagInput').focus()">
                 <input class="tag-input" id="tagInput" placeholder="Add tag..." onkeydown="handleTagKey(event)">
             </div>
-            <div class="sb-hint">Press Enter or comma to add. Entity links shown with colored badges.</div>
+            <div class="sb-hint">Press Enter or comma to add free-form tags. Entity links are managed above.</div>
         </div>
     </div>
 
@@ -867,27 +887,51 @@ function getTagType(t) {
     if (t.startsWith('treatment:')) return 'treatment';
     return '';
 }
-function getTagLabel(t) {
-    var type = getTagType(t);
-    if (!type) return t;
-    var slug = t.substring(type.length + 1);
-    var icons = {doctor:'👨‍⚕️',hospital:'🏥',specialty:'🎯',treatment:'💊'};
-    var name = slug.replace(/-/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()});
-    return icons[type] + ' ' + name;
+function getEntityName(tag) {
+    var type = getTagType(tag);
+    if (!type) return tag;
+    var slug = tag.substring(type.length + 1);
+    // Try to find the real name from dropdown options
+    var typeMap = {doctor:'linkDoctor',hospital:'linkHospital',specialty:'linkSpecialty',treatment:'linkTreatment'};
+    var sel = document.getElementById(typeMap[type]);
+    if (sel) {
+        for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === slug) return sel.options[i].textContent;
+        }
+    }
+    return slug.replace(/-/g,' ').replace(/\b\w/g, function(c){return c.toUpperCase()});
 }
 function renderTags() {
+    // 1. Render free-form tags (non-entity) in the Tags wrap
     var wrap = document.getElementById('tagsWrap');
-    wrap.innerHTML = tags.map(function(t,i) {
-        var type = getTagType(t);
-        var cls = type ? ' tag-chip--' + type : '';
-        var label = getTagLabel(t);
-        return '<span class="tag-chip' + cls + '">' + label + '<button onclick="removeTag(' + i + ')">&times;</button></span>';
+    var freeTags = tags.filter(function(t) { return !getTagType(t); });
+    wrap.innerHTML = freeTags.map(function(t) {
+        var idx = tags.indexOf(t);
+        return '<span class="tag-chip">' + t + '<button onclick="removeTag(' + idx + ')">&times;</button></span>';
     }).join('') + '<input class="tag-input" id="tagInput" placeholder="Add tag..." onkeydown="handleTagKey(event)">';
-    syncEntityDropdowns();
+
+    // 2. Render entity chips under each dropdown
+    renderEntityChips();
+}
+function renderEntityChips() {
+    var types = ['doctor','hospital','specialty','treatment'];
+    var icons = {doctor:'👨‍⚕️',hospital:'🏥',specialty:'🎯',treatment:'💊'};
+    types.forEach(function(type) {
+        var container = document.getElementById('chips' + type.charAt(0).toUpperCase() + type.slice(1));
+        if (!container) return;
+        var entityTags = tags.filter(function(t) { return t.startsWith(type + ':'); });
+        if (entityTags.length === 0) { container.innerHTML = ''; return; }
+        container.innerHTML = entityTags.map(function(tag) {
+            var idx = tags.indexOf(tag);
+            var name = getEntityName(tag);
+            return '<span class="entity-chip entity-chip--' + type + '">' + icons[type] + ' ' + name + '<button onclick="removeTag(' + idx + ')">&times;</button></span>';
+        }).join('');
+    });
 }
 function removeTag(i) {
     tags.splice(i, 1);
     renderTags();
+    resetAutoSave();
 }
 function syncEntityDropdowns() {
     ['Doctor','Hospital','Specialty','Treatment'].forEach(function(type) {
@@ -902,6 +946,7 @@ function addEntityTag(type, sel) {
     if (!tags.includes(tag)) { tags.push(tag); }
     sel.value = '';
     renderTags();
+    resetAutoSave();
 }
 async function loadEntityDropdowns() {
     try {
@@ -912,10 +957,12 @@ async function loadEntityDropdowns() {
             fetch('/api/treatments').then(function(r){return r.json()})
         ]);
         var doctors = results[0], hospitals = results[1], specialties = results[2], treatments = results[3];
-        document.getElementById('linkDoctor').innerHTML = '<option value="">— None —</option>' + doctors.map(function(d){return '<option value="'+d.slug+'">'+d.name+'</option>'}).join('');
-        document.getElementById('linkHospital').innerHTML = '<option value="">— None —</option>' + hospitals.map(function(h){return '<option value="'+h.slug+'">'+h.name+(h.city?' — '+h.city:'')+'</option>'}).join('');
-        document.getElementById('linkSpecialty').innerHTML = '<option value="">— None —</option>' + specialties.map(function(s){return '<option value="'+s.slug+'">'+s.name+'</option>'}).join('');
-        document.getElementById('linkTreatment').innerHTML = '<option value="">— None —</option>' + treatments.map(function(t){return '<option value="'+t.slug+'">'+t.name+'</option>'}).join('');
+        document.getElementById('linkDoctor').innerHTML = '<option value="">+ Add doctor...</option>' + doctors.map(function(d){return '<option value="'+d.slug+'">'+d.name+'</option>'}).join('');
+        document.getElementById('linkHospital').innerHTML = '<option value="">+ Add hospital...</option>' + hospitals.map(function(h){return '<option value="'+h.slug+'">'+h.name+(h.city?' — '+h.city:'')+'</option>'}).join('');
+        document.getElementById('linkSpecialty').innerHTML = '<option value="">+ Add specialty...</option>' + specialties.map(function(s){return '<option value="'+s.slug+'">'+s.name+'</option>'}).join('');
+        document.getElementById('linkTreatment').innerHTML = '<option value="">+ Add treatment...</option>' + treatments.map(function(t){return '<option value="'+t.slug+'">'+t.name+'</option>'}).join('');
+        // Re-render entity chips now that dropdown options are loaded (resolves names)
+        if (tags.length) renderEntityChips();
     } catch(e) { console.error('Entity dropdown load failed', e); }
 }
 
