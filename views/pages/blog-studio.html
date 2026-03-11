@@ -68,6 +68,10 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .ai-tool-btn{display:flex;align-items:center;gap:3px;padding:4px 10px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;font-size:.72rem;font-weight:600;color:var(--gray-500);cursor:pointer;font-family:inherit;transition:all .2s}
 .ai-tool-btn:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
 
+/* AI Shortcut Actions (left panel) */
+.ai-shortcuts{padding:8px 12px;border-top:1px solid var(--gray-200);flex-shrink:0;background:var(--white)}
+.ai-shortcuts__label{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+
 /* Image Editor Overlay (WordPress-style) */
 .img-edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9998;display:none;align-items:center;justify-content:center}
 .img-edit-overlay.active{display:flex}
@@ -331,6 +335,16 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
         <button class="ai-qbtn" onclick="aiCmd('Suggest relevant internal links and CTAs based on the content and our medical tourism website')">🔗 Add CTAs</button>
         <button class="ai-qbtn" onclick="aiCmd('Make the content shorter and more concise')">✂ Shorten</button>
     </div>
+    <div class="ai-shortcuts">
+        <div class="ai-shortcuts__label">✨ Quick Actions</div>
+        <div class="ai-helpers">
+            <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
+            <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
+            <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
+            <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
+            <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
+        </div>
+    </div>
     <div class="ai-input">
         <div class="ai-input__row">
             <textarea id="aiInput" placeholder="Ask AI to write, edit, improve..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiCmd()}"></textarea>
@@ -518,16 +532,6 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <textarea class="sb-textarea" id="metaDesc" placeholder="SEO description (auto-generated)" oninput="updateCharCount('metaDesc','metaDescCount',160);resetAutoSave()"></textarea>
             <div class="sb-label">Excerpt</div>
             <textarea class="sb-textarea" id="excerpt" placeholder="Brief summary (auto-generated)" oninput="resetAutoSave()"></textarea>
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
-                <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
-                <div class="ai-helpers">
-                    <button class="ai-btn" onclick="aiAction('seo')">🏷 Auto SEO</button>
-                    <button class="ai-btn" onclick="aiAction('optimize')">🎯 Optimize</button>
-                    <button class="ai-btn" onclick="aiAction('grammar')">✏ Grammar</button>
-                    <button class="ai-btn" onclick="aiAction('headings')">📑 Headings</button>
-                    <button class="ai-btn" onclick="cleanSpacing()">🧹 Clean Spacing</button>
-                </div>
-            </div>
         </div>
     </div>
 
