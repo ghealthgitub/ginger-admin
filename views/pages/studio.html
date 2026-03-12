@@ -18,7 +18,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .topbar__btn--publish{background:var(--teal);color:#fff}.topbar__btn--publish:hover{background:#0c918c}
 .topbar__btn--view{background:var(--white);color:var(--teal);border:1px solid var(--teal);text-decoration:none}.topbar__btn--view:hover{background:rgba(14,165,160,.08)}
 .studio{display:flex;height:calc(100vh - 48px)}
-.panel-editor{flex:1;display:flex;flex-direction:column;min-width:300px;min-height:0;background:var(--white);overflow:hidden}
+.panel-editor{flex:1;display:flex;flex-direction:column;min-width:300px;min-height:0;background:var(--white);overflow-y:auto}
 .panel-right{width:340px;min-width:240px;max-width:600px;background:var(--white);border-left:none;overflow-y:auto;flex-shrink:0}
 .panel-resizer{width:5px;background:var(--gray-200);cursor:col-resize;flex-shrink:0;transition:background .15s}
 .panel-resizer:hover,.panel-resizer.dragging{background:var(--teal)}
@@ -44,7 +44,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-tab{padding:4px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray-500);background:var(--white);transition:all .15s}
 .editor-tab.active{background:var(--teal);color:#fff}
 .editor-stats{font-size:.75rem;color:var(--gray-400)}
-.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:0}
+.editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:500px}
 .editor-wrap #editor{display:flex;flex-direction:column;flex:1;min-height:0}
 /* CKEditor 5 editor styles */
 .editor-wrap .ck-editor{display:flex;flex-direction:column;flex:1;overflow:hidden;border:none!important;box-shadow:none!important;min-height:0}
