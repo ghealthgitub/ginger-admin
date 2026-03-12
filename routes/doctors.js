@@ -143,8 +143,25 @@ app.post('/api/doctors/bulk', apiAuth, roleRequired('super_admin', 'editor'), as
         let count = 0;
         if (action === 'delete') {
             if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'Only admins can delete' });
-            const result = await pool.query('DELETE FROM doctors WHERE id = ANY($1) RETURNING id', [ids]);
-            count = result.rowCount; await logActivity(req.user.id, 'bulk_delete', 'doctor', null, `Bulk deleted ${count} doctors`);
+            // Check for dependent records across all selected doctors
+            const vids = await pool.query('SELECT doctor_id, COUNT(*) as cnt FROM videos WHERE doctor_id = ANY($1) GROUP BY doctor_id', [ids]);
+            const tests = await pool.query('SELECT doctor_id, COUNT(*) as cnt FROM testimonials WHERE doctor_id = ANY($1) GROUP BY doctor_id', [ids]);
+            const blocked = {};
+            vids.rows.forEach(r => { blocked[r.doctor_id] = (blocked[r.doctor_id] || []).concat(`${r.cnt} video(s)`); });
+            tests.rows.forEach(r => { blocked[r.doctor_id] = (blocked[r.doctor_id] || []).concat(`${r.cnt} testimonial(s)`); });
+            const blockedIds = Object.keys(blocked).map(Number);
+            const safeIds = ids.filter(id => !blockedIds.includes(id));
+            if (safeIds.length > 0) {
+                await pool.query('DELETE FROM doctor_treatments WHERE doctor_id = ANY($1)', [safeIds]);
+                const result = await pool.query('DELETE FROM doctors WHERE id = ANY($1) RETURNING id', [safeIds]);
+                count = result.rowCount;
+                await logActivity(req.user.id, 'bulk_delete', 'doctor', null, `Bulk deleted ${count} doctors`);
+            }
+            if (blockedIds.length > 0) {
+                const names = [];
+                for (const id of blockedIds) names.push(`ID ${id} (${blocked[id].join(', ')})`);
+                return res.json({ success: true, count, warning: `${count} deleted. ${blockedIds.length} skipped — linked to: ${names.join('; ')}. Remove linked videos/testimonials first.` });
+            }
         } else if (action === 'publish') {
             const result = await pool.query("UPDATE doctors SET status='published', updated_at=NOW() WHERE id = ANY($1) RETURNING id", [ids]);
             count = result.rowCount; await logActivity(req.user.id, 'bulk_publish', 'doctor', null, `Bulk published ${count} doctors`);
