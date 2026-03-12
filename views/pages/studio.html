@@ -45,6 +45,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
 .editor-tab.active{background:var(--teal);color:#fff}
 .editor-stats{font-size:.75rem;color:var(--gray-400)}
 .editor-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;min-height:0}
+.editor-wrap #editor{display:flex;flex-direction:column;flex:1;min-height:0}
 /* CKEditor 5 editor styles */
 .editor-wrap .ck-editor{display:flex;flex-direction:column;flex:1;overflow:hidden;border:none!important;box-shadow:none!important;min-height:0}
 .editor-wrap .ck-editor__top .ck-toolbar{border:none!important;border-bottom:1px solid var(--gray-100)!important;padding:4px 28px!important;background:var(--white)!important;box-shadow:none!important;flex-shrink:0}
@@ -1183,7 +1184,7 @@ function autoSlug() {
 function showTab(t) {
     document.getElementById('tabWrite').classList.toggle('active',t==='write');
     document.getElementById('tabPreview').classList.toggle('active',t==='preview');
-    document.getElementById('editorWrap').style.display=t==='write'?'block':'none';
+    document.getElementById('editorWrap').style.display=t==='write'?'flex':'none';
     const pp=document.getElementById('previewPane'); pp.style.display=t==='preview'?'block':'none';
     if(t==='preview') pp.innerHTML=window._ck ? window._ck.getData() : quill.root.innerHTML;
 }
