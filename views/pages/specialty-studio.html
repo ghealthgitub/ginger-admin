@@ -261,6 +261,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-100);heigh
             <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
                 <div class="sb-label" style="margin-bottom:8px">✨ AI Actions</div>
                 <div class="ai-helpers">
+                    <button class="ai-btn" id="aiBtnOverview" onclick="aiAction('overview')">📝 Write Overview</button>
                     <button class="ai-btn" id="aiBtnSeo" onclick="aiAction('seo')">🏷 Auto SEO</button>
                     <button class="ai-btn" id="aiBtnOptimize" onclick="aiAction('optimize')">🎯 Optimize</button>
                     <button class="ai-btn" id="aiBtnGrammar" onclick="aiAction('grammar')">✏ Grammar</button>
@@ -1091,6 +1092,7 @@ async function aiAction(type) {
     const content = quill.getText().trim();
     let prompt = '';
     if (type === 'seo') prompt = 'Generate meta title (max 60 chars), meta description (max 160 chars), and short description (max 200 chars) for the medical page "' + itemName + '". Return as plain text lines:\nMeta Title: ...\nMeta Description: ...\nShort Description: ...';
+    else if (type === 'overview') prompt = 'Write a concise specialty overview page for "' + itemName + '" for a medical tourism website. Keep it short and informative (300-500 words max). Structure with HTML (h2, h3, p, ul tags):\n\n1. Brief introduction (2-3 sentences — what is this specialty, who needs it)\n2. "Key Treatments" — short bullet list of major procedures covered\n3. "Our Specialists" — 2-3 sentences about the calibre of doctors (board-certified, 15-30+ years experience, internationally trained)\n4. "Why Choose Us" — 2-3 sentences about JCI-accredited hospitals, 5 countries, end-to-end support\n\nTone: Professional, reassuring, patient-friendly. Do NOT include pricing, specific hospital names, or doctor names. Return ONLY clean HTML, no explanation, no markdown fences.';
     else if (type === 'optimize') prompt = 'Improve and expand the following medical content. Make it more detailed, engaging, and informative. Keep HTML formatting (h2, h3, p, ul, ol).\n\n' + content.substring(0, 4000);
     else if (type === 'grammar') prompt = 'Fix grammar and improve readability in this medical content. Return clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
     else if (type === 'headings') prompt = 'Review the following medical content and improve the heading structure. Ensure clear H2 section headings and H3 sub-headings where appropriate. Keep all existing content but restructure headings for better readability and SEO. Return complete clean HTML:\n\n' + quill.root.innerHTML.substring(0, 6000);
